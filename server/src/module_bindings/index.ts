@@ -35,18 +35,25 @@ import {
 
 // Import all reducer arg schemas
 import BeginBuildReducer from "./begin_build_reducer";
+import CancelBermReducer from "./cancel_berm_reducer";
 import CommitRoundReducer from "./commit_round_reducer";
 import CreateRoomReducer from "./create_room_reducer";
 import JoinRoomReducer from "./join_room_reducer";
 import LeaveRoomReducer from "./leave_room_reducer";
 import LogResearchReducer from "./log_research_reducer";
+import MoveCursorReducer from "./move_cursor_reducer";
+import PlacePieceReducer from "./place_piece_reducer";
+import RemovePieceReducer from "./remove_piece_reducer";
 import SetServerIdentityReducer from "./set_server_identity_reducer";
+import StartBermReducer from "./start_berm_reducer";
 import StartRoundReducer from "./start_round_reducer";
 
 // Import all procedure arg schemas
 
 // Import all table schema definitions
+import CursorRow from "./cursor_table";
 import MemberRow from "./member_table";
+import PieceRow from "./piece_table";
 import PlanetParameterRow from "./planet_parameter_table";
 import RequirementRow from "./requirement_table";
 import ResearchLogRow from "./research_log_table";
@@ -58,6 +65,20 @@ import TileRow from "./tile_table";
 
 /** The schema information for all tables in this module. This is defined the same was as the tables would have been defined in the server. */
 const tablesSchema = __schema({
+  cursor: __table({
+    name: 'cursor',
+    indexes: [
+      { accessor: 'identity', name: 'cursor_identity_idx_btree', algorithm: 'btree', columns: [
+        'identity',
+      ] },
+      { accessor: 'roomId', name: 'cursor_room_id_idx_btree', algorithm: 'btree', columns: [
+        'roomId',
+      ] },
+    ],
+    constraints: [
+      { name: 'cursor_identity_key', constraint: 'unique', columns: ['identity'] },
+    ],
+  }, CursorRow),
   member: __table({
     name: 'member',
     indexes: [
@@ -72,6 +93,20 @@ const tablesSchema = __schema({
       { name: 'member_identity_key', constraint: 'unique', columns: ['identity'] },
     ],
   }, MemberRow),
+  piece: __table({
+    name: 'piece',
+    indexes: [
+      { accessor: 'id', name: 'piece_id_idx_btree', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { accessor: 'roundId', name: 'piece_round_id_idx_btree', algorithm: 'btree', columns: [
+        'roundId',
+      ] },
+    ],
+    constraints: [
+      { name: 'piece_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, PieceRow),
   planetParameter: __table({
     name: 'planet_parameter',
     indexes: [
@@ -162,12 +197,17 @@ const tablesSchema = __schema({
 /** The schema information for all reducers in this module. This is defined the same way as the reducers would have been defined in the server, except the body of the reducer is omitted in code generation. */
 const reducersSchema = __reducers(
   __reducerSchema("begin_build", BeginBuildReducer),
+  __reducerSchema("cancel_berm", CancelBermReducer),
   __reducerSchema("commit_round", CommitRoundReducer),
   __reducerSchema("create_room", CreateRoomReducer),
   __reducerSchema("join_room", JoinRoomReducer),
   __reducerSchema("leave_room", LeaveRoomReducer),
   __reducerSchema("log_research", LogResearchReducer),
+  __reducerSchema("move_cursor", MoveCursorReducer),
+  __reducerSchema("place_piece", PlacePieceReducer),
+  __reducerSchema("remove_piece", RemovePieceReducer),
   __reducerSchema("set_server_identity", SetServerIdentityReducer),
+  __reducerSchema("start_berm", StartBermReducer),
   __reducerSchema("start_round", StartRoundReducer),
 );
 

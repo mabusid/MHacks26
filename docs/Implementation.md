@@ -224,7 +224,10 @@ Built per [design.md](./design.md) (redesign after first review): base-scene SVG
 
 ### Checkpoint 5 (acceptance #1 complete)
 
-- [ ] Four tabs: place/remove syncs; cursors visible; invalid placement shows the `SenderError` message; releasing a berm early cancels it.
+- [ ] Four tabs: place/remove syncs; cursors visible; invalid placement shows the `SenderError` message; releasing a berm early cancels it (manual — see README).
+- [x] `pnpm check:phase5` (11 checks): phase gate, tile rules, budget, shared removal, berm dig timing (~2.3 s on the Moon) / cancel / only-the-digger-cancels, cursor sync + clamping + hiding, cleanup on leave.
+
+Notes: cursors are continuous grid coordinates (0–8), throttled to ~15/s client-side; pending berms occupy their tile and count toward mass but not shielding; a berm's completion is a scheduled `berm_done` row (cancel deletes it); offline members' cursors are hidden.
 
 ---
 

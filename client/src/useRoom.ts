@@ -22,6 +22,7 @@ export function useRoom() {
   const [members] = useTable(tables.member.where(m => m.roomId.eq(roomId)), { enabled: inRoom });
   const [rounds] = useTable(tables.round.where(r => r.roomId.eq(roomId)), { enabled: inRoom });
   const [log] = useTable(tables.researchLog.where(l => l.roomId.eq(roomId)), { enabled: inRoom });
+  const [cursors] = useTable(tables.cursor.where(c => c.roomId.eq(roomId)), { enabled: inRoom });
 
   const room = rooms[0];
   // The round on screen: the one being played, or (in the lobby) the one being prepared.
@@ -31,6 +32,7 @@ export function useRoom() {
   const [requirements] = useTable(tables.requirement.where(r => r.roundId.eq(roundId)), { enabled: hasRound });
   const [params] = useTable(tables.planetParameter.where(p => p.roundId.eq(roundId)), { enabled: hasRound });
   const [tiles] = useTable(tables.tile.where(t => t.roundId.eq(roundId)), { enabled: hasRound });
+  const [pieces] = useTable(tables.piece.where(p => p.roundId.eq(roundId)), { enabled: hasRound });
 
   const sortedMembers = [...members].sort((a, b) =>
     a.joinedAt.microsSinceUnixEpoch < b.joinedAt.microsSinceUnixEpoch ? -1 : 1
@@ -48,6 +50,8 @@ export function useRoom() {
     requirements: [...requirements].sort((a, b) => KIND_ORDER.indexOf(a.kind) - KIND_ORDER.indexOf(b.kind)),
     params,
     tiles: [...tiles].sort((a, b) => a.index - b.index),
+    pieces,
+    cursors,
   };
 }
 

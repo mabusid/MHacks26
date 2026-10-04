@@ -17,6 +17,13 @@ export const BecauseInput = __t.object("BecauseInput", {
 });
 export type BecauseInput = __Infer<typeof BecauseInput>;
 
+export const BermDone = __t.object("BermDone", {
+  scheduledId: __t.u64(),
+  scheduledAt: __t.scheduleAt(),
+  pieceId: __t.u64(),
+});
+export type BermDone = __Infer<typeof BermDone>;
+
 export const BuildEnd = __t.object("BuildEnd", {
   scheduledId: __t.u64(),
   scheduledAt: __t.scheduleAt(),
@@ -30,6 +37,15 @@ export const BuildStart = __t.object("BuildStart", {
   roundId: __t.u64(),
 });
 export type BuildStart = __Infer<typeof BuildStart>;
+
+export const Cursor = __t.object("Cursor", {
+  identity: __t.identity(),
+  roomId: __t.u64(),
+  x: __t.f32(),
+  y: __t.f32(),
+  visible: __t.bool(),
+});
+export type Cursor = __Infer<typeof Cursor>;
 
 export const Member = __t.object("Member", {
   identity: __t.identity(),
@@ -60,6 +76,17 @@ export const Phase = __t.enum("Phase", {
   Debrief: __t.unit(),
 });
 export type Phase = __Infer<typeof Phase>;
+
+export const Piece = __t.object("Piece", {
+  id: __t.u64(),
+  roundId: __t.u64(),
+  kind: __t.string(),
+  index: __t.u8(),
+  placedBy: __t.identity(),
+  pending: __t.bool(),
+  completesAt: __t.option(__t.timestamp()),
+});
+export type Piece = __Infer<typeof Piece>;
 
 export const PlanetParameter = __t.object("PlanetParameter", {
   id: __t.u64(),

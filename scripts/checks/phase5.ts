@@ -1,0 +1,158 @@
+// Checkpoint 5: authoritative placement, budget, removal, berm digging, live cursors.
+// Needs `pnpm dev` running. Run: pnpm check:phase5
+import { DbConnection, tables } from '../../client/src/module_bindings/index.ts';
+
+const URI = process.env.SPACETIME_URI ?? 'ws://localhost:3000';
+const DB = process.env.SPACETIME_DB ?? 'overburden';
+const SERVER = process.env.SERVER_URL ?? 'http://localhost:8787';
+const HABITAT_ADJACENT = [19, 20, 26, 29, 34, 37, 43, 44]; // D3 E3 C4 F4 C5 F5 D6 E6
+
+type Client = { conn: DbConnection; hex: string };
+
+function connect(): Promise<Client> {
+  return new Promise((resolve, reject) =>
+    DbConnection.builder()
+      .withUri(URI)
+      .withDatabaseName(DB)
+      .onConnect((conn, identity) => {
+        conn
+          .subscriptionBuilder()
+          .onApplied(() => resolve({ conn, hex: identity.toHexString() }))
+          .subscribe([tables.room, tables.member, tables.round, tables.tile, tables.piece, tables.cursor]);
+      })
+      .onConnectError((_ctx, err) => reject(err))
+      .build()
+  );
+}
+
+async function until(label: string, check: () => boolean, ms = 4000) {
+  const start = Date.now();
+  while (!check()) {
+    if (Date.now() - start > ms) throw new Error(`timed out waiting for: ${label}`);
+    await new Promise(r => setTimeout(r, 25));
+  }
+}
+
+async function rejects(label: string, call: Promise<unknown>, match: RegExp) {
+  try {
+    await call;
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (!match.test(msg)) throw new Error(`${label}: wrong error "${msg}"`);
+    return msg;
+  }
+  throw new Error(`${label}: expected rejection`);
+}
+
+let passed = 0;
+async function step(label: string, fn: () => Promise<unknown>) {
+  const out = await fn();
+  passed++;
+  console.log(`  ✓ ${label}${typeof out === 'string' ? ` — ${out}` : ''}`);
+}
+
+console.log(`Phase 5 checks against ${URI}/${DB}`);
+const [host, guest] = await Promise.all([connect(), connect()]);
+const db = host.conn.db;
+const room = () => [...db.room.iter()].find(r => [...db.member.iter()].some(m => m.roomId === r.id && m.identity.toHexString() === host.hex))!;
+const roundId = () => room().currentRoundId!;
+const tiles = () => [...db.tile.iter()].filter(t => t.roundId === roundId()).sort((a, b) => a.index - b.index);
+const pieces = (c: Client = host) => [...c.conn.db.piece.iter()].filter(p => p.roundId === roundId());
+/** A free tile (any kind except habitat), away from the habitat ring so berm tests keep their tiles. */
+const freeTile = (skip: number[] = []) =>
+  tiles().find(t => t.kind !== 'habitat' && !HABITAT_ADJACENT.includes(t.index) && !skip.includes(t.index) && !pieces().some(p => p.index === t.index))!.index;
+const tileOf = (kind: string, skip: number[] = []) => tiles().find(t => t.kind === kind && !skip.includes(t.index) && !HABITAT_ADJACENT.includes(t.index))!.index;
+
+await host.conn.reducers.createRoom({ name: 'Host' });
+await until('room', () => !!room());
+await guest.conn.reducers.joinRoom({ code: room().code, name: 'Guest' });
+
+await step('placing outside the build phase is refused', () => rejects('lobby place', host.conn.reducers.placePiece({ kind: 'solar', index: 0 }), /Not in the build phase/));
+
+const res = await fetch(`${SERVER}/dev/commit-fixture?room=${room().code}&planet=moon`, { method: 'POST' });
+if (!res.ok) throw new Error(`commit-fixture ${res.status}`);
+await until('ready', () => room().nextRoundId !== undefined);
+await host.conn.reducers.startRound({});
+await until('briefing', () => room().phase.tag === 'Briefing');
+await host.conn.reducers.beginBuild({});
+await until('build', () => room().phase.tag === 'Build' && tiles().length === 64);
+
+const lit = tileOf('lit');
+await step('solar on a sunlit tile appears for everyone, credited to the placer', async () => {
+  await host.conn.reducers.placePiece({ kind: 'solar', index: lit });
+  await until('guest sees solar', () => pieces(guest).some(p => p.index === lit && p.kind === 'solar' && !p.pending));
+  if (pieces()[0].placedBy.toHexString() !== host.hex) throw new Error('placedBy');
+});
+
+await step('tile rules are enforced server-side', async () => {
+  await rejects('solar on shade', guest.conn.reducers.placePiece({ kind: 'solar', index: tileOf('shaded') }), /sunlit/);
+  await rejects('drill off ice', guest.conn.reducers.placePiece({ kind: 'ice_drill', index: tileOf('lit', [lit]) }), /ice tile/);
+  await rejects('habitat', guest.conn.reducers.placePiece({ kind: 'battery', index: 27 }), /habitat/);
+  await rejects('occupied', guest.conn.reducers.placePiece({ kind: 'battery', index: lit }), /occupied/);
+  await rejects('berm via place', guest.conn.reducers.placePiece({ kind: 'berm', index: HABITAT_ADJACENT[0] }), /press and hold/);
+  return rejects('unknown', guest.conn.reducers.placePiece({ kind: 'warp_drive', index: 0 }), /Unknown piece/);
+});
+
+await step('ice drill goes on ice; the budget caps total mass (Moon: 20 CU)', async () => {
+  await guest.conn.reducers.placePiece({ kind: 'ice_drill', index: tileOf('ice') });
+  await host.conn.reducers.placePiece({ kind: 'reactor', index: freeTile() }); // 1 + 2 + 10 = 13
+  return rejects('over budget', host.conn.reducers.placePiece({ kind: 'reactor', index: freeTile() }), /Over budget: 23\/20/);
+});
+
+await step('anyone can remove any piece (refund); removing empty ground is refused', async () => {
+  await guest.conn.reducers.removePiece({ index: lit });
+  await until('solar gone', () => !pieces().some(p => p.index === lit));
+  return rejects('empty', guest.conn.reducers.removePiece({ index: lit }), /Nothing to remove/);
+});
+
+await step('berms must touch the habitat', () => rejects('far berm', host.conn.reducers.startBerm({ index: freeTile() }), /touch the habitat/));
+
+await step('a held berm digs for ~2.3 s (Moon gravity), occupies its tile, then completes', async () => {
+  const t0 = Date.now();
+  await host.conn.reducers.startBerm({ index: HABITAT_ADJACENT[0] });
+  await until('pending', () => pieces().some(p => p.index === HABITAT_ADJACENT[0] && p.pending));
+  await rejects('dig tile occupied', guest.conn.reducers.placePiece({ kind: 'battery', index: HABITAT_ADJACENT[0] }), /occupied/);
+  await rejects('remove while digging', guest.conn.reducers.removePiece({ index: HABITAT_ADJACENT[0] }), /still being dug/);
+  await until('done', () => pieces().some(p => p.index === HABITAT_ADJACENT[0] && !p.pending), 5000);
+  const secs = (Date.now() - t0) / 1000;
+  if (secs < 2.0 || secs > 3.5) throw new Error(`took ${secs.toFixed(2)} s`);
+  return `${secs.toFixed(1)} s`;
+});
+
+await step('letting go early cancels the dig; it never completes', async () => {
+  await host.conn.reducers.startBerm({ index: HABITAT_ADJACENT[1] });
+  await host.conn.reducers.cancelBerm({ index: HABITAT_ADJACENT[1] });
+  await until('cancelled', () => !pieces().some(p => p.index === HABITAT_ADJACENT[1]));
+  await new Promise(r => setTimeout(r, 2800));
+  if (pieces().some(p => p.index === HABITAT_ADJACENT[1])) throw new Error('berm came back');
+});
+
+await step("another player can't cancel your dig", async () => {
+  await host.conn.reducers.startBerm({ index: HABITAT_ADJACENT[2] });
+  await guest.conn.reducers.cancelBerm({ index: HABITAT_ADJACENT[2] });
+  await until('still completes', () => pieces().some(p => p.index === HABITAT_ADJACENT[2] && !p.pending), 5000);
+});
+
+await step('live cursors: movement and hiding sync to the other player', async () => {
+  await host.conn.reducers.moveCursor({ x: 2.5, y: 6.25, visible: true });
+  const mine = () => [...guest.conn.db.cursor.iter()].find(c => c.identity.toHexString() === host.hex);
+  await until('cursor visible', () => mine()?.visible === true && Math.abs(mine()!.x - 2.5) < 0.01 && Math.abs(mine()!.y - 6.25) < 0.01);
+  await host.conn.reducers.moveCursor({ x: 99, y: -5, visible: true });
+  await until('clamped', () => mine()!.x === 8 && mine()!.y === 0);
+  await host.conn.reducers.moveCursor({ x: 0, y: 0, visible: false });
+  await until('hidden', () => mine()?.visible === false);
+});
+
+await step('leaving removes your cursor; an emptied room takes its pieces with it', async () => {
+  const rid = roundId();
+  await guest.conn.reducers.moveCursor({ x: 1, y: 1, visible: true });
+  await until('guest cursor', () => [...db.cursor.iter()].some(c => c.identity.toHexString() === guest.hex));
+  await guest.conn.reducers.leaveRoom({});
+  await until('guest cursor gone', () => ![...db.cursor.iter()].some(c => c.identity.toHexString() === guest.hex));
+  await host.conn.reducers.leaveRoom({});
+  await until('pieces gone', () => ![...guest.conn.db.piece.iter()].some(p => p.roundId === rid));
+});
+
+console.log(`\nAll ${passed} checks passed.`);
+for (const c of [host, guest]) c.conn.disconnect();
+process.exit(0);

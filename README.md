@@ -46,6 +46,7 @@ pnpm typecheck   # all packages
 pnpm check:phase1   # multiplayer checks against the running dev stack (needs `pnpm dev`)
 pnpm check:phase3   # research commit + start/briefing/build (add --wait-end to wait out the timer)
 pnpm check:phase4   # room-scoped subscriptions
+pnpm check:phase5   # placement, budget, berm digging, cursors
 cd /tmp && spacetime sql --server local overburden "SELECT * FROM server_info"   # query the local DB
 ```
 
@@ -59,6 +60,9 @@ Run ad-hoc `spacetime` commands from outside the repo, or rely on `spacetime.jso
 2. Tab 1 create, tab 2 join → **split card**: left = code (tap to copy) + crew with colors + open seats; right = research.
 3. Host: **dev: test planet** → right half shows planet name, headline, 2–3 key numbers; backdrop tint matches the planet.
 4. **Start mission** → briefing card: planet, 3 one-line requirements, "Build starts in 10…" — the build starts on its own (host can **Skip**).
-5. Build: big timer top center (red under 0:30), requirements on the right (**Planet facts & sources** toggle), Mission Control bar at the bottom typing out a line — **tap the bar to mute/unmute**. Grid arrives in Phase 5.
+5. Build: big timer top center (red under 0:30), mass top right, requirements on the right (**Planet facts & sources** toggle), Mission Control bar at the bottom — **tap the bar to mute/unmute**.
+   - Pick a piece in the palette (or keys **1–8**), click a tile to place; hovered tiles outline teal/red. **Remove** (or **R**) then click a piece.
+   - **Berm**: press and hold a tile touching the habitat — the ring fills (~2.3 s on the Moon); let go early to cancel.
+   - The other tab's cursor moves live with their name; a wrong tile shows a red toast with the reason.
 6. At 0:00 → debrief split card (results arrive in Phase 6).
 7. Narrow the window below 1024px → halves stack; the Mission Control bar stays pinned at the bottom.

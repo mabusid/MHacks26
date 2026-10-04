@@ -7,20 +7,30 @@ import { type Infer as __Infer } from "spacetimedb";
 
 // Import all reducer arg schemas
 import BeginBuildReducer from "../begin_build_reducer";
+import CancelBermReducer from "../cancel_berm_reducer";
 import CommitRoundReducer from "../commit_round_reducer";
 import CreateRoomReducer from "../create_room_reducer";
 import JoinRoomReducer from "../join_room_reducer";
 import LeaveRoomReducer from "../leave_room_reducer";
 import LogResearchReducer from "../log_research_reducer";
+import MoveCursorReducer from "../move_cursor_reducer";
+import PlacePieceReducer from "../place_piece_reducer";
+import RemovePieceReducer from "../remove_piece_reducer";
 import SetServerIdentityReducer from "../set_server_identity_reducer";
+import StartBermReducer from "../start_berm_reducer";
 import StartRoundReducer from "../start_round_reducer";
 
 export type BeginBuildParams = __Infer<typeof BeginBuildReducer>;
+export type CancelBermParams = __Infer<typeof CancelBermReducer>;
 export type CommitRoundParams = __Infer<typeof CommitRoundReducer>;
 export type CreateRoomParams = __Infer<typeof CreateRoomReducer>;
 export type JoinRoomParams = __Infer<typeof JoinRoomReducer>;
 export type LeaveRoomParams = __Infer<typeof LeaveRoomReducer>;
 export type LogResearchParams = __Infer<typeof LogResearchReducer>;
+export type MoveCursorParams = __Infer<typeof MoveCursorReducer>;
+export type PlacePieceParams = __Infer<typeof PlacePieceReducer>;
+export type RemovePieceParams = __Infer<typeof RemovePieceReducer>;
 export type SetServerIdentityParams = __Infer<typeof SetServerIdentityReducer>;
+export type StartBermParams = __Infer<typeof StartBermReducer>;
 export type StartRoundParams = __Infer<typeof StartRoundReducer>;
 

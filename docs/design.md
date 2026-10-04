@@ -110,11 +110,16 @@ Shown **briefly and automatically** after the host presses Start, then the build
 
 Home / split card: halves stack (team above planet). Build: top bar → grid → palette → requirements (collapsible) → Mission Control bar pinned at the bottom.
 
-## Not yet placed (to decide)
+## Build details (decided in Phase 5)
 
-- **Leave room** during the build — small menu in the top bar?
-- **Host-only controls** during the build (lock in early).
-- **Remove mode** and **berm hold progress** on the grid.
-- **Placement errors** (e.g. “Solar needs a sunlit tile”) — brief toast near the grid.
-- **Offline crew** during the build, now that the crew panel is gone — dim/hide their cursor?
-- **Dev planet loader** — keep in the lobby’s right half, dev builds only.
+- **Leave room** during the build: small button next to the planet name (top left).
+- **Remove mode**: last button in the palette (✕, full refund); keyboard **1–8** pick pieces, **R** remove.
+- **Berm hold progress**: ring around the berm fills over the hold time; letting go cancels.
+- **Placement preview**: hovered tile outlined teal (valid) or red (invalid, reason in the tooltip).
+- **Placement errors**: brief toast between the grid and the palette.
+- **Offline crew**: their cursors are hidden.
+- **Dev planet loader**: lobby right half, dev builds only.
+
+## Still to decide
+
+- **Host-only controls** during the build (lock in early) — Phase 6.
