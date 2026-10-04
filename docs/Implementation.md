@@ -56,9 +56,9 @@ Shared eval logic lives in `packages/shared` and is **imported by the Spacetime 
 | **Module API** | `table`, `schema`, `t` from `spacetimedb/server`; reducers/lifecycle hooks must be **`export const`** (bare calls are silently ignored). `ScheduleAt` imports from `spacetimedb`. Throw `SenderError` for rejected player actions. |
 | **Public vs private** | Player-visible tables `public: true`. `server_config` is private. There is **no diagnosis table** — Node computes the board read at cue time from public tables, so pass/fail is never stored where the client UI reads it. |
 | **Server identity** | `init` stores the publisher identity in `server_config.owner`. Owner calls `set_server_identity(identity)` once via `spacetime call` with the Node service's identity. Server-only reducers check `ctx.sender === server_config.server`. |
-| **Timers** | **Scheduled tables, not polling.** One-shot `ScheduleAt` rows for: build end (`build_ends_at`), hint cues (8 per round — see Plan.md cue schedule), berm completion, room TTL. Scheduled reducers run as the module identity — guard them so players can't call them directly. |
+| **Timers** | **Scheduled tables, not polling.** One-shot `ScheduleAt` rows for: build end (`build_ends_at`), hint cues (8 per round — see Plan.md cue schedule), berm completion, room TTL. Scheduled reducers run as the module identity; clients calling them get "No such procedure" (verified) — keep a `ctx.sender.equals(ctx.databaseIdentity)` guard anyway. Scheduled table option: `scheduled: (): any => reducerName`. |
 | **Countdown** | Clients render the countdown locally from `round.build_ends_at`; the server is authoritative only at the scheduled end. |
-| **Determinism** | Tile layout uses a **seeded PRNG** (seed = `round_id`), no `Math.random()` in reducers. |
+| **Determinism** | Use **`ctx.random`** (verified: `ctx.random()`, `ctx.random.integerInRange(a, b)`) for tile layout — stdlib RNG/clocks are unavailable in modules. |
 | **Procedures** (HTTP from module) | Available but **not used** — all external fetches stay in Node, where the LLM loop and fetch cache live. |
 | **Client** | `spacetime generate --lang typescript --out-dir client/src/module_bindings --module-path spacetimedb`. Persist the auth token in `localStorage` and reconnect with it (refresh = same member). Use the SDK's React bindings if present (`spacetimedb/react`), else a small `useTable` hook. |
 | **Node** | Same TS SDK in Node with a persisted server token (`SPACETIME_TOKEN`). Subscribes to `room`, `round`, `planet_parameter`, `requirement`, `tile`, `piece`, `hint_cue` — everything needed to compute the board read locally. |
@@ -68,7 +68,7 @@ Shared eval logic lives in `packages/shared` and is **imported by the Spacetime 
 
 | Requirement | How |
 | --- | --- |
-| **Endpoint** | `wss://api.x.ai/v1/realtime?model=grok-voice-latest` (pin a versioned model for the demo once chosen). |
+| **Endpoint** | `wss://api.x.ai/v1/realtime?model=grok-voice-latest` (resolves to `grok-voice-think-fast-*`; pin the versioned name for the demo). Needs a regular **API key** from console.x.ai → API Keys (management keys are rejected). |
 | **Auth** | Session runs **in Node**, so use `Authorization: Bearer $XAI_API_KEY`. **No ephemeral tokens** — browsers never talk to xAI. |
 | **Mode** | **Text in, audio out.** No microphone input; players never talk to it. |
 | **Audio format** | Output `audio/pcm` 24 kHz, 16-bit little-endian, `audio.output.transport = "binary"` so Node relays raw frames without base64. |
@@ -76,8 +76,8 @@ Shared eval logic lives in `packages/shared` and is **imported by the Spacetime 
 | **Cues** | On a `hint_cue` row: Node computes the board read, then `conversation.item.create` with one text item — **fact mode:** the fun fact text; **hint mode:** diagnosis, suggestion (piece + tile), board summary, change since last cue, time left. Then `response.create` with **per-response `instructions`** for the mode (fun fact / nudge / direction / exact). |
 | **Session instructions** | Persona (calm Mission Control), ≤ 2 sentences, use grid coordinates as given, never invent numbers or tiles, never mention pieces not in the suggestion during exact hints. |
 | **Tools** | **None.** All context is in the text item, so there are no tool-call round trips. Do not enable `web_search` / `x_search`. |
-| **Output** | `response.output_audio.*` frames → broadcast to every client in the room. Assistant transcript (on `response.done`; confirm exact transcript event name when wiring) → `post_hint` → captions. |
-| **Latency** | `reasoning.effort: "none"`; short instructions (one requirement + one fact, ≤ 2 sentences). Send the cue ~2 s early so speech lands on time. |
+| **Output** | Binary transport verified: raw PCM arrives as WebSocket binary frames → broadcast to every client. Captions: `response.output_audio_transcript.delta` (live) and `response.output_audio_transcript.done` (`transcript` field) → `post_hint`. End of line: `response.output_audio.done` / `response.done`. |
+| **Latency** | Measured with `reasoning.effort: "none"`: hint **~750 ms to first audio**, ~2.3 s to done (7 s of speech); `force_message` ~460 ms. Send the cue ~1 s early. |
 | **Lifecycle** | Open the session at `begin_build`, close at debrief — no idle billing. One session per room. |
 | **Fallbacks** | Key present but model call fails → speak the template line verbatim with `force_message` (Grok voice, no model). No key → template line to `hint` table; clients speak it with `speechSynthesis`. Templates: fun facts verbatim; hints like "{Requirement} is short — {fact}. Try {piece} on {tile}." |
 | **Pronunciation** | `replace` map for planet names (e.g. "TRAPPIST-1 e"). |
@@ -101,6 +101,8 @@ Shared eval logic lives in `packages/shared` and is **imported by the Spacetime 
 - `client/`: Vite + React + TS; env `VITE_SPACETIME_URI`, `VITE_SPACETIME_DB`, `VITE_VOICE_WS_URL`.
 - `server/`: TS + `tsx watch`; env `XAI_API_KEY` (optional), `SPACETIME_URI`, `SPACETIME_DB`, `SPACETIME_TOKEN`.
 - Root `pnpm dev` (concurrently: `spacetime dev`, client, server). `.env.example` files; no secrets in git.
+- Spike notes (verified on SpacetimeDB 2.10.2): add `typescript` as a devDependency **inside** `spacetimedb/` (otherwise `spacetime build` skips typechecking); `spacetime.local.json` overrides the database name, so run ad-hoc `spacetime sql/call` from outside the project dir or rely on it deliberately; module must `export default spacetimedb`, and only registered things may be exported.
+- Exoplanet Archive `*_reflink` values are HTML anchors (`<a href=…>Agol et al. 2021</a>`) — parse into `source_label` + `source_url`. Filtered pool = 65 planets (verified).
 
 ### Checkpoint 0
 
@@ -329,7 +331,7 @@ If time is short, stop after a checkpoint and still have a demo:
 
 | Risk | When | Mitigation |
 | --- | --- | --- |
-| Module bundler can't import `packages/shared` | Phase 0 | Prebuild copy into `spacetimedb/src/shared/` |
+| ~~Module bundler can't import `packages/shared`~~ | Verified OK (npm workspace import bundles) | — |
 | Suggestion feels like the game playing itself | Playtest | Exact hints only from 0:30; earlier hints stay at system/piece-type level |
 | 4 devices playing slightly out of sync in one room | Phase 9b | ~100 ms jitter buffer; players can mute all but one device |
 | Grok latency makes hints late | Phase 9c | `reasoning.effort: "none"`, send cue ~2 s early, `force_message` fallback |

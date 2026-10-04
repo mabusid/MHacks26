@@ -316,7 +316,7 @@ Runs in the **lobby** (and during debrief for the next round) so players never w
 | Insolation (Earth = 1) | Solar output | Fact Sheet (solar irradiance / 1361 W/m²) | `pl_insol` |
 | Night length | Night band | Fact Sheet (day length / 2) | **Estimated:** band 2 — rotation unknown; close-in planets may be tidally locked |
 | Temperature | Thermal twist & load | Fact Sheet mean surface temp | `pl_eqt` |
-| Gravity | Berm build time | Fact Sheet | Derived: `pl_bmasse / pl_rade²` × 9.8; **estimated** if mass missing (assume Earth density) |
+| Gravity | Berm build time | Fact Sheet | Derived: `pl_bmasse / pl_rade²` × 9.8; **estimated** (assume Earth density) if mass is missing, an upper limit (`pl_bmasselim = 1`), or not a direct measurement (`pl_bmassprov` ≠ "Mass") |
 | Atmosphere (pressure, CO₂-rich?) | Radiation twist, O₂ unit mode | Fact Sheet | **Estimated:** unknown → no usable atmosphere |
 | Water/ice | Ice tiles | Curated per body with mission source (e.g. LCROSS, MESSENGER, Dawn) | **Estimated:** unknown → no ice |
 | Surface radiation dose | Radiation twist threshold (4 vs 6 berms) | Curated with mission source (Moon ~1.4 mSv/day — Chang'e 4 LND; Mars ~0.7 mSv/day — Curiosity RAD; Europa: far higher, Galileo) | **Estimated:** unknown → 4 berms |
