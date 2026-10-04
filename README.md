@@ -44,6 +44,7 @@ Optional: copy `server/.env.example` → `server/.env` and set `XAI_API_KEY` (a 
 pnpm test        # unit tests
 pnpm typecheck   # all packages
 pnpm check:phase1   # multiplayer checks against the running dev stack (needs `pnpm dev`)
+pnpm check:phase3   # research commit + start/briefing/build (add --wait-end to wait out the timer)
 cd /tmp && spacetime sql --server local overburden "SELECT * FROM server_info"   # query the local DB
 ```
 

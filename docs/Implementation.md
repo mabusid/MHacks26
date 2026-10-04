@@ -55,7 +55,9 @@ Shared eval logic lives in `packages/shared` and is **imported by the Spacetime 
 | --- | --- |
 | **Module API** | `table`, `schema`, `t` from `spacetimedb/server`; reducers/lifecycle hooks must be **`export const`** (bare calls are silently ignored). `ScheduleAt` imports from `spacetimedb`. Throw `SenderError` for rejected player actions. |
 | **Public vs private** | Player-visible tables `public: true`. `server_config` is private. There is **no diagnosis table** — Node computes the board read at cue time from public tables, so pass/fail is never stored where the client UI reads it. |
-| **Server identity** | `init` stores the publisher identity in `server_config.owner`. Owner calls `set_server_identity(identity)` once via `spacetime call` with the Node service's identity. Server-only reducers check `ctx.sender === server_config.server`. |
+| **Server identity** | `init` stores the publisher identity in `server_config.owner`. Server-only reducers accept the **owner or** a registered `server_config.server` (`set_server_identity`, owner only). In dev the Node service uses the local CLI login (`spacetime login show --token`) — the publisher — so no registration step; in production set `SPACETIME_TOKEN`. |
+| **Enums** | Declare variants in **PascalCase** (`'Lobby'`): generated client bindings use the canonical PascalCase tag, so module and client then compare identical strings. |
+| **Bindings** | `spacetime.json` generates two targets: `client/src/module_bindings` and `server/src/module_bindings`. |
 | **Timers** | **Scheduled tables, not polling.** One-shot `ScheduleAt` rows for: build end (`build_ends_at`), hint cues (8 per round — see Plan.md cue schedule), berm completion, room TTL. Scheduled reducers run as the module identity; clients calling them get "No such procedure" (verified) — keep a `ctx.sender.equals(ctx.databaseIdentity)` guard anyway. Scheduled table option: `scheduled: (): any => reducerName`. |
 | **Countdown** | Clients render the countdown locally from `round.build_ends_at`; the server is authoritative only at the scheduled end. |
 | **Determinism** | Use **`ctx.random`** (verified: `ctx.random()`, `ctx.random.integerInRange(a, b)`) for tile layout — stdlib RNG/clocks are unavailable in modules. |
@@ -182,8 +184,13 @@ Dev path: `log_research`/`commit_round` callable via `spacetime call` with the o
 
 ### Checkpoint 3 (acceptance #2, #4 partial)
 
-- [ ] After fixture commit, all subscribers see the requirement card rows.
-- [ ] Impossible fixture rejected; valid fixture gets a budget; an untriggered twist is rejected.
+- [x] After fixture commit, all subscribers see the requirement card rows.
+- [x] Invalid research rejected (untriggered twist, missing source, unknown citation field, wrong fun-fact count); valid fixture gets a budget; players can't call `commit_round`.
+- [x] `pnpm check:phase3` (9 checks; `--wait-end` also waits out the scheduled build end).
+
+Note: with the current constants every *legitimate* profile is winnable (one reactor + tanks always fits under 24 CU), so the winnability rejection path is covered by unit tests with synthetic rules.
+
+Round rules (solar per array, night band, thermal load, CO₂, ice, berms) are stored as columns on `round`, derived server-side; the Node service reconnects automatically (startup race with `spacetime dev`, breaking republishes).
 
 ---
 

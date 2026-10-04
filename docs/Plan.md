@@ -361,7 +361,7 @@ Each stored requirement row: `{ round_id, kind: power | life_support | twist, th
 | --- | --- |
 | Tables | Public: `room`, `member`, `round`, `planet_parameter`, `requirement`, `tile`, `piece`, `cursor`, `research_log`, `hint`, `result`. Private: `server_config`. Scheduled: build end, `hint_cue`, berm completion, room TTL |
 | Player reducers | `create_room`, `join_room`, `start_round`, `begin_build`, `place_piece`, `remove_piece`, `start_berm`, `cancel_berm`, `move_cursor`, `lock_build`, `rematch` |
-| Server-only reducers | `commit_round`, `log_research`, `post_hint` (Node service identity only); `set_server_identity` (publisher only) |
+| Server-only reducers | `commit_round`, `log_research`, `post_hint` (publisher or registered Node service identity); `set_server_identity` (publisher only) |
 | Timer | One-shot scheduled row ends the build at 0:00 and runs evaluation; clients count down locally from `build_ends_at` |
 | Lifecycle | `client_connected` / `client_disconnected` mark members online/offline |
 | Identity | Anonymous Spacetime identities; token kept in `sessionStorage` (per tab) so a refresh rejoins as the same member and separate tabs are separate players. Online = the identity has at least one live connection. |

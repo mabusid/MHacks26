@@ -3,6 +3,7 @@
   "database": "overburden",
   "module-path": "./spacetimedb",
   "generate": [
-    { "language": "typescript", "out-dir": "./client/src/module_bindings" }
+    { "language": "typescript", "out-dir": "./client/src/module_bindings" },
+    { "language": "typescript", "out-dir": "./server/src/module_bindings" }
   ]
 }

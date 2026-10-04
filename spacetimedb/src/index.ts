@@ -1,9 +1,13 @@
 import { schema, table, t, SenderError, type InferSchema, type ReducerCtx } from 'spacetimedb/server';
-import type { Identity } from 'spacetimedb';
-import { MAX_MEMBERS, ROOM_CODE_ALPHABET, ROOM_CODE_LENGTH, normalizeRoomCode, validateName } from '@overburden/shared';
+import { ScheduleAt, Timestamp, type Identity } from 'spacetimedb';
+import {
+  BUILD_SECONDS, MAX_MEMBERS, PARAM_FIELDS, ROOM_CODE_ALPHABET, ROOM_CODE_LENGTH, TWISTS,
+  deriveRules, describeRequirements, generateTiles, normalizeRoomCode, profileFromParams, solveRound, validateName,
+  type ParamRow, type RequirementKind, type Twist,
+} from '@overburden/shared';
 
-const Phase = t.enum('Phase', ['lobby', 'briefing', 'build', 'debrief']);
-const RoundStatus = t.enum('RoundStatus', ['researching', 'ready', 'active', 'done']);
+const Phase = t.enum('Phase', ['Lobby', 'Briefing', 'Build', 'Debrief']);
+const RoundStatus = t.enum('RoundStatus', ['Researching', 'Ready', 'Active', 'Done']);
 
 // Private: publisher identity (set in init) and the Node service identity (set once by the owner).
 const serverConfig = table(
@@ -50,6 +54,7 @@ const member = table(
   }
 );
 
+// A researched round. Rules columns are derived server-side from planet_parameter rows (never sent by the agent).
 const round = table(
   { name: 'round', public: true },
   {
@@ -57,12 +62,100 @@ const round = table(
     roomId: t.u64().index('btree'),
     status: RoundStatus,
     planetName: t.string(),
+    twist: t.string(),
     massBudget: t.u32(),
+    cheapestMass: t.u32(),
+    solarPerArray: t.f64(),
+    nightBand: t.u8(),
+    thermalLoad: t.u8(),
+    co2Atmosphere: t.bool(),
+    iceAvailable: t.bool(),
+    bermsRequired: t.u8(),
+    gravity: t.f64(),
+    headline: t.string(),
+    scaleText: t.string(),
+    funFacts: t.array(t.string()),
     buildEndsAt: t.option(t.timestamp()),
   }
 );
 
-const spacetimedb = schema({ serverConfig, session, room, member, round });
+const planetParameter = table(
+  { name: 'planet_parameter', public: true },
+  {
+    id: t.u64().primaryKey().autoInc(),
+    roundId: t.u64().index('btree'),
+    field: t.string(),
+    num: t.option(t.f64()),
+    flag: t.option(t.bool()),
+    unit: t.string(),
+    status: t.string(),
+    sourceLabel: t.string(),
+    sourceUrl: t.string(),
+    note: t.string(),
+  }
+);
+
+// The Mission Requirements Card: server-computed threshold + the agent's because-line.
+const requirement = table(
+  { name: 'requirement', public: true },
+  {
+    id: t.u64().primaryKey().autoInc(),
+    roundId: t.u64().index('btree'),
+    kind: t.string(),
+    title: t.string(),
+    threshold: t.string(),
+    derivedFrom: t.array(t.string()),
+    because: t.string(),
+    becauseField: t.string(),
+  }
+);
+
+const tile = table(
+  { name: 'tile', public: true },
+  {
+    id: t.u64().primaryKey().autoInc(),
+    roundId: t.u64().index('btree'),
+    index: t.u8(),
+    kind: t.string(),
+  }
+);
+
+const researchLog = table(
+  { name: 'research_log', public: true },
+  {
+    id: t.u64().primaryKey().autoInc(),
+    roomId: t.u64().index('btree'),
+    text: t.string(),
+    at: t.timestamp(),
+  }
+);
+
+// One-shot schedule that ends the build phase.
+const buildEnd = table(
+  { name: 'build_end' },
+  {
+    scheduledId: t.u64().primaryKey().autoInc(),
+    scheduledAt: t.scheduleAt(),
+    roundId: t.u64(),
+  }
+);
+
+const ParamInput = t.object('ParamInput', {
+  field: t.string(),
+  num: t.option(t.f64()),
+  flag: t.option(t.bool()),
+  unit: t.string(),
+  status: t.string(),
+  sourceLabel: t.string(),
+  sourceUrl: t.string(),
+  note: t.string(),
+});
+
+const BecauseInput = t.object('BecauseInput', { kind: t.string(), text: t.string(), field: t.string() });
+
+const spacetimedb = schema({
+  serverConfig, session, room, member, round, planetParameter, requirement, tile, researchLog, buildEnd,
+});
 export default spacetimedb;
 
 type Ctx = ReducerCtx<InferSchema<typeof spacetimedb>>;
@@ -100,9 +193,32 @@ function ensureOnlineHost(ctx: Ctx, r: RoomRow) {
   if (next && !next.identity.equals(r.host)) ctx.db.room.id.update({ ...r, host: next.identity });
 }
 
+function deleteRound(ctx: Ctx, roundId: bigint) {
+  for (const p of [...ctx.db.planetParameter.roundId.filter(roundId)]) ctx.db.planetParameter.id.delete(p.id);
+  for (const r of [...ctx.db.requirement.roundId.filter(roundId)]) ctx.db.requirement.id.delete(r.id);
+  for (const tl of [...ctx.db.tile.roundId.filter(roundId)]) ctx.db.tile.id.delete(tl.id);
+  ctx.db.round.id.delete(roundId);
+}
+
 function deleteRoom(ctx: Ctx, roomId: bigint) {
-  for (const rd of [...ctx.db.round.roomId.filter(roomId)]) ctx.db.round.id.delete(rd.id);
+  for (const rd of [...ctx.db.round.roomId.filter(roomId)]) deleteRound(ctx, rd.id);
+  for (const l of [...ctx.db.researchLog.roomId.filter(roomId)]) ctx.db.researchLog.id.delete(l.id);
   ctx.db.room.id.delete(roomId);
+}
+
+/** Owner (publisher; used by the Node service in dev) or the registered server identity. */
+function requireServer(ctx: Ctx) {
+  const cfg = ctx.db.serverConfig.id.find(0);
+  const ok = cfg && (cfg.owner.equals(ctx.sender) || (cfg.server !== undefined && cfg.server.equals(ctx.sender)));
+  if (!ok) throw new SenderError('Server only');
+}
+
+function requireHost(ctx: Ctx): RoomRow {
+  const me = ctx.db.member.identity.find(ctx.sender);
+  const r = me && ctx.db.room.id.find(me.roomId);
+  if (!r) throw new SenderError('You are not in a room');
+  if (!r.host.equals(ctx.sender)) throw new SenderError('Only the host can do that');
+  return r;
 }
 
 function leaveCurrentRoom(ctx: Ctx, identity: Identity) {
@@ -157,7 +273,7 @@ export const createRoom = spacetimedb.reducer({ name: t.string() }, (ctx, { name
     id: 0n,
     code: generateCode(ctx),
     host: ctx.sender,
-    phase: { tag: 'lobby' },
+    phase: { tag: 'Lobby' },
     currentRoundId: undefined,
     nextRoundId: undefined,
     createdAt: ctx.timestamp,
@@ -175,7 +291,7 @@ export const joinRoom = spacetimedb.reducer({ code: t.string(), name: t.string()
     if (existing.name !== clean) ctx.db.member.identity.update({ ...existing, name: clean });
     return;
   }
-  if (r.phase.tag !== 'lobby') throw new SenderError('That game has already started');
+  if (r.phase.tag !== 'Lobby') throw new SenderError('That game has already started');
   if (membersOf(ctx, r.id).length >= MAX_MEMBERS) throw new SenderError(`Room is full (${MAX_MEMBERS} players)`);
 
   leaveCurrentRoom(ctx, ctx.sender);
@@ -184,4 +300,146 @@ export const joinRoom = spacetimedb.reducer({ code: t.string(), name: t.string()
 
 export const leaveRoom = spacetimedb.reducer(ctx => {
   leaveCurrentRoom(ctx, ctx.sender);
+});
+
+// ── Research → round ────────────────────────────────────────────────────────────────────────────
+
+export const logResearch = spacetimedb.reducer({ roomId: t.u64(), text: t.string() }, (ctx, { roomId, text }) => {
+  requireServer(ctx);
+  if (!ctx.db.room.id.find(roomId)) throw new SenderError('No such room');
+  ctx.db.researchLog.insert({ id: 0n, roomId, text: text.slice(0, 280), at: ctx.timestamp });
+});
+
+/**
+ * Commits a researched planet as the room's next round. Validates provenance, derives every threshold
+ * from the parameters, generates tiles, and sets the budget from the winnability check. Never changes phase.
+ */
+export const commitRound = spacetimedb.reducer(
+  {
+    roomId: t.u64(),
+    planetName: t.string(),
+    params: t.array(ParamInput),
+    twist: t.string(),
+    headline: t.string(),
+    scaleText: t.string(),
+    because: t.array(BecauseInput),
+    funFacts: t.array(t.string()),
+  },
+  (ctx, args) => {
+    requireServer(ctx);
+    const r = ctx.db.room.id.find(args.roomId);
+    if (!r) throw new SenderError('No such room');
+    if (!(TWISTS as readonly string[]).includes(args.twist)) throw new SenderError(`Unknown twist "${args.twist}"`);
+    const twist = args.twist as Twist;
+
+    const rows: ParamRow[] = args.params.map(p => {
+      if (p.status !== 'sourced' && p.status !== 'estimated') throw new SenderError(`"${p.field}" has unknown status "${p.status}"`);
+      return {
+        field: p.field as ParamRow['field'], // checked by profileFromParams
+        num: p.num ?? null,
+        flag: p.flag ?? null,
+        unit: p.unit,
+        status: p.status,
+        sourceLabel: p.sourceLabel,
+        sourceUrl: p.sourceUrl,
+        note: p.note,
+      };
+    });
+
+    let profile, rules;
+    try {
+      profile = profileFromParams(args.planetName, rows);
+      rules = deriveRules(profile, twist);
+    } catch (e) {
+      throw new SenderError(e instanceof Error ? e.message : String(e));
+    }
+
+    const specs = describeRequirements(rules);
+    const because = new Map<string, { text: string; field: string }>();
+    for (const b of args.because) because.set(b.kind, b);
+    for (const spec of specs) {
+      const line = because.get(spec.kind);
+      if (!line || !line.text.trim()) throw new SenderError(`Missing because-line for ${spec.kind}`);
+      if (!(PARAM_FIELDS as string[]).includes(line.field)) throw new SenderError(`Because-line for ${spec.kind} cites unknown field "${line.field}"`);
+    }
+    if (args.funFacts.length !== 3 || args.funFacts.some(f => !f.trim())) throw new SenderError('Exactly 3 fun facts required');
+
+    const tiles = generateTiles(() => ctx.random(), { ice: profile.waterIce, polarIce: profile.polarIce });
+    const solved = solveRound(rules, tiles);
+    if (!solved.ok) throw new SenderError(`Not winnable: ${solved.reason}`);
+
+    // Replace an unused prepared round.
+    if (r.nextRoundId !== undefined) {
+      const old = ctx.db.round.id.find(r.nextRoundId);
+      if (old && old.status.tag === 'Ready') deleteRound(ctx, old.id);
+    }
+
+    const rd = ctx.db.round.insert({
+      id: 0n,
+      roomId: r.id,
+      status: { tag: 'Ready' },
+      planetName: profile.name,
+      twist,
+      massBudget: solved.budget,
+      cheapestMass: solved.cheapest.mass,
+      solarPerArray: rules.solarPerArray,
+      nightBand: rules.nightBand,
+      thermalLoad: rules.thermalLoad,
+      co2Atmosphere: rules.co2Atmosphere,
+      iceAvailable: rules.iceAvailable,
+      bermsRequired: rules.bermsRequired,
+      gravity: profile.gravity,
+      headline: args.headline,
+      scaleText: args.scaleText,
+      funFacts: args.funFacts,
+      buildEndsAt: undefined,
+    });
+    for (const p of rows) ctx.db.planetParameter.insert({ id: 0n, roundId: rd.id, ...p, num: p.num ?? undefined, flag: p.flag ?? undefined });
+    for (const spec of specs) {
+      const line = because.get(spec.kind)!;
+      ctx.db.requirement.insert({
+        id: 0n,
+        roundId: rd.id,
+        kind: spec.kind satisfies RequirementKind,
+        title: spec.title,
+        threshold: spec.threshold,
+        derivedFrom: spec.derivedFrom,
+        because: line.text,
+        becauseField: line.field,
+      });
+    }
+    tiles.forEach((kind, index) => ctx.db.tile.insert({ id: 0n, roundId: rd.id, index, kind }));
+    ctx.db.room.id.update({ ...ctx.db.room.id.find(r.id)!, nextRoundId: rd.id });
+  }
+);
+
+// ── Phases ──────────────────────────────────────────────────────────────────────────────────────
+
+export const startRound = spacetimedb.reducer(ctx => {
+  const r = requireHost(ctx);
+  if (r.phase.tag !== 'Lobby') throw new SenderError('The game has already started');
+  const next = r.nextRoundId !== undefined ? ctx.db.round.id.find(r.nextRoundId) : undefined;
+  if (!next || next.status.tag !== 'Ready') throw new SenderError('No planet is ready yet');
+  ctx.db.room.id.update({ ...r, phase: { tag: 'Briefing' }, currentRoundId: next.id, nextRoundId: undefined });
+});
+
+export const beginBuild = spacetimedb.reducer(ctx => {
+  const r = requireHost(ctx);
+  if (r.phase.tag !== 'Briefing' || r.currentRoundId === undefined) throw new SenderError('Not in the briefing');
+  const rd = ctx.db.round.id.find(r.currentRoundId);
+  if (!rd) throw new SenderError('Round missing');
+  const endsAt = ctx.timestamp.microsSinceUnixEpoch + BigInt(BUILD_SECONDS) * 1_000_000n;
+  ctx.db.round.id.update({ ...rd, status: { tag: 'Active' }, buildEndsAt: new Timestamp(endsAt) });
+  ctx.db.buildEnd.insert({ scheduledId: 0n, scheduledAt: ScheduleAt.time(endsAt), roundId: rd.id });
+  ctx.db.room.id.update({ ...r, phase: { tag: 'Build' } });
+});
+
+/** Scheduled at build start. Evaluation is added in Phase 6. */
+export const endBuild = spacetimedb.reducer({ onSchedule: buildEnd }, { job: buildEnd.rowType }, (ctx, { job }) => {
+  if (!ctx.sender.equals(ctx.databaseIdentity)) throw new SenderError('Scheduled only');
+  const rd = ctx.db.round.id.find(job.roundId);
+  if (!rd || rd.status.tag !== 'Active') return;
+  ctx.db.round.id.update({ ...rd, status: { tag: 'Done' } });
+  const r = ctx.db.room.id.find(rd.roomId);
+  if (r && r.currentRoundId === rd.id && r.phase.tag === 'Build') ctx.db.room.id.update({ ...r, phase: { tag: 'Debrief' } });
 });

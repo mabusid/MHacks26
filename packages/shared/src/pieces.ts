@@ -59,3 +59,6 @@ export function massOf(counts: Counts): number {
 export function bermHoldMs(gravity: number): number {
   return Math.round(2000 + 2000 * Math.min(gravity / 9.8, 1));
 }
+
+/** Build phase length (Plan.md → Round structure). */
+export const BUILD_SECONDS = 150;
