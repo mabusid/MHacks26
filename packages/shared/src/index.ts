@@ -1,7 +1,9 @@
 // Pure game logic shared by the SpacetimeDB module, the client, and the Node service.
-// No runtime dependencies: this file is bundled into the module.
+// No runtime dependencies: this package is bundled into the module.
 
 export const SHARED_VERSION = '0.0.1';
+
+export * from './room';
 
 /** Night storage multiplier from night length (Plan.md → Evaluation). */
 export function nightBand(nightHours: number, dust: boolean): 1 | 2 | 3 {

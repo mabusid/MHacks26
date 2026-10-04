@@ -11,7 +11,9 @@ import {
 } from "spacetimedb";
 
 export default __t.row({
-  id: __t.u32().primaryKey(),
-  sharedVersion: __t.string().name("shared_version"),
-  moonNightBand: __t.u8().name("moon_night_band"),
+  identity: __t.identity().primaryKey(),
+  roomId: __t.u64().name("room_id"),
+  name: __t.string(),
+  joinedAt: __t.timestamp().name("joined_at"),
+  online: __t.bool(),
 });

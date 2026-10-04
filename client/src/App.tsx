@@ -1,28 +1,24 @@
-import { SHARED_VERSION, nightBand } from '@overburden/shared';
 import { useSpacetimeDB, useTable } from 'spacetimedb/react';
 import { tables } from './module_bindings';
+import Home from './screens/Home';
+import Lobby from './screens/Lobby';
 
-// Phase 0 placeholder: shows that client and module run the same shared code.
 export default function App() {
-  const { isActive } = useSpacetimeDB();
-  const [info] = useTable(tables.serverInfo);
-  const row = info[0];
-  const clientBand = nightBand(354, false);
-  const match = row && row.sharedVersion === SHARED_VERSION && row.moonNightBand === clientBand;
+  const { isActive, identity } = useSpacetimeDB();
+  // Phase 1: small tables, subscribe to everything. Phase 4 scopes subscriptions to the player's room.
+  const [members, membersReady] = useTable(tables.member);
+  const [rooms, roomsReady] = useTable(tables.room);
 
-  return (
-    <main style={{ padding: '2rem', maxWidth: 560 }}>
-      <h1>Overburden</h1>
-      <p>
-        SpacetimeDB:{' '}
-        <strong style={{ color: isActive ? 'var(--ok)' : 'var(--bad)' }}>{isActive ? 'connected' : 'disconnected'}</strong>
-      </p>
-      <p>
-        Client shared v{SHARED_VERSION}, Moon night band {clientBand}
-        <br />
-        Module shared {row ? `v${row.sharedVersion}, Moon night band ${row.moonNightBand}` : '…'}
-      </p>
-      <p data-testid="shared-check">{row ? (match ? '✓ shared code matches' : '✗ mismatch') : 'waiting for module…'}</p>
-    </main>
-  );
+  if (!isActive || !identity || !membersReady || !roomsReady) {
+    return <main className="screen">Connecting…</main>;
+  }
+
+  const me = members.find(m => m.identity.isEqual(identity));
+  const room = me && rooms.find(r => r.id === me.roomId);
+  if (!me || !room) return <Home />;
+
+  const roomMembers = members
+    .filter(m => m.roomId === room.id)
+    .sort((a, b) => (a.joinedAt.microsSinceUnixEpoch < b.joinedAt.microsSinceUnixEpoch ? -1 : 1));
+  return <Lobby room={room} members={roomMembers} me={me} />;
 }

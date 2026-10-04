@@ -8,12 +8,13 @@ import './index.css';
 
 const URI = import.meta.env.VITE_SPACETIME_URI ?? 'ws://localhost:3000';
 const DB = import.meta.env.VITE_SPACETIME_DB ?? 'overburden';
-// Persisted so a refresh reconnects as the same identity (same member).
+// Per tab (sessionStorage): a refresh reconnects as the same member, while separate tabs are
+// separate players — needed for testing four players on one machine.
 const TOKEN_KEY = `${URI}/${DB}/auth_token`;
 
 function readToken(): string | undefined {
   try {
-    return localStorage.getItem(TOKEN_KEY) ?? undefined;
+    return sessionStorage.getItem(TOKEN_KEY) ?? undefined;
   } catch {
     return undefined;
   }
@@ -25,7 +26,7 @@ const connectionBuilder = DbConnection.builder()
   .withToken(readToken())
   .onConnect((_conn: DbConnection, identity: Identity, token: string) => {
     try {
-      localStorage.setItem(TOKEN_KEY, token);
+      sessionStorage.setItem(TOKEN_KEY, token);
     } catch {
       // Private mode: reconnect gets a fresh identity.
     }

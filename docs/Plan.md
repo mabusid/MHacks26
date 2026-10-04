@@ -6,7 +6,8 @@ Co-op **learning game** for **four players**. An agent researches a **random rea
 
 **Status:** design only. All numbers below are **starting values** — tune in playtest. Only the demo script is still open (**`[MISSING]`**).
 
-**Implementation order:** [Implementation.md](./Implementation.md)
+**Implementation order:** [Implementation.md](./Implementation.md)  
+**UI layout:** [design.md](./design.md)
 
 ---
 
@@ -361,7 +362,7 @@ Each stored requirement row: `{ round_id, kind: power | life_support | twist, th
 | Server-only reducers | `commit_round`, `log_research`, `post_hint` (Node service identity only); `set_server_identity` (publisher only) |
 | Timer | One-shot scheduled row ends the build at 0:00 and runs evaluation; clients count down locally from `build_ends_at` |
 | Lifecycle | `client_connected` / `client_disconnected` mark members online/offline |
-| Identity | Anonymous Spacetime identities; token kept in `localStorage` so a refresh rejoins as the same member |
+| Identity | Anonymous Spacetime identities; token kept in `sessionStorage` (per tab) so a refresh rejoins as the same member and separate tabs are separate players. Online = the identity has at least one live connection. |
 | Host migration | On host disconnect, the **longest-joined online member** becomes host. Voice is unaffected (it runs on the Node service). A returning ex-host rejoins as a normal member. |
 | Room lifetime | Join code valid while the room exists; room deleted **5 min after the last member leaves**. |
 | Disconnects mid-build | Round keeps going; pieces stay. Rejoining shows current state. |

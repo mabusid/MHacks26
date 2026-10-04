@@ -1,10 +1,12 @@
 {
   "name": "overburden",
   "private": true,
+  "type": "module",
   "packageManager": "pnpm@12.9.1",
   "scripts": {
     "dev": "node scripts/dev.mjs",
     "test": "pnpm -r --if-present test",
-    "typecheck": "pnpm -r --if-present typecheck"
+    "typecheck": "pnpm -r --if-present typecheck",
+    "check:phase1": "pnpm --filter @overburden/server exec tsx ../scripts/checks/phase1.ts"
   }
 }

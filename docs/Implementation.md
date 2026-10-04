@@ -60,7 +60,7 @@ Shared eval logic lives in `packages/shared` and is **imported by the Spacetime 
 | **Countdown** | Clients render the countdown locally from `round.build_ends_at`; the server is authoritative only at the scheduled end. |
 | **Determinism** | Use **`ctx.random`** (verified: `ctx.random()`, `ctx.random.integerInRange(a, b)`) for tile layout — stdlib RNG/clocks are unavailable in modules. |
 | **Procedures** (HTTP from module) | Available but **not used** — all external fetches stay in Node, where the LLM loop and fetch cache live. |
-| **Client** | `spacetime generate --lang typescript --out-dir client/src/module_bindings --module-path spacetimedb`. Persist the auth token in `localStorage` and reconnect with it (refresh = same member). Use the SDK's React bindings if present (`spacetimedb/react`), else a small `useTable` hook. |
+| **Client** | Bindings regenerate automatically via `spacetime dev` (`generate` target in `spacetime.json`). Auth token in **`sessionStorage`** (refresh = same member; each tab = its own player for local testing). React: `SpacetimeDBProvider`, `useTable`, `useReducer` from `spacetimedb/react`; reducer promises reject with the `SenderError` message (verified). |
 | **Node** | Same TS SDK in Node with a persisted server token (`SPACETIME_TOKEN`). Subscribes to `room`, `round`, `planet_parameter`, `requirement`, `tile`, `piece`, `hint_cue` — everything needed to compute the board read locally. |
 | **Hosting** | Dev: `spacetime dev` locally. Demo: **Maincloud** (no tunnel needed for 4 devices). |
 
@@ -118,15 +118,17 @@ Shared eval logic lives in `packages/shared` and is **imported by the Spacetime 
 
 - `server_config` (private): `owner`, `server`; `init` stores owner; `set_server_identity` (owner only).
 - `room` (join code, host member, phase `lobby | briefing | build | debrief`, `current_round_id`, `next_round_id`)
-- `member` (room, identity, display name, `joined_at`, `online`, `is_host`)
+- `member` (identity PK — one room per identity, room, display name, `joined_at`, `online`); host is `room.host` (single source of truth)
+- `session` (private): one row per connection; `online` = identity has any session (handles multiple tabs / reconnect races)
 - `round` (`status: researching | ready | active | done`, planet name, `mass_budget`, `build_ends_at?`)
 - Reducers: `create_room`, `join_room` (max 4, 4-letter code), lifecycle `clientConnected` / `clientDisconnected` (mark online/offline).
 - Host migration: on host disconnect, promote longest-joined **online** member.
 
 ### Checkpoint 1 (acceptance #1 partial)
 
-- [ ] Two tabs: create room, second joins with code.
-- [ ] Same member list on both; host badge moves when the host tab closes; refresh rejoins as the same member.
+- [x] Two tabs: create room, second joins with code.
+- [x] Same member list on both; host badge moves when the host tab closes; refresh rejoins as the same member.
+- [x] `pnpm check:phase1` (5 simulated players: create, join, bad code, blank name, full room, host disconnect → migration, reconnect keeps seat, host leaves, empty room deleted).
 
 ---
 

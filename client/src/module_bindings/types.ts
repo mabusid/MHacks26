@@ -10,10 +10,68 @@ import {
   type Infer as __Infer,
 } from "spacetimedb";
 
-export const ServerInfo = __t.object("ServerInfo", {
-  id: __t.u32(),
-  sharedVersion: __t.string(),
-  moonNightBand: __t.u8(),
+export const Member = __t.object("Member", {
+  identity: __t.identity(),
+  roomId: __t.u64(),
+  name: __t.string(),
+  joinedAt: __t.timestamp(),
+  online: __t.bool(),
 });
-export type ServerInfo = __Infer<typeof ServerInfo>;
+export type Member = __Infer<typeof Member>;
+
+// The tagged union or sum type for the algebraic type `Phase`.
+export const Phase = __t.enum("Phase", {
+  Lobby: __t.unit(),
+  Briefing: __t.unit(),
+  Build: __t.unit(),
+  Debrief: __t.unit(),
+});
+export type Phase = __Infer<typeof Phase>;
+
+export const Room = __t.object("Room", {
+  id: __t.u64(),
+  code: __t.string(),
+  host: __t.identity(),
+  get phase() {
+    return Phase;
+  },
+  currentRoundId: __t.option(__t.u64()),
+  nextRoundId: __t.option(__t.u64()),
+  createdAt: __t.timestamp(),
+});
+export type Room = __Infer<typeof Room>;
+
+export const Round = __t.object("Round", {
+  id: __t.u64(),
+  roomId: __t.u64(),
+  get status() {
+    return RoundStatus;
+  },
+  planetName: __t.string(),
+  massBudget: __t.u32(),
+  buildEndsAt: __t.option(__t.timestamp()),
+});
+export type Round = __Infer<typeof Round>;
+
+// The tagged union or sum type for the algebraic type `RoundStatus`.
+export const RoundStatus = __t.enum("RoundStatus", {
+  Researching: __t.unit(),
+  Ready: __t.unit(),
+  Active: __t.unit(),
+  Done: __t.unit(),
+});
+export type RoundStatus = __Infer<typeof RoundStatus>;
+
+export const ServerConfig = __t.object("ServerConfig", {
+  id: __t.u32(),
+  owner: __t.identity(),
+  server: __t.option(__t.identity()),
+});
+export type ServerConfig = __Infer<typeof ServerConfig>;
+
+export const Session = __t.object("Session", {
+  connectionId: __t.connectionId(),
+  identity: __t.identity(),
+});
+export type Session = __Infer<typeof Session>;
 

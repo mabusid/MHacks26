@@ -43,7 +43,10 @@ Optional: copy `server/.env.example` → `server/.env` and set `XAI_API_KEY` (a 
 ```sh
 pnpm test        # unit tests
 pnpm typecheck   # all packages
+pnpm check:phase1   # multiplayer checks against the running dev stack (needs `pnpm dev`)
 cd /tmp && spacetime sql --server local overburden "SELECT * FROM server_info"   # query the local DB
 ```
+
+If a schema change can't migrate existing rows, reset the local DB: `cd /tmp && spacetime delete --server local overburden` (then `pnpm dev` republishes).
 
 Run ad-hoc `spacetime` commands from outside the repo, or rely on `spacetime.json` (database `overburden`, server `local`).
