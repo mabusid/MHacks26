@@ -135,12 +135,21 @@ export default function Grid(props: Props) {
                 onKeyDown={e => onKey(i, e)}
                 onClick={() => (tool === 'remove' ? props.onRemove(i) : props.onPlace(i))}
               >
-                {p ? <PieceIcon kind={p.kind as PieceKind} size={30} /> : ok && <span className="valid-dot" aria-hidden />}
+                {p ? <PieceIcon kind={p.kind as PieceKind} size={48} /> : ok && <span className="valid-dot" aria-hidden />}
               </button>
             );
           })}
           <div className="habitat" aria-label="Habitat">
-            <span>HAB</span>
+            <svg className="habitat-svg" viewBox="0 0 80 64" aria-hidden>
+              <polygon points="10,46 40,58 70,46 40,34" fill="#475569" />
+              <polygon points="22,28 40,36 58,28 40,18" fill="#e2e8f0" />
+              <polygon points="22,28 40,36 40,52 22,42" fill="#94a3b8" />
+              <polygon points="40,36 58,28 58,42 40,52" fill="#64748b" />
+              <path d="M28 20c0-8 24-8 24 0v10H28z" fill="#cbd5e1" />
+              <ellipse cx="40" cy="20" rx="12" ry="7" fill="#f8fafc" />
+              <circle cx="40" cy="12" r="2.6" fill="#2dd4bf" />
+              <path d="M26 32h6M48 30h6" stroke="#1e293b" strokeWidth="1.4" opacity="0.35" />
+            </svg>
           </div>
           {others.map(c => {
             const m = members.find(x => x.identity.isEqual(c.identity))!;

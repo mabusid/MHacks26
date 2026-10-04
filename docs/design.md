@@ -13,7 +13,7 @@ Layout, look, and transitions for every phase. Rules, copy, and visibility: [Pla
 | Layer | Choice |
 | --- | --- |
 | 3D world | `@react-three/fiber` 9 + `@react-three/drei` 10 (React 19 compatible) — **one `<Canvas>` mounted for the whole session**, behind the HUD, never remounted between phases. Low-poly procedural terrain, habitat, decorative pieces. Renders on demand outside camera moves; DPR capped at 1.5. |
-| Board | HTML/CSS grid (focusable buttons with aria-labels), CSS `rotateX` tilt ≤ 25° on wide screens, **flat top-down on phones**. Pieces drawn as SVG icons (same art in palette and on the board). |
+| Board | HTML/CSS grid (focusable buttons with aria-labels), CSS 2.5D tilt on wide screens, **flat top-down on phones**. Tiles are thick terrain slabs. Pieces are isometric 3D models (same art in palette and on the board). |
 | HUD | Screen-space HTML panels with `--hud-*` design tokens (no in-world HTML). |
 | Fallback | If WebGL is unavailable or the context is lost, the scene is replaced by the CSS/SVG backdrop. The game is fully playable without 3D. |
 
@@ -110,7 +110,7 @@ Centered card: planet name, 1–2 numbers, the **same 3 requirement lines as the
 └──────────────────────────────────────────────────────────────┘
 ```
 - **Top bar:** planet, ★ host name, Leave (left) · timer (center, largest; coral + blink under 0:30) · mass **bar + numbers** (right; coral + "over by N" when over; flashes on change).
-- **Board:** A–H / 1–8 edge labels; tile types by pattern + legend (sunlit bright, shaded dark + striped, ice blue); habitat 2×2; pieces as SVG icons; live named cursors in crew colors (offline hidden).
+- **Board:** A–H / 1–8 edge labels; tile types by pattern + legend (sunlit bright, shaded dark + striped, ice blue); habitat 2×2 as a 3D module; pieces as isometric 3D models sitting on the pad; live named cursors in crew colors (offline hidden).
 - **Tool selected →** all valid tiles get a teal rim + dot; invalid tiles dim (no dot). Hover/focus puts the tile name and reason in the info line.
 - **Palette:** 9 pieces + Remove (two rows of five on phones), all one click/tap (no press-and-hold anywhere). Disabled pieces say why ("over budget", "no ice here", "no night here", "not needed"). The **info line** under the palette says what the selected piece does *on this planet*.
 - **Right rail:** 3 requirement lines, **tap to expand** threshold + researched reason; Planet facts & sources; host **Lock in early** (in-HUD confirm, not a browser dialog); dev board read (dev only).

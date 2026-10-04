@@ -676,6 +676,7 @@ button:disabled {
   .game-timer.urgent {
     animation: none;
   }
+
 }
 
 /* ── Phones / narrow (< 1024px) ────────────────────────────────────────── */
@@ -721,6 +722,7 @@ button:disabled {
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
+  overflow: visible;
 }
 
 .game-context {
@@ -776,14 +778,17 @@ button:disabled {
   color: var(--accent);
 }
 
-/* The board: HTML grid tilted for depth (flat on phones). */
+/* The board: thick 2.5D pad (flat on phones). Pieces are isometric models sitting on the tiles. */
 .board-scene {
-  --cell: min(58px, calc((100vw - 420px) / 9), calc((100vh - 340px) / 8.3));
-  perspective: 1100px;
+  --cell: min(54px, calc((100vw - 420px) / 10), calc((100vh - 360px) / 10));
+  --tile-edge: 6px;
+  --tilt-x: 46deg;
+  --tilt-z: -16deg;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.7rem;
+  padding: 1.25rem 2rem 0.8rem;
 }
 
 .board-plane {
@@ -793,9 +798,10 @@ button:disabled {
   grid-template-areas:
     '. cols'
     'rows board';
-  transform: rotateX(22deg);
-  transform-origin: 50% 70%;
-  transition: transform 400ms ease;
+  /* perspective() on the same transform so an ancestor animation can't flatten it. */
+  transform: perspective(980px) rotateX(var(--tilt-x)) rotateZ(var(--tilt-z));
+  transform-origin: 50% 65%;
+  transform-style: preserve-3d;
 }
 
 .grid-cols,
@@ -825,104 +831,143 @@ button:disabled {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
   grid-template-rows: repeat(8, 1fr);
-  gap: 3px;
-  padding: 3px;
-  border-radius: 10px;
-  background: rgba(6, 9, 15, 0.55);
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+  gap: 2px;
+  padding: 2px;
+  border-radius: 4px 4px 2px 2px;
+  background: #141820;
+  box-shadow:
+    0 var(--tile-edge) 0 #0a0d12,
+    0 22px 40px rgba(0, 0, 0, 0.55);
   touch-action: manipulation;
   user-select: none;
+  transform-style: preserve-3d;
+  overflow: visible;
 }
 
 .tile {
+  --slab: #6b6558;
   border: none;
-  border-radius: 6px;
+  border-radius: 2px;
   padding: 0;
   display: grid;
-  place-items: center;
+  place-items: end center;
   position: relative;
-  transition: box-shadow 80ms, opacity 120ms, transform 80ms;
+  overflow: visible;
+  transition: box-shadow 80ms, opacity 120ms, filter 120ms;
+  box-shadow: 0 var(--tile-edge) 0 var(--slab);
+}
+
+.tile::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent 42%);
 }
 
 /* Tile types: pattern + color, never color alone (legend below the board). */
-/* Sunlit tiles are bright on every planet; shaded ones dark + striped — readable at a glance. */
 .tile-lit,
 .swatch-tile.tile-lit {
-  background: linear-gradient(160deg, #d6cfbb, #a9a18b);
+  --slab: #7a6f55;
+  background:
+    radial-gradient(circle at 20% 25%, rgba(255, 255, 255, 0.16) 0 1px, transparent 2px),
+    linear-gradient(160deg, #e4d8b8, #b7a888);
 }
 
 .tile-shaded,
 .swatch-tile.tile-shaded {
+  --slab: #16181d;
   background:
-    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.09) 0 3px, transparent 3px 8px),
-    #2a2d36;
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0 2px, transparent 2px 7px),
+    linear-gradient(160deg, #3a3e48, #1c1f26);
 }
 
 .tile-ice,
 .swatch-tile.tile-ice {
+  --slab: #3d6d86;
   background:
-    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.55) 0 2px, transparent 3px),
-    radial-gradient(circle at 70% 65%, rgba(255, 255, 255, 0.45) 0 1.5px, transparent 2.5px),
-    linear-gradient(135deg, #a7d3ea, #5d93b3);
+    radial-gradient(circle at 28% 28%, rgba(255, 255, 255, 0.7) 0 2px, transparent 3px),
+    radial-gradient(circle at 72% 68%, rgba(255, 255, 255, 0.4) 0 1.5px, transparent 2.5px),
+    linear-gradient(145deg, #c7e8f6, #5d93b3);
 }
 
 .tile-habitat-cell {
   background: transparent;
+  box-shadow: none;
 }
 
-/* With a tool selected: valid tiles get a teal rim + dot; invalid tiles dim + hatch. */
+.tile-habitat-cell::before {
+  display: none;
+}
+
+/* With a tool selected: valid tiles get a teal rim + dot; invalid tiles dim. */
 .tile.valid {
-  box-shadow: inset 0 0 0 2px rgba(45, 212, 191, 0.75);
+  box-shadow:
+    inset 0 0 0 2px rgba(45, 212, 191, 0.85),
+    0 var(--tile-edge) 0 var(--slab);
 }
 
 .tile.invalid:not(.has-piece) {
-  opacity: 0.45;
-  filter: saturate(0.4);
+  opacity: 0.42;
+  filter: saturate(0.35);
 }
 
 .tile.hovered.valid,
 .tile.valid:focus-visible {
-  box-shadow: inset 0 0 0 3px var(--accent);
+  box-shadow:
+    inset 0 0 0 3px var(--accent),
+    0 calc(var(--tile-edge) + 2px) 0 var(--slab);
   transform: translateY(-2px);
 }
 
 .tile.hovered.invalid {
-  box-shadow: inset 0 0 0 3px var(--bad);
+  box-shadow:
+    inset 0 0 0 3px var(--bad),
+    0 var(--tile-edge) 0 var(--slab);
   cursor: not-allowed;
 }
 
 .valid-dot {
   width: 7px;
   height: 7px;
+  margin-bottom: 28%;
   border-radius: 50%;
   background: var(--accent);
   box-shadow: 0 0 6px var(--accent);
 }
 
-.tile .piece-svg {
-  width: calc(var(--cell) * 0.62);
-  height: calc(var(--cell) * 0.62);
-  filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.55));
+.tile.has-piece {
+  place-items: center;
+  z-index: 2;
+}
+
+.tile .piece-svg,
+.habitat-svg {
   pointer-events: none;
+}
+
+.tile .piece-svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(1px 4px 0 rgba(0, 0, 0, 0.35));
 }
 
 .habitat {
   position: absolute;
-  left: calc(37.5% + 1px);
-  top: calc(37.5% + 1px);
-  width: calc(25% - 2px);
-  height: calc(25% - 2px);
-  border-radius: 12px;
-  background: linear-gradient(160deg, #e2e8f0, #9fb0c4);
-  border: 3px solid #f1f5f9;
+  left: 37.5%;
+  top: 37.5%;
+  width: 25%;
+  height: 25%;
+  pointer-events: none;
+  z-index: 1;
   display: grid;
   place-items: center;
-  pointer-events: none;
-  color: #1e293b;
-  font-family: var(--mono);
-  font-weight: 900;
-  letter-spacing: 0.1em;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+.habitat-svg {
+  width: 118%;
+  height: 118%;
+  filter: drop-shadow(1px 5px 0 rgba(0, 0, 0, 0.4));
 }
 
 .cursor {
@@ -1012,6 +1057,12 @@ button:disabled {
   width: 78px;
   padding: 0.4rem 0.3rem;
   background: var(--panel);
+}
+
+.piece-btn .piece-svg {
+  width: 34px;
+  height: 30px;
+  filter: drop-shadow(0 2px 1px rgba(0, 0, 0, 0.45));
 }
 
 .piece-btn.selected {
@@ -1231,10 +1282,24 @@ button:disabled {
 @media (max-width: 1023px) {
   .board-scene {
     --cell: min(46px, calc((100vw - 52px) / 8.4));
+    --tile-edge: 4px;
+    --tilt-x: 0deg;
+    --tilt-z: 0deg;
+    padding: 0.4rem 0 0.6rem;
   }
 
   .board-plane {
     transform: none;
+  }
+
+  .tile .piece-svg {
+    width: 86%;
+    height: 86%;
+  }
+
+  .habitat-svg {
+    width: 100%;
+    height: 100%;
   }
 
   .game-top {
