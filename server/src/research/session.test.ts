@@ -11,7 +11,7 @@ function session() {
 }
 
 describe('ResearchSession provenance', () => {
-  it('commits curated Moon data with every value sourced', async () => {
+  it('commits curated Moon data: every value sourced, or estimated with a reason', async () => {
     const { s, commits } = session();
     const f = s.fetchSolarSystemBody('moon');
     for (const v of f.values) s.setParameter(f.fetchId, v.field);
@@ -19,8 +19,10 @@ describe('ResearchSession provenance', () => {
     s.writeCard(FIXTURES.moon.card);
     await s.commit();
     expect(commits).toHaveLength(1);
-    expect(commits[0].params.every(p => p.status === 'sourced' && p.sourceUrl.startsWith('https://'))).toBe(true);
+    expect(commits[0].params.every(p => (p.status === 'sourced' ? p.sourceUrl.startsWith('https://') : p.note.length > 0))).toBe(true);
     expect(commits[0].params.find(p => p.field === 'radiationDoseMSvPerDay')?.num).toBe(1.369);
+    // The equatorial-midpoint temperature isn't a measured site value, so it's estimated (and can't set a twist).
+    expect(commits[0].params.find(p => p.field === 'meanTempK')?.status).toBe('estimated');
   });
 
   it('only accepts values that came from a fetch', () => {
@@ -65,6 +67,12 @@ describe('Exoplanet Archive mapping', () => {
     pl_rade_reflink: '<a refstr=AGOL_ET_AL__2021 href=https://ui.adsabs.harvard.edu/abs/2021PSJ.....2....1A/abstract target=ref>Agol et al. 2021</a>',
     pl_bmasse_reflink: null, pl_insol_reflink: null, pl_eqt_reflink: null,
   };
+
+  it('makes site-relative archive links absolute', () => {
+    expect(parseReflink('<a refstr=CALCULATED_VALUE href=/docs/pscp_calc.html target=ref>Calculated Value</a>').url).toBe(
+      'https://exoplanetarchive.ipac.caltech.edu/docs/pscp_calc.html'
+    );
+  });
 
   it('parses reflink HTML into a label and URL', () => {
     expect(parseReflink(row.pl_rade_reflink)).toEqual({

@@ -17,13 +17,6 @@ export const BecauseInput = __t.object("BecauseInput", {
 });
 export type BecauseInput = __Infer<typeof BecauseInput>;
 
-export const BermDone = __t.object("BermDone", {
-  scheduledId: __t.u64(),
-  scheduledAt: __t.scheduleAt(),
-  pieceId: __t.u64(),
-});
-export type BermDone = __Infer<typeof BermDone>;
-
 export const BuildEnd = __t.object("BuildEnd", {
   scheduledId: __t.u64(),
   scheduledAt: __t.scheduleAt(),
@@ -96,8 +89,6 @@ export const Piece = __t.object("Piece", {
   kind: __t.string(),
   index: __t.u8(),
   placedBy: __t.identity(),
-  pending: __t.bool(),
-  completesAt: __t.option(__t.timestamp()),
 });
 export type Piece = __Infer<typeof Piece>;
 

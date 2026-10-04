@@ -61,7 +61,7 @@ export default function Lobby({ data }: { data: RoomData }) {
         <div className="planet-foot">
           {isHost ? (
             <button className="primary big" disabled={!ready || start.pending} onClick={() => start.run()}>
-              {ready ? 'Start mission' : 'Waiting for a planet…'}
+              {ready ? 'Start mission' : 'Researching…'}
             </button>
           ) : (
             <p className="muted">{ready ? 'Waiting for the host…' : 'Waiting for research…'}</p>

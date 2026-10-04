@@ -35,7 +35,6 @@ import {
 
 // Import all reducer arg schemas
 import BeginBuildReducer from "./begin_build_reducer";
-import CancelBermReducer from "./cancel_berm_reducer";
 import CommitRoundReducer from "./commit_round_reducer";
 import CreateRoomReducer from "./create_room_reducer";
 import JoinRoomReducer from "./join_room_reducer";
@@ -48,7 +47,6 @@ import PostHintReducer from "./post_hint_reducer";
 import RematchReducer from "./rematch_reducer";
 import RemovePieceReducer from "./remove_piece_reducer";
 import SetServerIdentityReducer from "./set_server_identity_reducer";
-import StartBermReducer from "./start_berm_reducer";
 import StartRoundReducer from "./start_round_reducer";
 
 // Import all procedure arg schemas
@@ -237,7 +235,6 @@ const tablesSchema = __schema({
 /** The schema information for all reducers in this module. This is defined the same way as the reducers would have been defined in the server, except the body of the reducer is omitted in code generation. */
 const reducersSchema = __reducers(
   __reducerSchema("begin_build", BeginBuildReducer),
-  __reducerSchema("cancel_berm", CancelBermReducer),
   __reducerSchema("commit_round", CommitRoundReducer),
   __reducerSchema("create_room", CreateRoomReducer),
   __reducerSchema("join_room", JoinRoomReducer),
@@ -250,7 +247,6 @@ const reducersSchema = __reducers(
   __reducerSchema("rematch", RematchReducer),
   __reducerSchema("remove_piece", RemovePieceReducer),
   __reducerSchema("set_server_identity", SetServerIdentityReducer),
-  __reducerSchema("start_berm", StartBermReducer),
   __reducerSchema("start_round", StartRoundReducer),
 );
 

@@ -42,7 +42,7 @@ describe('boardRead', () => {
 
   it('suggests removing a piece when the board is over budget', () => {
     const { tiles, rules, budget, winners } = setup('titan');
-    // 2 reactors + 2 water tanks = 24 CU > 23 budget; shortest fix: drop a reactor, add 2 O₂ tanks.
+    // 2 reactors + 2 water tanks = 36 CU > 34 budget; shortest fix: drop a reactor, add 2 O₂ tanks.
     const board: PlacedPiece[] = [
       { kind: 'reactor', x: 0, y: 0 },
       { kind: 'reactor', x: 1, y: 0 },
@@ -50,7 +50,7 @@ describe('boardRead', () => {
       { kind: 'water_tank', x: 3, y: 0 },
     ];
     const read = boardRead(board, tiles, rules, budget, winners);
-    expect(read.massLeft).toBe(budget - 24);
+    expect(read.massLeft).toBe(budget - 36);
     expect(read.suggestion.filter(a => a.op === 'remove').map(a => a.kind)).toEqual(['reactor']);
     const after = apply(board, read.suggestion);
     expect(evaluate(countBoard(after), rules).allPass).toBe(true);

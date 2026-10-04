@@ -45,12 +45,16 @@ export function bermsRequiredFor(doseMSvPerDay: number | null): 4 | 6 {
   return doseMSvPerDay !== null && doseMSvPerDay > 10 ? 6 : 4;
 }
 
-/** Twists the research supports. Radiation is the fallback when nothing triggers. */
-export function triggeredTwists(p: PlanetProfile): Twist[] {
+/**
+ * Twists the research supports. Radiation is the fallback when nothing triggers.
+ * An **estimated** value can't set a twist (no thresholds from guesses) — except radiation from an
+ * unmeasured atmosphere, which is the honest plan-for-the-worst case.
+ */
+export function triggeredTwists(p: PlanetProfile, estimated: ReadonlySet<string> = new Set()): Twist[] {
   const out: Twist[] = [];
   if (p.surfacePressureBar === null || p.surfacePressureBar < 0.01) out.push('radiation');
-  if (thermalLoadFor(p.meanTempK) > 0) out.push('thermal');
-  if (p.dustStorms) out.push('dust');
+  if (thermalLoadFor(p.meanTempK) > 0 && !estimated.has('meanTempK')) out.push('thermal');
+  if (p.dustStorms && !estimated.has('dustStorms')) out.push('dust');
   return out.length ? out : ['radiation'];
 }
 
@@ -65,8 +69,8 @@ export interface RoundRules {
   bermsRequired: number;
 }
 
-export function deriveRules(p: PlanetProfile, twist: Twist): RoundRules {
-  if (!triggeredTwists(p).includes(twist)) throw new Error(`Twist "${twist}" is not supported by ${p.name}'s data`);
+export function deriveRules(p: PlanetProfile, twist: Twist, estimated: ReadonlySet<string> = new Set()): RoundRules {
+  if (!triggeredTwists(p, estimated).includes(twist)) throw new Error(`Twist "${twist}" is not supported by ${p.name}'s data`);
   const dust = twist === 'dust';
   return {
     twist,

@@ -1,4 +1,4 @@
-// Checkpoint 5: authoritative placement, budget, removal, berm digging, live cursors.
+// Checkpoint 5: authoritative placement, budget, removal, berms, live cursors.
 // Needs `pnpm dev` running. Run: pnpm check:phase5
 import { DbConnection, tables } from '../../client/src/module_bindings/index.ts';
 
@@ -90,7 +90,7 @@ await until('build', () => room().phase.tag === 'Build' && tiles().length === 64
 const lit = tileOf('lit');
 await step('solar on a sunlit tile appears for everyone, credited to the placer', async () => {
   await host.conn.reducers.placePiece({ kind: 'solar', index: lit });
-  await until('guest sees solar', () => pieces(guest).some(p => p.index === lit && p.kind === 'solar' && !p.pending));
+  await until('guest sees solar', () => pieces(guest).some(p => p.index === lit && p.kind === 'solar'));
   if (pieces()[0].placedBy.toHexString() !== host.hex) throw new Error('placedBy');
 });
 
@@ -99,16 +99,16 @@ await step('tile rules are enforced server-side', async () => {
   await rejects('drill off ice', guest.conn.reducers.placePiece({ kind: 'ice_drill', index: tileOf('lit', [lit]) }), /ice tile/);
   await rejects('habitat', guest.conn.reducers.placePiece({ kind: 'battery', index: 27 }), /habitat/);
   await rejects('occupied', guest.conn.reducers.placePiece({ kind: 'battery', index: lit }), /occupied/);
-  await rejects('berm via place', guest.conn.reducers.placePiece({ kind: 'berm', index: HABITAT_ADJACENT[0] }), /press and hold/);
   return rejects('unknown', guest.conn.reducers.placePiece({ kind: 'warp_drive', index: 0 }), /Unknown piece/);
 });
 
-await step('ice drill goes on ice; the budget caps total mass (Moon: 20 CU)', async () => {
+await step('ice drill goes on ice; the budget caps total mass (Moon: 33 CU)', async () => {
   const ice = tileOf('ice');
   handedOut.add(ice);
-  await guest.conn.reducers.placePiece({ kind: 'ice_drill', index: ice });
-  await host.conn.reducers.placePiece({ kind: 'reactor', index: freeTile() }); // 1 + 2 + 10 = 13
-  return rejects('over budget', host.conn.reducers.placePiece({ kind: 'reactor', index: freeTile() }), /Over budget: 23\/20/);
+  await guest.conn.reducers.placePiece({ kind: 'ice_drill', index: ice }); // 2
+  await host.conn.reducers.placePiece({ kind: 'reactor', index: freeTile() }); // + 14 = 16
+  await host.conn.reducers.placePiece({ kind: 'reactor', index: freeTile() }); // + 14 = 30, + the solar (1) = 31
+  return rejects('over budget', host.conn.reducers.placePiece({ kind: 'reactor', index: freeTile() }), /Over budget: 45\/33/);
 });
 
 await step('anyone can remove any piece (refund); removing empty ground is refused', async () => {
@@ -117,32 +117,11 @@ await step('anyone can remove any piece (refund); removing empty ground is refus
   return rejects('empty', guest.conn.reducers.removePiece({ index: lit }), /Nothing to remove/);
 });
 
-await step('berms must touch the habitat', () => rejects('far berm', host.conn.reducers.startBerm({ index: freeTile() }), /touch the habitat/));
-
-await step('a held berm digs for ~2.3 s (Moon gravity), occupies its tile, then completes', async () => {
-  const t0 = Date.now();
-  await host.conn.reducers.startBerm({ index: HABITAT_ADJACENT[0] });
-  await until('pending', () => pieces().some(p => p.index === HABITAT_ADJACENT[0] && p.pending));
-  await rejects('dig tile occupied', guest.conn.reducers.placePiece({ kind: 'battery', index: HABITAT_ADJACENT[0] }), /occupied/);
-  await rejects('remove while digging', guest.conn.reducers.removePiece({ index: HABITAT_ADJACENT[0] }), /still being dug/);
-  await until('done', () => pieces().some(p => p.index === HABITAT_ADJACENT[0] && !p.pending), 5000);
-  const secs = (Date.now() - t0) / 1000;
-  if (secs < 2.0 || secs > 3.5) throw new Error(`took ${secs.toFixed(2)} s`);
-  return `${secs.toFixed(1)} s`;
-});
-
-await step('letting go early cancels the dig; it never completes', async () => {
-  await host.conn.reducers.startBerm({ index: HABITAT_ADJACENT[1] });
-  await host.conn.reducers.cancelBerm({ index: HABITAT_ADJACENT[1] });
-  await until('cancelled', () => !pieces().some(p => p.index === HABITAT_ADJACENT[1]));
-  await new Promise(r => setTimeout(r, 2800));
-  if (pieces().some(p => p.index === HABITAT_ADJACENT[1])) throw new Error('berm came back');
-});
-
-await step("another player can't cancel your dig", async () => {
-  await host.conn.reducers.startBerm({ index: HABITAT_ADJACENT[2] });
-  await guest.conn.reducers.cancelBerm({ index: HABITAT_ADJACENT[2] });
-  await until('still completes', () => pieces().some(p => p.index === HABITAT_ADJACENT[2] && !p.pending), 5000);
+await step('berms place with a single click (1 CU) and must touch the habitat', async () => {
+  await rejects('far berm', host.conn.reducers.placePiece({ kind: 'berm', index: freeTile() }), /touch the habitat/);
+  await host.conn.reducers.placePiece({ kind: 'berm', index: HABITAT_ADJACENT[0] });
+  await until('berm placed', () => pieces().some(p => p.index === HABITAT_ADJACENT[0] && p.kind === 'berm'));
+  return rejects('berm tile occupied', guest.conn.reducers.placePiece({ kind: 'battery', index: HABITAT_ADJACENT[0] }), /occupied/);
 });
 
 await step('live cursors: movement and hiding sync to the other player', async () => {

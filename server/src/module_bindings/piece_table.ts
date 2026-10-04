@@ -16,6 +16,4 @@ export default __t.row({
   kind: __t.string(),
   index: __t.u8(),
   placedBy: __t.identity().name("placed_by"),
-  pending: __t.bool(),
-  completesAt: __t.option(__t.timestamp()).name("completes_at"),
 });

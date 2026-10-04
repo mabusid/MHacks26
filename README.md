@@ -67,9 +67,17 @@ Run ad-hoc `spacetime` commands from outside the repo, or rely on `spacetime.jso
 4. **Start mission** → briefing card: planet, 3 one-line requirements, "Build starts in 10…" — the build starts on its own (host can **Skip**).
 5. Build: big timer top center (red under 0:30), mass top right, requirements on the right (**Planet facts & sources** toggle), Mission Control bar at the bottom — **tap the bar to mute/unmute**.
    - Pick a piece in the palette (or keys **1–8**), click a tile to place; hovered tiles outline teal/red. **Remove** (or **R**) then click a piece.
-   - **Berm**: press and hold a tile touching the habitat — the ring fills (~2.3 s on the Moon); let go early to cancel.
+   - **Berm**: one click on a tile touching the habitat (1 CU) — like every other piece.
    - The other tab's cursor moves live with their name; a wrong tile shows a red toast with the reason.
-6. **Mission Control** (build): ~4 s in, a welcome fun fact plays and types out in the bottom bar; more facts at 2:05 / 1:45, then hints at 1:30, 1:10, 0:50, 0:30, 0:15 that follow your grid (place the suggested piece and the next hint says “Nice — …”). If the bar says **tap to enable sound**, tap it once (browsers block audio until you interact). Tap again to mute this device only — captions keep typing. Without an xAI key, the browser reads the same lines aloud.
+6. **Mission Control** (build, 1:30): ~4 s in, a welcome fun fact plays and types out in the bottom bar; another fact at 1:12, then hints at 1:00, 0:45, 0:30 that follow your grid, and one exact move at 0:15 (act on a hint and the next one says “Nice — …”). If the bar says **tap to enable sound**, tap it once (browsers block audio until you interact). Tap again to mute this device only — captions keep typing. Without an xAI key, the browser reads the same lines aloud.
 7. At 0:00 (or host **Lock in early**) → debrief split card: **MISSION SUCCESS / FAILED**, ✓/✗ with one reason per requirement, the key fact, **Sources** link. Host **Next planet** → lobby, or straight into the briefing if a planet is already prepared.
    - Dev: the **dev: board read** panel on the build screen shows what Mission Control will see (worst requirement + suggested moves).
 8. Narrow the window below 1024px → halves stack; the Mission Control bar stays pinned at the bottom.
+
+## Visual walkthrough (screenshots)
+
+`test/` (git-ignored) has a Playwright script that plays a round as a desktop host + phone guest and screenshots every screen:
+
+```sh
+cd test && npm install && npx playwright install chromium && node shots.mjs   # needs pnpm dev; writes test/shots/*.png
+```

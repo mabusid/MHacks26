@@ -164,36 +164,79 @@ button:disabled {
   color: var(--warn);
 }
 
-/* ── Stage: backdrop for every non-build screen ────────────────────────── */
+/* ── Layers: persistent 3D world → veil → HUD ─────────────────────────── */
 
-.stage {
+.app {
   position: relative;
   min-height: 100vh;
-  display: grid;
-  place-items: center;
-  padding: 24px 16px;
-  overflow: hidden;
 }
 
-.base-scene {
+.world {
   position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: var(--bg);
+}
+
+.world canvas {
+  display: block;
+}
+
+/* SVG fallback when WebGL is unavailable */
+.world .base-scene {
+  position: absolute;
   inset: -4%;
   width: 108%;
   height: 108%;
   animation: drift 60s ease-in-out infinite alternate;
 }
 
-.stage-veil {
+/* Readability veil: strong behind cards, light during the build so the site shows through. */
+.veil {
   position: fixed;
   inset: 0;
-  background: radial-gradient(ellipse at center, rgba(6, 9, 15, 0.55) 0%, rgba(6, 9, 15, 0.88) 75%);
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(6, 9, 15, 0.35) 0%, rgba(6, 9, 15, 0.8) 80%);
+  transition: background 600ms ease;
 }
 
-.stage-content {
+.veil-home,
+.veil-lobby {
+  background: radial-gradient(ellipse at 30% 50%, rgba(6, 9, 15, 0.1) 0%, rgba(6, 9, 15, 0.75) 75%);
+}
+
+.veil-build {
+  background: linear-gradient(rgba(6, 9, 15, 0.45), rgba(6, 9, 15, 0.25) 30%, rgba(6, 9, 15, 0.55));
+}
+
+.layer {
   position: relative;
-  width: 100%;
+  z-index: 1;
+}
+
+.stage {
+  min-height: 100vh;
   display: grid;
   place-items: center;
+  padding: 24px 16px;
+  animation: hud-in 220ms ease-out both;
+}
+
+.host-toast {
+  position: fixed;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  padding: 0.45rem 1rem;
+  border-radius: 999px;
+  background: rgba(59, 47, 11, 0.92);
+  border: 1px solid rgba(251, 191, 36, 0.5);
+  color: var(--warn);
+  font-weight: 700;
+  animation: hud-in 220ms ease-out both;
 }
 
 .card {
@@ -445,9 +488,8 @@ button:disabled {
     'bottom bottom';
   gap: 12px;
   padding: 0 16px 16px;
-  background:
-    radial-gradient(1100px 600px at 30% 40%, color-mix(in srgb, var(--ground-1) 45%, transparent), transparent 70%),
-    var(--bg);
+  /* Opacity only: a transform here would make .game the containing block for the fixed Mission Control bar. */
+  animation: hud-fade 220ms ease-out both;
 }
 
 .game-top {
@@ -487,16 +529,6 @@ button:disabled {
   min-width: 0;
   display: grid;
   place-items: center;
-}
-
-.grid-placeholder {
-  width: min(560px, 100%);
-  aspect-ratio: 1;
-  border: 1px dashed var(--rule);
-  border-radius: var(--radius);
-  display: grid;
-  place-items: center;
-  color: var(--muted);
 }
 
 .game-side {
@@ -609,6 +641,19 @@ button:disabled {
   }
 }
 
+@keyframes hud-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes hud-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
 @keyframes drift {
   from {
     transform: translate(-1.5%, -1%) scale(1);
@@ -619,6 +664,11 @@ button:disabled {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .stinger,
+  .board-plane,
+  .stage,
+  .game,
+  .host-toast,
   .base-scene,
   .log li,
   .blink,
@@ -653,31 +703,37 @@ button:disabled {
       'bottom';
   }
 
-  .game-bottom {
-    position: sticky;
-    bottom: 8px;
-  }
 
   .game-timer {
     font-size: 2.2rem;
   }
+
 
   .room-code {
     font-size: 2.2rem;
   }
 }
 
-/* ── Grid & palette ────────────────────────────────────────────────────── */
+/* ── Build: top bar, board, palette ─────────────────────────────────────── */
 
 .game-board {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.5rem;
 }
 
-.game-leave {
-  margin-left: 0.75rem;
+.game-context {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.host-chip {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--warn);
 }
 
 .game-leave button {
@@ -685,18 +741,61 @@ button:disabled {
   font-size: 0.8rem;
 }
 
-.game-mass.over {
+.mass {
+  justify-self: end;
+  display: grid;
+  gap: 0.25rem;
+  min-width: 150px;
+  font-family: var(--mono);
+  font-weight: 700;
+  text-align: right;
+}
+
+.mass-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.2);
+  overflow: hidden;
+}
+
+.mass-fill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 200ms ease;
+}
+
+.mass.over .mass-fill {
+  background: var(--bad);
+}
+
+.mass.over .mass-text {
   color: var(--bad);
 }
 
-.grid-wrap {
-  --cell: min(64px, calc((100vw - 400px) / 9), calc((100vh - 330px) / 8.5));
+.mass.flash .mass-text {
+  color: var(--accent);
+}
+
+/* The board: HTML grid tilted for depth (flat on phones). */
+.board-scene {
+  --cell: min(58px, calc((100vw - 420px) / 9), calc((100vh - 340px) / 8.3));
+  perspective: 1100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.board-plane {
   display: grid;
-  grid-template-columns: 1.4rem calc(var(--cell) * 8);
-  grid-template-rows: 1.4rem calc(var(--cell) * 8);
+  grid-template-columns: 1.3rem calc(var(--cell) * 8);
+  grid-template-rows: 1.3rem calc(var(--cell) * 8);
   grid-template-areas:
     '. cols'
     'rows board';
+  transform: rotateX(22deg);
+  transform-origin: 50% 70%;
+  transition: transform 400ms ease;
 }
 
 .grid-cols,
@@ -704,7 +803,9 @@ button:disabled {
   display: grid;
   font-family: var(--mono);
   font-size: 0.75rem;
-  color: var(--muted);
+  font-weight: 700;
+  color: var(--text);
+  opacity: 0.8;
   place-items: center;
 }
 
@@ -725,7 +826,11 @@ button:disabled {
   grid-template-columns: repeat(8, 1fr);
   grid-template-rows: repeat(8, 1fr);
   gap: 3px;
-  touch-action: none;
+  padding: 3px;
+  border-radius: 10px;
+  background: rgba(6, 9, 15, 0.55);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+  touch-action: manipulation;
   user-select: none;
 }
 
@@ -736,32 +841,69 @@ button:disabled {
   display: grid;
   place-items: center;
   position: relative;
-  transition: transform 80ms, box-shadow 80ms;
+  transition: box-shadow 80ms, opacity 120ms, transform 80ms;
 }
 
-.tile-lit {
-  background: color-mix(in srgb, var(--ground-1) 75%, #d8c9a0);
+/* Tile types: pattern + color, never color alone (legend below the board). */
+/* Sunlit tiles are bright on every planet; shaded ones dark + striped — readable at a glance. */
+.tile-lit,
+.swatch-tile.tile-lit {
+  background: linear-gradient(160deg, #d6cfbb, #a9a18b);
 }
 
-.tile-shaded {
-  background: color-mix(in srgb, var(--ground-2) 80%, #000);
+.tile-shaded,
+.swatch-tile.tile-shaded {
+  background:
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.09) 0 3px, transparent 3px 8px),
+    #2a2d36;
 }
 
-.tile-ice {
-  background: linear-gradient(135deg, #9cc9e0, #5d93b3);
+.tile-ice,
+.swatch-tile.tile-ice {
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.55) 0 2px, transparent 3px),
+    radial-gradient(circle at 70% 65%, rgba(255, 255, 255, 0.45) 0 1.5px, transparent 2.5px),
+    linear-gradient(135deg, #a7d3ea, #5d93b3);
 }
 
 .tile-habitat-cell {
   background: transparent;
 }
 
-.tile.preview-ok {
-  box-shadow: inset 0 0 0 2px var(--accent);
+/* With a tool selected: valid tiles get a teal rim + dot; invalid tiles dim + hatch. */
+.tile.valid {
+  box-shadow: inset 0 0 0 2px rgba(45, 212, 191, 0.75);
 }
 
-.tile.preview-bad {
-  box-shadow: inset 0 0 0 2px var(--bad);
+.tile.invalid:not(.has-piece) {
+  opacity: 0.45;
+  filter: saturate(0.4);
+}
+
+.tile.hovered.valid,
+.tile.valid:focus-visible {
+  box-shadow: inset 0 0 0 3px var(--accent);
+  transform: translateY(-2px);
+}
+
+.tile.hovered.invalid {
+  box-shadow: inset 0 0 0 3px var(--bad);
   cursor: not-allowed;
+}
+
+.valid-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent);
+}
+
+.tile .piece-svg {
+  width: calc(var(--cell) * 0.62);
+  height: calc(var(--cell) * 0.62);
+  filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.55));
+  pointer-events: none;
 }
 
 .habitat {
@@ -771,7 +913,7 @@ button:disabled {
   width: calc(25% - 2px);
   height: calc(25% - 2px);
   border-radius: 12px;
-  background: #c9d2de;
+  background: linear-gradient(160deg, #e2e8f0, #9fb0c4);
   border: 3px solid #f1f5f9;
   display: grid;
   place-items: center;
@@ -780,45 +922,7 @@ button:disabled {
   font-family: var(--mono);
   font-weight: 900;
   letter-spacing: 0.1em;
-}
-
-.piece {
-  font-size: calc(var(--cell) * 0.5);
-  line-height: 1;
-  position: relative;
-  display: grid;
-  place-items: center;
-  pointer-events: none;
-  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.5));
-}
-
-.piece.digging {
-  opacity: 0.7;
-}
-
-.dig-ring {
-  position: absolute;
-  inset: calc(var(--cell) * -0.18);
-  border-radius: 50%;
-  -webkit-mask: radial-gradient(circle, transparent 58%, #000 60%);
-  mask: radial-gradient(circle, transparent 58%, #000 60%);
-  animation: dig var(--left) linear forwards;
-}
-
-@property --sweep {
-  syntax: '<angle>';
-  inherits: false;
-  initial-value: 0deg;
-}
-
-.dig-ring {
-  background: conic-gradient(var(--accent) var(--sweep), rgba(255, 255, 255, 0.12) var(--sweep));
-}
-
-@keyframes dig {
-  to {
-    --sweep: 360deg;
-  }
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
 }
 
 .cursor {
@@ -840,6 +944,39 @@ button:disabled {
   white-space: nowrap;
 }
 
+.legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 1rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.swatch-tile {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  display: inline-grid;
+  place-items: center;
+}
+
+.swatch-tile.valid-sample {
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+}
+
+.swatch-tile .valid-dot {
+  width: 4px;
+  height: 4px;
+}
+
 .toast-slot {
   min-height: 1.6rem;
 }
@@ -847,9 +984,9 @@ button:disabled {
 .toast {
   font-size: 0.85rem;
   color: #fecaca;
-  background: rgba(127, 29, 29, 0.6);
-  border: 1px solid rgba(248, 113, 113, 0.4);
-  padding: 0.2rem 0.7rem;
+  background: rgba(127, 29, 29, 0.7);
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  padding: 0.2rem 0.75rem;
   border-radius: 999px;
 }
 
@@ -857,7 +994,7 @@ button:disabled {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.35rem;
   width: 100%;
 }
 
@@ -865,33 +1002,34 @@ button:disabled {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 0.4rem;
+  gap: 0.35rem;
 }
 
 .piece-btn {
   display: grid;
-  grid-template-rows: auto auto auto;
   justify-items: center;
-  gap: 0.05rem;
+  gap: 0.1rem;
   width: 78px;
-  padding: 0.45rem 0.3rem;
+  padding: 0.4rem 0.3rem;
+  background: var(--panel);
 }
 
 .piece-btn.selected {
   border-color: var(--accent);
   box-shadow: inset 0 0 0 1px var(--accent);
-  background: rgba(45, 212, 191, 0.12);
+  background: rgba(45, 212, 191, 0.14);
 }
 
 .piece-btn.remove.selected {
   border-color: var(--bad);
   box-shadow: inset 0 0 0 1px var(--bad);
-  background: rgba(248, 113, 113, 0.12);
+  background: rgba(248, 113, 113, 0.14);
 }
 
-.piece-icon {
-  font-size: 1.3rem;
-  line-height: 1.2;
+.remove-glyph {
+  font-size: 1.15rem;
+  line-height: 26px;
+  color: var(--bad);
 }
 
 .piece-label {
@@ -905,16 +1043,98 @@ button:disabled {
   color: var(--muted);
 }
 
-.piece-info {
-  font-size: 0.85rem;
-  color: var(--muted);
-  min-height: 1.3em;
-  text-align: center;
+.piece-mass.why {
+  color: var(--warn);
 }
 
-@media (max-width: 1023px) {
-  .grid-wrap {
-    --cell: min(52px, calc((100vw - 60px) / 8.4));
+.piece-info {
+  font-size: 0.88rem;
+  color: var(--text);
+  min-height: 1.3em;
+  text-align: center;
+  font-family: var(--mono);
+}
+
+/* Requirements rail */
+.req-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  font-weight: 600;
+  text-align: left;
+  background: var(--panel);
+}
+
+.req-summary {
+  flex: 1;
+}
+
+.req-caret {
+  color: var(--muted);
+}
+
+.req-detail {
+  padding: 0.5rem 0.75rem 0.25rem 2.6rem;
+  font-size: 0.85rem;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.req-list li {
+  display: block;
+  padding: 0;
+  border: none;
+}
+
+.lock-btn {
+  margin-top: auto;
+  border-color: rgba(251, 191, 36, 0.45);
+  color: var(--warn);
+}
+
+.lock-confirm {
+  margin-top: auto;
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid rgba(251, 191, 36, 0.45);
+  border-radius: 10px;
+  background: rgba(59, 47, 11, 0.6);
+}
+
+.sound-btn.off {
+  color: var(--muted);
+}
+
+/* Debrief stinger */
+.stinger {
+  font-family: var(--mono);
+  font-size: clamp(3rem, 12vw, 7rem);
+  font-weight: 900;
+  letter-spacing: 0.25em;
+  color: var(--text);
+  text-shadow: 0 0 40px rgba(45, 212, 191, 0.45);
+  animation: stinger 1.2s ease-out both;
+}
+
+@keyframes stinger {
+  0% {
+    opacity: 0;
+    transform: scale(1.15);
+  }
+  20% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
   }
 }
 
@@ -989,11 +1209,6 @@ button:disabled {
   text-decoration: underline;
 }
 
-.lock-btn {
-  margin-top: auto;
-  border-color: rgba(251, 191, 36, 0.4);
-  color: var(--warn);
-}
 
 .board-read {
   font-size: 0.8rem;
@@ -1009,5 +1224,99 @@ button:disabled {
 }
 
 .mc-bar.locked .mc-state {
+  color: var(--warn);
+}
+
+/* Phones / narrow build screen — last in the file so these override the base board rules above. */
+@media (max-width: 1023px) {
+  .board-scene {
+    --cell: min(46px, calc((100vw - 52px) / 8.4));
+  }
+
+  .board-plane {
+    transform: none;
+  }
+
+  .game-top {
+    grid-template-columns: 1fr auto;
+    gap: 0.4rem;
+  }
+
+  .game-top .mass {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+    text-align: left;
+  }
+
+  .legend {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.6rem;
+  }
+
+  .piece-btn {
+    width: 70px;
+  }
+
+  /* Room for the fixed Mission Control bar so nothing hides behind it. */
+  .game {
+    padding-bottom: 152px;
+  }
+
+  .game-bottom {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: 8px;
+    z-index: 4;
+  }
+
+  .mc-bar {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      'label state'
+      'text text';
+    gap: 0.3rem 0.75rem;
+    padding: 0.6rem 0.8rem;
+  }
+
+  .mc-label {
+    grid-area: label;
+  }
+
+  .mc-state {
+    grid-area: state;
+  }
+
+  .mc-text {
+    grid-area: text;
+    font-size: 0.9rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+/* Source / provenance tags (requirement details, planet facts). */
+.because {
+  color: var(--muted);
+}
+
+.tag {
+  display: inline-block;
+  margin-left: 0.45rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid var(--rule);
+  color: var(--muted);
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.tag.estimated {
+  border-color: rgba(251, 191, 36, 0.45);
   color: var(--warn);
 }

@@ -1,7 +1,8 @@
 import type { Member, PlanetParameter, Round } from './module_bindings/types';
 
 /** Crew colors by join order (cursors in Phase 5 use the same). */
-export const CREW_COLORS = ['#60a5fa', '#f472b6', '#facc15', '#34d399'];
+// Avoids the reserved teal (valid), coral (invalid), green (success), and amber (host) — design.md.
+export const CREW_COLORS = ['#60a5fa', '#f472b6', '#facc15', '#a78bfa'];
 
 export function crewColor(members: readonly Member[], m: Member): string {
   const i = members.findIndex(x => x.identity.isEqual(m.identity));

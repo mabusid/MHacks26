@@ -8,7 +8,8 @@ import { ungroundedNumbers } from './grounding';
 import { ResearchError, type ResearchSession } from './session';
 
 const API = 'https://api.x.ai/v1/chat/completions';
-const FIELD_NAME = /\b(insolation|nightHours|meanTempK|surfacePressureBar|co2Atmosphere|waterIce|polarIce|radiationDoseMSvPerDay|dustStorms)\b/;
+// camelCase field names only ("insolation" is a normal English word, so it isn't listed).
+const FIELD_NAME = /\b(nightHours|meanTempK|surfacePressureBar|co2Atmosphere|waterIce|polarIce|radiationDoseMSvPerDay|dustStorms)\b/;
 const ESTIMABLE = ['nightHours', 'surfacePressureBar', 'radiationDoseMSvPerDay', 'co2Atmosphere', 'waterIce', 'polarIce', 'dustStorms'];
 const MAX_TURNS = 14;
 /** Exoplanets offered per run (random sample) so rooms don't all get the famous ones. */
@@ -140,8 +141,17 @@ export async function runAgent(s: ResearchSession, alreadyPlayed: string[], sign
         ...fun_facts.map((f: string, i: number): [string, string] => [`fun_facts[${i}]`, f]),
         ...Object.entries(because).map(([k, b]: [string, any]): [string, string] => [`because.${k}`, b.text]),
       ];
-      const leaked = parts.filter(([, t]) => FIELD_NAME.test(t)).map(([w]) => w);
-      if (leaked.length) throw new ResearchError(`Write plain English, not field names like "waterIce" (in ${leaked.join(', ')}).`);
+      // Cause-and-effect the fact check can miss: sunlight drives SOLAR power; temperature drives HEATING/COOLING.
+      const wrongCause = Object.entries(because as Record<string, { text: string; field: string }>).filter(
+        ([, b]) => (b.field === 'insolation' && /\b(heat|heating|warm|cool|cooling)\b/i.test(b.text)) || (b.field === 'meanTempK' && /\bsun(light)?\b/i.test(b.text))
+      );
+      if (wrongCause.length) {
+        throw new ResearchError(
+          `Wrong cause-and-effect in because.${wrongCause.map(([k]) => k).join(', because.')}: sunlight drives solar power (not heating); temperature drives heating or cooling (not sunlight).`
+        );
+      }
+      const leaked = parts.flatMap(([w, t]) => (t.match(FIELD_NAME) ? [`"${t.match(FIELD_NAME)![0]}" in ${w}`] : []));
+      if (leaked.length) throw new ResearchError(`Replace internal field names with plain English: ${leaked.join(', ')}.`);
       const allowed = s.groundingNumbers(extraNumbers);
       const problems = parts.flatMap(([where, text]) => ungroundedNumbers(text, allowed).map(n => `${n} (in ${where})`));
       if (problems.length) throw new ResearchError(`Not in the fetched data: ${problems.join(', ')}. Use only fetched numbers, or drop them.`);

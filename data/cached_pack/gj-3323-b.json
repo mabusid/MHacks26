@@ -1,34 +1,34 @@
 {
-  "planetName": "Kepler-1512 b",
+  "planetName": "GJ 3323 b",
   "params": [
     {
       "field": "insolation",
-      "num": 1.6,
+      "num": 2.58,
       "flag": null,
       "unit": "× Earth",
       "status": "sourced",
-      "sourceLabel": "Torres et al. 2017 via NASA Exoplanet Archive",
-      "sourceUrl": "https://ui.adsabs.harvard.edu/abs/2017AJ....154..264T/abstract",
+      "sourceLabel": "Astudillo-Defru et al. 2017 via NASA Exoplanet Archive",
+      "sourceUrl": "https://ui.adsabs.harvard.edu/abs/2017A&A...602A..88A/abstract",
       "note": ""
     },
     {
       "field": "meanTempK",
-      "num": 322,
+      "num": 290.06,
       "flag": null,
       "unit": "K",
       "status": "sourced",
-      "sourceLabel": "Torres et al. 2017 via NASA Exoplanet Archive",
-      "sourceUrl": "https://ui.adsabs.harvard.edu/abs/2017AJ....154..264T/abstract",
+      "sourceLabel": "Calculated Value via NASA Exoplanet Archive",
+      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/docs/pscp_calc.html",
       "note": "Equilibrium temperature"
     },
     {
       "field": "gravity",
-      "num": 11.58,
+      "num": 12.07,
       "flag": null,
       "unit": "m/s²",
       "status": "estimated",
-      "sourceLabel": "Morton et al. 2016 via NASA Exoplanet Archive",
-      "sourceUrl": "https://ui.adsabs.harvard.edu/abs/2016ApJ...822...86M/abstract",
+      "sourceLabel": "Calculated Value via NASA Exoplanet Archive",
+      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/docs/pscp_calc.html",
       "note": "Mass not directly measured; assumes Earth-like density from its radius"
     },
     {
@@ -103,12 +103,12 @@
     }
   ],
   "twist": "radiation",
-  "headline": "Kepler-1512 b gets 160% of Earth’s sunlight, 528.4 light-years away.",
-  "scaleText": "528.4 light-years away · 1.18× Earth’s width · 1.60× Earth’s sunlight",
+  "headline": "GJ 3323 b gets 258% of Earth’s sunlight, 17.5 light-years away.",
+  "scaleText": "17.5 light-years away · 1.23× Earth’s width · 2.58× Earth’s sunlight",
   "because": [
     {
       "kind": "power",
-      "text": "It gets 1.60× Earth’s sunlight; its nights have never been measured.",
+      "text": "It gets 2.58× Earth’s sunlight; its nights have never been measured.",
       "field": "insolation"
     },
     {
@@ -123,8 +123,8 @@
     }
   ],
   "funFacts": [
-    "Welcome to Kepler-1512 b, 528.4 light-years from Earth.",
-    "A year here lasts 20 Earth days as it circles its star.",
+    "Welcome to GJ 3323 b, 17.5 light-years from Earth.",
+    "A year here lasts 5 Earth days as it circles a M4 star.",
     "Nobody knows yet whether it has air — only a handful of rocky exoplanets have been checked."
   ]
 }

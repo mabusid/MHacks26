@@ -58,3 +58,12 @@ describe('rulesFromRound', () => {
     expect(rulesFromRound(rules)).toEqual(rules);
   });
 });
+
+describe('estimated values cannot set a twist', () => {
+  it('drops thermal when the temperature is only estimated; radiation from an unknown atmosphere stays', () => {
+    const p = { ...FIXTURES.titan.profile, meanTempK: 167, surfacePressureBar: null };
+    expect(triggeredTwists(p)).toEqual(['radiation', 'thermal']);
+    expect(triggeredTwists(p, new Set(['meanTempK']))).toEqual(['radiation']);
+    expect(() => deriveRules(p, 'thermal', new Set(['meanTempK']))).toThrow(/not supported/);
+  });
+});

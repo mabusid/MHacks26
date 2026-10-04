@@ -108,23 +108,24 @@ await toBuild(host, 'moon');
 await step('only the host can lock in', () => rejects('guest lock', guest.conn.reducers.lockBuild({}), /Only the host/));
 
 let moonRound = 0n;
-await step("winning Moon base, locked in early → MISSION SUCCESS, every requirement ✓; an unfinished berm doesn't count", async () => {
+await step('winning Moon base (solar + batteries + ice drill), locked in early → MISSION SUCCESS, every requirement ✓', async () => {
   moonRound = A.rid();
   const ice = A.tiles().find(t => t.kind === 'ice' && !RING.includes(t.index))!.index;
   A.used.add(ice);
+  const lit = () => {
+    const i = A.tiles().find(t => t.kind === 'lit' && !RING.includes(t.index) && !A.used.has(t.index) && !A.pieces().some(p => p.index === t.index))!.index;
+    A.used.add(i);
+    return i;
+  };
   await host.conn.reducers.placePiece({ kind: 'ice_drill', index: ice });
-  await host.conn.reducers.placePiece({ kind: 'reactor', index: A.free() });
-  await guest.conn.reducers.placePiece({ kind: 'o2_tank', index: A.free() });
-  await guest.conn.reducers.placePiece({ kind: 'o2_tank', index: A.free() });
-  for (const i of RING.slice(0, 4)) await host.conn.reducers.startBerm({ index: i });
-  await until('4 berms dug', () => A.pieces().filter(p => p.kind === 'berm' && !p.pending).length === 4, 5000);
-  await guest.conn.reducers.startBerm({ index: RING[4] }); // still digging at lock time
+  for (let n = 0; n < 2; n++) await host.conn.reducers.placePiece({ kind: 'solar', index: lit() });
+  for (let n = 0; n < 6; n++) await guest.conn.reducers.placePiece({ kind: 'battery', index: A.free() });
+  for (let n = 0; n < 2; n++) await guest.conn.reducers.placePiece({ kind: 'o2_tank', index: A.free() });
+  for (const i of RING.slice(0, 4)) await host.conn.reducers.placePiece({ kind: 'berm', index: i });
   await host.conn.reducers.lockBuild({});
   await until('debrief', () => A.room().phase.tag === 'Debrief' && A.results(moonRound).length === 3);
   const rd = A.db.round.id.find(moonRound)!;
   if (rd.success !== true || A.results(moonRound).some(r => !r.pass)) throw new Error(JSON.stringify(A.results(moonRound)));
-  await new Promise(r => setTimeout(r, 2800));
-  if (!A.pieces().some(p => p.index === RING[4] && p.pending)) throw new Error('pending berm completed after lock');
   return A.results(moonRound).map(r => r.reason).join(' · ');
 });
 

@@ -26,10 +26,10 @@
       "num": 440,
       "flag": null,
       "unit": "K",
-      "status": "sourced",
+      "status": "estimated",
       "sourceLabel": "NASA Mercury Fact Sheet",
       "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/mercuryfact.html",
-      "note": "Average temperature 440 K (167 °C)"
+      "note": "Planet-wide average 440 K; the polar craters that hold ice are far colder"
     },
     {
       "field": "surfacePressureBar",
@@ -102,7 +102,7 @@
       "note": ""
     }
   ],
-  "twist": "thermal",
+  "twist": "radiation",
   "headline": "One full day on Mercury lasts 176 Earth days.",
   "scaleText": "57.9 million km from the Sun · 0.38× Earth’s width · 6.7× Earth’s sunlight",
   "because": [
@@ -118,8 +118,8 @@
     },
     {
       "kind": "twist",
-      "text": "It averages 440 K (167 °C), so the base needs cooling power.",
-      "field": "meanTempK"
+      "text": "With almost no atmosphere, nothing blocks the radiation.",
+      "field": "surfacePressureBar"
     }
   ],
   "funFacts": [

@@ -102,7 +102,7 @@
       "note": "Derived from mass 9.393 × 10²⁰ kg and mean radius ~470 km"
     }
   ],
-  "twist": "thermal",
+  "twist": "radiation",
   "headline": "A full day on Ceres lasts just 9 hours.",
   "scaleText": "413 million km from the Sun · 1/13 of Earth’s width · 13% of Earth’s sunlight",
   "because": [
@@ -118,8 +118,8 @@
     },
     {
       "kind": "twist",
-      "text": "It’s only about 167 K (−106 °C), so heating eats your power.",
-      "field": "meanTempK"
+      "text": "With only a whisper of atmosphere, plan for radiation.",
+      "field": "surfacePressureBar"
     }
   ],
   "funFacts": [

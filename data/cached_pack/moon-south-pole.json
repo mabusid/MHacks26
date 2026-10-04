@@ -26,10 +26,10 @@
       "num": 242.5,
       "flag": null,
       "unit": "K",
-      "status": "sourced",
+      "status": "estimated",
       "sourceLabel": "NASA Moon Fact Sheet",
       "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html",
-      "note": "Midpoint of the equatorial day–night range, 95–390 K"
+      "note": "Equatorial midpoint (95–390 K); the south-polar base is colder — not a measured site temperature"
     },
     {
       "field": "surfacePressureBar",

@@ -9,7 +9,7 @@ export default function BoardReadPanel(props: { rules: RoundRules; tiles: TileKi
   // ~35 ms; recompute only when the round changes.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const winners = useMemo(() => winningBuilds(rules, tiles, budget), [rulesKey, tiles.join(), budget]);
-  const board = pieces.map(p => ({ kind: p.kind as PieceKind, ...xy(p.index), pending: p.pending }));
+  const board = pieces.map(p => ({ kind: p.kind as PieceKind, ...xy(p.index) }));
   const read = boardRead(board, tiles, rules, budget, winners);
 
   return (

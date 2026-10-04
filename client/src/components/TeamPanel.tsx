@@ -1,13 +1,16 @@
 import { useState } from 'react';
+import { unlockAudio } from '../audio';
 import { MAX_MEMBERS } from '@overburden/shared';
 import { crewColor } from '../format';
 import LeaveButton from '../LeaveButton';
+import { useMute } from '../useMute';
 import type { RoomData } from '../useRoom';
 
 /** Left half of the split card: code, crew, open seats, leave. */
 export default function TeamPanel({ data }: { data: RoomData }) {
   const { room, members, me } = data;
   const [copied, setCopied] = useState(false);
+  const [muted, toggleMute] = useMute();
   if (!room || !me) return null;
 
   async function copy() {
@@ -39,7 +42,7 @@ export default function TeamPanel({ data }: { data: RoomData }) {
               {m.name}
               {m.identity.isEqual(me.identity) && <span className="muted"> (you)</span>}
             </span>
-            {room.host.isEqual(m.identity) && <span className="badge">host</span>}
+            {room.host.isEqual(m.identity) && <span className="badge">★ host</span>}
           </li>
         ))}
         {Array.from({ length: MAX_MEMBERS - members.length }, (_, i) => (
@@ -49,6 +52,16 @@ export default function TeamPanel({ data }: { data: RoomData }) {
         ))}
       </ul>
       <div className="team-foot">
+        <button
+          className={muted ? 'secondary sound-btn off' : 'secondary sound-btn'}
+          aria-pressed={!muted}
+          onClick={() => {
+            unlockAudio(); // a click: lets the browser play Mission Control later
+            toggleMute();
+          }}
+        >
+          {muted ? '🔇 Sound off' : '🔊 Sound on'}
+        </button>
         <LeaveButton />
       </div>
     </div>

@@ -1,6 +1,6 @@
 # Overburden — plan (simple)
 
-Co-op **learning game** for **four players**. An agent researches a **random real planet** (solar system or exoplanet) from public space data, and **that research sets the win criteria** — the requirements, their thresholds, which pieces work, and the mass budget all come from the planet's real numbers. The crew has **2:30** to build a base on a shared 2D grid that meets **three requirements**. There is no live score — the **voice assistant's hints** are the only feedback. The debrief ties the result back to the real science.
+Co-op **learning game** for **four players**. An agent researches a **random real planet** (solar system or exoplanet) from public space data, and **that research sets the win criteria** — the requirements, their thresholds, which pieces work, and the mass budget all come from the planet's real numbers. The crew has **1:30** to build a base on a shared grid that meets **three requirements**. There is no live score — the **voice assistant's hints** are the only feedback. The debrief ties the result back to the real science.
 
 **Pitch:** a fun way to touch research/space data that rarely gets attention — real planets give a sense of **scale and variety**.
 
@@ -16,9 +16,9 @@ Co-op **learning game** for **four players**. An agent researches a **random rea
 | | |
 | --- | --- |
 | Players | 4, co-op in one room, each on their own device |
-| Round length | ~3.5 min total (briefing ~20s, **build 2:30**, debrief ~20s) |
+| Round length | ~2 min total (briefing ~10s, **build 1:30**, debrief ~20s) |
 | Variety | Random real planet per round; **same loop, same timer, same pieces** — **research sets the win criteria** (thresholds, twist, usable pieces, mass budget) |
-| View | **2D** grid; background art changes per planet type |
+| View | Persistent **3D world** behind the HUD (React Three Fiber); the build board is an HTML grid tilted for depth (2.5D). See [design.md](./design.md) |
 | Authority | **SpacetimeDB** — shared state, reducers, subscriptions; clients render only |
 | Assistant | **Grok Voice** hints, same audio on every device (mutable); **research agent** runs during the lobby |
 
@@ -43,7 +43,7 @@ Co-op **learning game** for **four players**. An agent researches a **random rea
 | **Node service** | Node + TypeScript, WebSocket server | Holds `XAI_API_KEY`; runs the **research agent** and **one Grok Voice session per room**; broadcasts hint audio out. Connects to Spacetime with a **server identity**. |
 | **In-game AI** | [xAI Grok Voice](https://docs.x.ai/) (realtime voice) | Watches the grid (via a server-computed board read) and speaks fun facts early, then increasingly specific hints. Runs server-side so every device hears the same thing. |
 | **Research agent** | xAI chat API with tool calling, on the Node service | One provider, one key. Fetches planet data, maps it to the schema, streams progress, commits the round. |
-| **Frontend** | Vite + React + TypeScript; grid as **DOM/CSS grid** (no canvas) | 8×8 grid is small — DOM gives hover tooltips, click targets, and styling for free. Planet background via CSS art per planet type. |
+| **Frontend** | Vite + React + TypeScript; 3D world via `@react-three/fiber`; board as a **DOM/CSS grid** (tilted) | DOM keeps exact taps, labels, keyboard play, and tests; the 3D scene is decoration with a CSS fallback. |
 | **Research data** | NASA Exoplanet Archive (live) + checked-in solar-system JSON + NASA BVAD | See **Research sources**. |
 
 ---
@@ -53,7 +53,7 @@ Co-op **learning game** for **four players**. An agent researches a **random rea
 ```
 Lobby (create / join with code)  ← research agent runs here, in background
     → Briefing   (~10s)   automatic transition: planet + 3 one-line requirements, countdown
-    → Build      (2:30)   place pieces on shared grid, voice hints, no live score
+    → Build      (1:30)   place pieces on shared grid, voice hints, no live score
     → Evaluate   (instant) server formula
     → Debrief    (~20s)   per-requirement result, reason, the real fact behind it, sources
     → Rematch    (new planet)
@@ -61,7 +61,7 @@ Lobby (create / join with code)  ← research agent runs here, in background
 
 | Step | Behavior |
 | --- | --- |
-| **Room + code** | Host creates room; up to 4 join with a 4-letter code. No spectators in v1. |
+| **Room + code** | Host creates room; up to 4 join with a 4-letter code, during the lobby or the debrief (not mid-round). No spectators in v1. |
 | **Research** | Starts automatically on room create; next planet pre-researched during each debrief so rematch is instant. Host's **Start** is enabled once a round is committed. |
 | **Briefing** | Short automatic transition (~10 s countdown, host can skip); not counted against the build timer. The build starts on its own. |
 | **Build** | Timer runs server-side; ends at 0:00 (or host locks early). |
@@ -87,7 +87,7 @@ Crew size (**4**, one per player) and mission length (**30 sols**) are fixed so 
 | **Power** (always) | Insolation, dust, day length, temperature | Solar output per array; **night storage** needed (night band); **thermal load** added to the base load |
 | **Life support** (always) | BVAD crew rates; water/ice presence; atmosphere composition | Water & O₂ thresholds (from BVAD); whether the **ice drill** is usable (ice tiles exist); whether the **O₂ unit** needs water or uses CO₂ |
 | **Twist** (one) | Radiation dose, atmosphere, temperature, dust record | Which twist applies and its threshold (see below) |
-| **Mass budget** | All of the above | Cheapest winning build under these criteria × 1.25 (see **Evaluation**) |
+| **Mass budget** | All of the above | Cheapest winning build under these criteria × 1.15 (see **Evaluation**) |
 
 ### Twists (agent picks one from what its research triggers)
 
@@ -121,37 +121,42 @@ Mass is in **cargo units (CU)**. The **habitat** (2×2) is pre-placed at grid ce
 | Piece | Mass | Power | Gives | Placement | Planet data it depends on |
 | --- | --- | --- | --- | --- | --- |
 | **Solar array** | 1 | +3 × insolation (cap 2.0), day only | Power | Lit tiles | Insolation, dust |
-| **Battery** | 2 | — | Covers 2 power of night load per night band | Anywhere; needs ≥ 1 solar to charge | Night length |
-| **Reactor** (fission) | 10 | +6 flat, day and night | Power | Anywhere | — (the "far from the star" answer) |
-| **Water tank** | 2 | — | +6 water | Anywhere | — |
-| **O₂ tank** | 2 | — | +6 O₂ | Anywhere | — |
-| **Ice drill** | 2 | −2 | +18 water | **Ice tiles only** | Water/ice presence |
+| **Battery** | 2 | — | Covers 3 power of night load per night band | Anywhere; needs ≥ 1 solar to charge | Night length |
+| **Reactor** (fission) | 14 | +6 flat, day and night | Power | Anywhere | — (the "dark world" answer) |
+| **Water tank** | 4 | — | +6 water | Anywhere | — |
+| **O₂ tank** | 4 | — | +6 O₂ | Anywhere | — |
+| **Ice drill** | 2 | −2 | +12 water | **Ice tiles only** | Water/ice presence |
 | **O₂ unit** | 1 | −1 | +12 O₂; **uses 6 water** unless atmosphere is CO₂-rich | Anywhere | Atmosphere composition |
-| **Berm** (Overburden) | **0** | — | Radiation shielding | Orthogonally adjacent to habitat | Gravity sets build time |
+| **Berm** (Overburden) | 1 | — | Radiation shielding | Orthogonally adjacent to habitat | Radiation |
 
-**Build time:** all pieces place instantly except **berms**: hold for `2s + 2s × min(g / 9.8, 1)` (Moon ≈ 2.3s, Mars ≈ 2.8s).
+**Placement:** every piece, including berms, places with one click/tap (no press-and-hold anywhere).
 
 ### Core tradeoffs
 
-- **Ship it vs make it:** tanks are heavy but need no power; drill / O₂ unit are light but cost power.
-- **Mass vs time:** berms cost no mass but cost build time and tiles near the habitat.
-- **Solar vs reactor:** solar is cheap per CU but weak far from the star and needs batteries for long nights.
+- **Ship it vs make it:** tanks are heavy (4 CU) but need no power; drill / O₂ unit are light but cost power — worth it only where the planet has ice or CO₂ air.
+- **Solar vs reactor:** solar + batteries is cheap on bright worlds with short nights; the reactor (14 CU) wins only on dark or very long-night worlds.
 - **Grid placement:** drills need ice tiles (often shaded), solar needs lit tiles, berms compete for habitat-adjacent tiles.
 
-### Balance check (starting values)
+### Balance (tuned with the solver over all real planets)
 
-Cheapest winning build per planet should differ — this is what makes planets feel different.
+Constants were chosen by sweeping 288 combinations against every planet in the cached pack (each planet's real data, 30 tile layouts). Before tuning, one planet-blind build (reactor + tanks) won on **10/10** planets and the reactor was required on 10/10; after tuning, the best planet-blind build wins on **4–6/10** (the exoplanets share unmeasured defaults), there are **7 distinct cheapest builds**, and the reactor is required on **4/10**. Every planet stays winnable on 30/30 layouts.
 
-| Planet (twist from research) | Cheapest build | CU | Lesson |
+| Planet (twist) | Cheapest build | CU | What the data teaches |
 | --- | --- | --- | --- |
-| **Moon south pole** (radiation) | Reactor + ice drill + 2 O₂ tanks + 4 berms | 16 | 14-day night kills solar; polar ice in shadowed craters |
-| **Mars** (dust storms) | Reactor + O₂ unit (CO₂ air) + 2 water tanks | 15 | Make O₂ from the atmosphere (like NASA's MOXIE) |
-| **Titan** (thermal, 94 K → +2) | Reactor + 2 water tanks + 2 O₂ tanks | 18 | ~1% of Earth's sunlight; heating eats your power |
-| **Bright exoplanet** (insolation 1.5, radiation) | 1 solar + 4 batteries + tanks + 4 berms | 17 | Near a star with short nights, solar wins |
+| **Moon south pole** (radiation) | 2 solar + 6 batteries + ice drill + 2 O₂ tanks + 4 berms | 28 | Full sunlight but ~15-day nights → storage; ice in shadowed craters |
+| **Mercury** (radiation) | 1 solar + 6 batteries + ice drill + 2 O₂ tanks + 4 berms | 27 | 6.7× sunlight, 88-day nights; MESSENGER's polar ice |
+| **Mars** (dust) | Reactor + O₂ unit (CO₂ air) + 2 water tanks | 23 | Dust halves solar; make O₂ from the air (MOXIE) |
+| **Ceres** (radiation) | Reactor + ice drill + 2 O₂ tanks + 4 berms | 28 | 13% sunlight; Dawn's crater ice |
+| **Titan / Europa** (thermal) | Reactor + 2 water tanks + 2 O₂ tanks | 30 | ~1–4% sunlight and bitter cold |
+| **Bright exoplanets** (radiation) | 1–2 solar + 4 batteries + 3 water tanks + O₂ unit + 4 berms | 26–27 | Bright star, but no measured ice or CO₂ — ship water |
 
 ### Mass budget
 
-`budget = ceil(cheapest winning build × 1.25)`, clamped to **14–24 CU**. Every planet ends up equally tight (~25% slack). If the cheapest build is over 24 CU, redraw the planet.
+`budget = ceil(cheapest winning build × 1.15)`, clamped to **14–34 CU**. If the cheapest build is over 34 CU, redraw the planet.
+
+### Data integrity
+
+An **estimated** value can't set a twist (no thresholds from guesses) — except radiation from an unmeasured atmosphere, the honest plan-for-the-worst case. E.g. Ceres' temperature is a blackbody estimate, so it gets radiation, not thermal; the Moon's and Mercury's temperatures are equatorial/global averages, not polar-site values, so they're marked estimated.
 
 ---
 
@@ -191,9 +196,9 @@ solar     = Σ lit solar arrays · 3 · min(insolation, 2) · (dust ? 0.5 : 1)
 band      = night ≤ 24 h → 1 · ≤ 10 Earth days → 2 · longer → 3   (+1 if dust, max 3)
 
 Power      : reactor + solar ≥ load
-             AND batteries ≥ ceil(max(0, load − reactor) / 2) · band
+             AND batteries ≥ ceil(max(0, load − reactor) / 3) · band
              AND (batteries = 0 OR solar arrays ≥ 1)
-Water      : 6·water_tanks + 18·drills − (co2_atmosphere ? 0 : 6·o2_units) ≥ 12
+Water      : 6·water_tanks + 12·drills − (co2_atmosphere ? 0 : 6·o2_units) ≥ 12
 O₂         : 6·o2_tanks + 12·o2_units ≥ 12
 Radiation  : berms adjacent to habitat ≥ required (4 or 6, from researched dose)
 ```
@@ -202,7 +207,7 @@ Radiation  : berms adjacent to habitat ≥ required (4 or 6, from researched dos
 - **Board read** (computed by the Node service at each voice cue from public tables, using the same shared code):
   - **Diagnosis:** per-requirement status, the **worst-failing requirement, its shortfall, and the planet fact responsible** (e.g. "Power: night short by 4; night = 14 Earth days").
   - **Suggestion:** from the winnability enumeration, the winning build **closest to the current board** (fewest adds/removes, then least mass) → a short action list with tiles, e.g. `add ice_drill @ C6`, `remove solar @ F2`. Tiles = first valid free tile nearest the habitat.
-  - **Board summary:** pieces with coordinates, free ice / lit / habitat-adjacent tiles, mass used / remaining, pending berms.
+  - **Board summary:** pieces with coordinates, free ice / lit / habitat-adjacent tiles, mass used / remaining.
   - **Change since last cue:** requirements that flipped to passing, whether the board changed at all.
   - Players never see the board read directly — only what Mission Control says.
 - **Winnability check** (in `commit_round`): brute-force piece counts (solar 0–12, battery 0–9, reactor 0–2, each tank 0–4, drill 0–2, O₂ unit 0–2 → ~90k combos, trivial), confirm one fits the grid's tile constraints, compute cheapest cost, set the mass budget, or reject.
@@ -217,28 +222,26 @@ Radiation  : berms adjacent to habitat ≥ required (4 or 6, from researched dos
 | --- | --- |
 | **Session** | **One Grok Voice session per room, run on the Node service** (not in a browser). Survives host changes. Text in, audio out — no microphones. |
 | **What it looks at** | The **grid**: at every cue Node computes a fresh **board read** (diagnosis + suggestion + board summary + change since last cue) and sends it as one text message with the time left and the cue's mode. No tool calls needed. |
-| **When it speaks** | Scheduled cues from Spacetime, ~every 20 s, shifting from facts to hints (see schedule below). |
+| **When it speaks** | Six scheduled cues, ~every 12–15 s, shifting from facts to hints (see schedule below). |
 | **Output** | Node broadcasts Grok's audio to **all devices in the room** over WebSocket; transcript written to the `hint` table → **captions on every screen**. |
 | **Mute** | Local toggle per device (audio off, captions stay). Default on. |
 | **Grounding** | Never does math and never invents numbers — it only phrases the board read, facts, and tiles it was given. |
-| **Style** | ≤ 2 sentences. Hints name one requirement, the researched fact behind it, and (later) a piece + tile. |
+| **Style** | ≤ 2 sentences. Hints name one requirement and the researched fact behind it; only the final cue names **one** piece + tile. |
 | **Acknowledge progress** | If a requirement flipped to passing since the last cue, open with a short "Nice — power's covered." |
-| **No repeats** | If the board hasn't changed since the last hint, escalate one level instead of repeating. If audio is still playing when a cue fires, skip that cue. |
+| **No repeats, capped help** | If the board hasn't changed since the last hint, escalate one level instead of repeating — but never into an exact move before the final cue (the voice confirms reasoning, it doesn't solve the round). If audio is still playing when a cue fires, skip that cue. |
 | **All passing** | Encouragement + a fun fact, and "you can lock in early." |
 | **No API key / API down** | Node writes template lines (fun facts verbatim; hints from the board read) to the `hint` table on the same schedule; every device speaks them with browser `speechSynthesis` (still same audio everywhere, still mutable). |
 
-### Cue schedule (2:30 build)
+### Cue schedule (1:30 build)
 
 | Time left | Mode | Example |
 | --- | --- | --- |
-| **2:25** | Welcome + fun fact | "Welcome to the Moon's south pole. A single night here lasts about 14 Earth days." |
-| **2:05** | Fun fact | "The ice you're standing near sits in craters that haven't seen sunlight in billions of years — LCROSS confirmed it in 2009." |
-| **1:45** | Fun fact (ties to a requirement) | "With no atmosphere, radiation hits the surface at about 1.4 millisieverts a day." |
-| **1:30** | Hint — **nudge** (which system is weak) | "Your crew's going to get thirsty." |
-| **1:10** | Hint — **direction** (piece type + why) | "Water's short, and this planet has ice — something should be drilling." |
-| **0:50** | Hint — **direction** | "Nights here are two weeks long; solar alone won't carry you." |
-| **0:30** | Hint — **exact** (piece + tile) | "Put an ice drill on C6." |
-| **0:15** | Hint — **exact** / last call | "Two berms next to the habitat — D3 and E3 — and you're done." |
+| **1:25** | Welcome + fun fact | "Welcome to the Moon's south pole, where one night lasts about two Earth weeks." |
+| **1:12** | Fun fact | "LCROSS crashed into a shadowed crater here and found water in the plume." |
+| **1:00** | Hint — **nudge** (which system is weak) | "Your crew is going to run short on water or air." |
+| **0:45** | Hint — **direction** (problem + researched fact) | "Water short by 12 units. Water ice sits in permanently shadowed craters." |
+| **0:30** | Hint — **direction** | "Daytime power short by 4. A lunar night lasts ~15 Earth days, so solar alone can't carry you." |
+| **0:15** | Hint — **exact** (one piece + tile) | "Try an ice drill on C6." |
 
 Fun facts come from the research agent (see `write_card`), so they're sourced and fact-checked like everything else — and Grok speaks them **verbatim**. Hints: the server writes an accurate template from the board read and Grok phrases it (same facts, tiles, and numbers); if Grok is unavailable the template itself is the caption and each browser speaks it. Hint levels are a floor: "no repeats" escalates when the same level would repeat.
 
@@ -327,7 +330,7 @@ Runs in the **lobby** (and during debrief for the next round) so players never w
 | Insolation (Earth = 1) | Solar output | Fact Sheet (solar irradiance / 1361 W/m²) | `pl_insol` |
 | Night length | Night band | Fact Sheet (day length / 2) | **Estimated:** band 2 — rotation unknown; close-in planets may be tidally locked |
 | Temperature | Thermal twist & load | Fact Sheet mean surface temp | `pl_eqt` |
-| Gravity | Berm build time | Fact Sheet | Derived: `pl_bmasse / pl_rade²` × 9.8; **estimated** (assume Earth density) if mass is missing, an upper limit (`pl_bmasselim = 1`), or not a direct measurement (`pl_bmassprov` ≠ "Mass") |
+| Gravity | Planet facts (display only) | Fact Sheet | Derived: `pl_bmasse / pl_rade²` × 9.8; **estimated** (assume Earth density) if mass is missing, an upper limit (`pl_bmasselim = 1`), or not a direct measurement (`pl_bmassprov` ≠ "Mass") |
 | Atmosphere (pressure, CO₂-rich?) | Radiation twist, O₂ unit mode | Fact Sheet | **Estimated:** unknown → no usable atmosphere |
 | Water/ice | Ice tiles | Curated per body with mission source (e.g. LCROSS, MESSENGER, Dawn) | **Estimated:** unknown → no ice |
 | Surface radiation dose | Radiation twist threshold (4 vs 6 berms) | Curated with mission source (Moon ~1.4 mSv/day — Chang'e 4 LND; Mars ~0.7 mSv/day — Curiosity RAD; Europa: far higher, Galileo) | **Estimated:** unknown → 4 berms |
@@ -367,8 +370,8 @@ Each stored requirement row: `{ round_id, kind: power | life_support | twist, th
 
 | Topic | Notes |
 | --- | --- |
-| Tables | Public: `room`, `member`, `round`, `planet_parameter`, `requirement`, `tile`, `piece`, `cursor`, `research_log`, `hint`, `result`. Private: `server_config`. Scheduled: build end, `hint_cue`, berm completion, room TTL |
-| Player reducers | `create_room`, `join_room`, `start_round`, `begin_build`, `place_piece`, `remove_piece`, `start_berm`, `cancel_berm`, `move_cursor`, `lock_build`, `rematch` |
+| Tables | Public: `room`, `member`, `round`, `planet_parameter`, `requirement`, `tile`, `piece`, `cursor`, `research_log`, `hint`, `result`. Private: `server_config`. Scheduled: build end, `hint_cue`, room TTL |
+| Player reducers | `create_room`, `join_room`, `start_round`, `begin_build`, `place_piece`, `remove_piece`, `move_cursor`, `lock_build`, `rematch` |
 | Server-only reducers | `commit_round`, `log_research`, `post_hint` (publisher or registered Node service identity); `set_server_identity` (publisher only) |
 | Timer | One-shot scheduled row ends the build at 0:00 and runs evaluation; clients count down locally from `build_ends_at` |
 | Lifecycle | `client_connected` / `client_disconnected` mark members online/offline |

@@ -15,7 +15,7 @@ flowchart LR
   end
   subgraph spacetime [SpacetimeDB_2_module]
     ST[Tables_and_reducers]
-    SCH[Scheduled_rows_build_end_hint_cues_berms_TTL]
+    SCH[Scheduled_rows_build_end_hint_cues_TTL]
   end
   subgraph node [Node_service]
     RES[Research_agent_xAI_chat_tools]
@@ -58,7 +58,7 @@ Shared eval logic lives in `packages/shared` and is **imported by the Spacetime 
 | **Server identity** | `init` stores the publisher identity in `server_config.owner`. Server-only reducers accept the **owner or** a registered `server_config.server` (`set_server_identity`, owner only). In dev the Node service uses the local CLI login (`spacetime login show --token`) — the publisher — so no registration step; in production set `SPACETIME_TOKEN`. |
 | **Enums** | Declare variants in **PascalCase** (`'Lobby'`): generated client bindings use the canonical PascalCase tag, so module and client then compare identical strings. |
 | **Bindings** | `spacetime.json` generates two targets: `client/src/module_bindings` and `server/src/module_bindings`. |
-| **Timers** | **Scheduled tables, not polling.** One-shot `ScheduleAt` rows for: build end (`build_ends_at`), hint cues (8 per round — see Plan.md cue schedule), berm completion, room TTL. Scheduled reducers run as the module identity; clients calling them get "No such procedure" (verified) — keep a `ctx.sender.equals(ctx.databaseIdentity)` guard anyway. Scheduled table option: `scheduled: (): any => reducerName`. |
+| **Timers** | **Scheduled tables, not polling.** One-shot `ScheduleAt` rows for: build end (`build_ends_at`), hint cues (8 per round — see Plan.md cue schedule), room TTL. Scheduled reducers run as the module identity; clients calling them get "No such procedure" (verified) — keep a `ctx.sender.equals(ctx.databaseIdentity)` guard anyway. Scheduled table option: `scheduled: (): any => reducerName`. |
 | **Countdown** | Clients render the countdown locally from `round.build_ends_at`; the server is authoritative only at the scheduled end. |
 | **Determinism** | Use **`ctx.random`** (verified: `ctx.random()`, `ctx.random.integerInRange(a, b)`) for tile layout — stdlib RNG/clocks are unavailable in modules. |
 | **Procedures** (HTTP from module) | Available but **not used** — all external fetches stay in Node, where the LLM loop and fetch cache live. |
@@ -146,7 +146,7 @@ In `packages/shared`:
 - **Board read:** `boardRead(board, profile, requirements, budget, prevRead?)` →
   - diagnosis (per-requirement status, worst failing, shortfall, responsible parameter field)
   - suggestion: from the winnability enumeration, the winning count-vector with the **fewest adds/removes** from the current board (tie → least mass), mapped to tiles (first valid free tile nearest the habitat, A–H × 1–8)
-  - board summary text (pieces + coordinates, free ice/lit/adjacent tiles, mass left, pending berms)
+  - board summary text (pieces + coordinates, free ice/lit/adjacent tiles, mass left)
   - change since last read (newly passing requirements, board unchanged?)
 - **Winnability:** brute-force counts (~90k combos) + tile feasibility (ice tiles, lit tiles, ≤ 8 habitat-adjacent tiles) → cheapest CU → `budget = clamp(ceil(min × 1.25), 14, 24)` or `reject`.
 - Seeded PRNG + tile generator (12 shaded, 4 ice; polar bodies put ice inside shade).
@@ -219,15 +219,15 @@ Built per [design.md](./design.md) (redesign after first review): base-scene SVG
 - `piece` table; `cursor` table (one row per member).
 - Reducers: `place_piece`, `remove_piece` (refund), `move_cursor` (client throttles ~15/s).
 - Validation: phase `build`, budget, tile rules (lit / ice / habitat-adjacent), occupancy.
-- **Berms (server-timed):** `start_berm(tile)` inserts a `pending` berm + scheduled completion at `now + hold(g)`; `cancel_berm` on release deletes it. The scheduled reducer finalizes it. Client shows a progress ring.
+- **Berms:** placed with `place_piece` like every other piece (one click, 1 CU, must touch the habitat). The original press-and-hold dig (`start_berm` / `cancel_berm`, gravity-scaled timer) was removed in the UI overhaul.
 - React **CSS grid** 8×8: tile classes, piece icons, hover stats from `packages/shared` + round parameters.
 
 ### Checkpoint 5 (acceptance #1 complete)
 
-- [ ] Four tabs: place/remove syncs; cursors visible; invalid placement shows the `SenderError` message; releasing a berm early cancels it (manual — see README).
-- [x] `pnpm check:phase5` (11 checks): phase gate, tile rules, budget, shared removal, berm dig timing (~2.3 s on the Moon) / cancel / only-the-digger-cancels, cursor sync + clamping + hiding, cleanup on leave.
+- [ ] Four tabs: place/remove syncs; cursors visible; invalid placement shows the `SenderError` message (manual — see README).
+- [x] `pnpm check:phase5`: phase gate, tile rules, budget, shared removal, one-click berms (habitat-adjacent, occupy their tile), cursor sync + clamping + hiding, cleanup on leave.
 
-Notes: cursors are continuous grid coordinates (0–8), throttled to ~15/s client-side; pending berms occupy their tile and count toward mass but not shielding; a berm's completion is a scheduled `berm_done` row (cancel deletes it); offline members' cursors are hidden.
+Notes: cursors are continuous grid coordinates (0–8), throttled to ~15/s client-side; offline members' cursors are hidden.
 
 ---
 

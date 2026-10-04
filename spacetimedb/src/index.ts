@@ -2,7 +2,7 @@ import { schema, table, t, SenderError, type InferSchema, type ReducerCtx } from
 import { ScheduleAt, Timestamp, type Identity } from 'spacetimedb';
 import {
   BRIEFING_SECONDS, BUILD_SECONDS, GRID_SIZE, MAX_MEMBERS, PIECES, PIECE_KINDS, ROOM_TTL_SECONDS, PARAM_FIELDS, ROOM_CODE_ALPHABET, ROOM_CODE_LENGTH, TWISTS,
-  bermHoldMs, countBoard, deriveRules, describeRequirements, evaluate, generateTiles, normalizeRoomCode, placementError, profileFromParams,
+  countBoard, deriveRules, describeRequirements, evaluate, generateTiles, normalizeRoomCode, placementError, profileFromParams,
   rulesFromRound, solveRound, validateName, xy, type ParamRow, type PieceKind, type RequirementKind, type TileKind, type Twist,
 } from '@overburden/shared';
 
@@ -143,9 +143,6 @@ const piece = table(
     kind: t.string(),
     index: t.u8(),
     placedBy: t.identity(),
-    /** Berm still being dug: occupies the tile, doesn't count until done. */
-    pending: t.bool(),
-    completesAt: t.option(t.timestamp()),
   }
 );
 
@@ -202,16 +199,6 @@ const cursor = table(
   }
 );
 
-// Completes a berm when its hold time has passed (cancelled if the player lets go early).
-const bermDone = table(
-  { name: 'berm_done' },
-  {
-    scheduledId: t.u64().primaryKey().autoInc(),
-    scheduledAt: t.scheduleAt(),
-    pieceId: t.u64(),
-  }
-);
-
 // One-shot schedule that starts the build when the briefing countdown runs out.
 const buildStart = table(
   { name: 'build_start' },
@@ -246,7 +233,7 @@ const ParamInput = t.object('ParamInput', {
 const BecauseInput = t.object('BecauseInput', { kind: t.string(), text: t.string(), field: t.string() });
 
 const spacetimedb = schema({
-  serverConfig, session, room, member, round, planetParameter, requirement, tile, researchLog, piece, hint, result, cursor, bermDone, buildStart, buildEnd, roomCleanup,
+  serverConfig, session, room, member, round, planetParameter, requirement, tile, researchLog, piece, hint, result, cursor, buildStart, buildEnd, roomCleanup,
 });
 export default spacetimedb;
 
@@ -406,7 +393,8 @@ export const joinRoom = spacetimedb.reducer({ code: t.string(), name: t.string()
     if (existing.name !== clean) ctx.db.member.identity.update({ ...existing, name: clean });
     return;
   }
-  if (r.phase.tag !== 'Lobby') throw new SenderError('That game has already started');
+  // Joins are open in the lobby and the debrief, so late friends get in before the next planet.
+  if (r.phase.tag !== 'Lobby' && r.phase.tag !== 'Debrief') throw new SenderError('Round in progress — join at the debrief');
   if (membersOf(ctx, r.id).length >= MAX_MEMBERS) throw new SenderError(`Room is full (${MAX_MEMBERS} players)`);
 
   leaveCurrentRoom(ctx, ctx.sender);
@@ -464,7 +452,8 @@ export const commitRound = spacetimedb.reducer(
     let profile, rules;
     try {
       profile = profileFromParams(args.planetName, rows);
-      rules = deriveRules(profile, twist);
+      // Estimated values can't set a twist (Plan.md → Data integrity).
+      rules = deriveRules(profile, twist, new Set(rows.filter(r => r.status === 'estimated').map(r => r.field)));
     } catch (e) {
       throw new SenderError(e instanceof Error ? e.message : String(e));
     }
@@ -586,8 +575,8 @@ export const autoStartBuild = spacetimedb.reducer({ onSchedule: buildStart }, { 
 });
 
 /**
- * Build → debrief. Shared by the timer and the host's Lock in: cancels pending schedules, scores the board
- * (pending berms don't count), and writes one result row per requirement. No-op if already finished.
+ * Build → debrief. Shared by the timer and the host's Lock in: cancels the pending timer, scores the board,
+ * and writes one result row per requirement. No-op if already finished.
  */
 function finishBuild(ctx: Ctx, roundId: bigint, runningJobId?: bigint) {
   const rd = ctx.db.round.id.find(roundId);
@@ -596,10 +585,7 @@ function finishBuild(ctx: Ctx, roundId: bigint, runningJobId?: bigint) {
     if (job.roundId === rd.id && job.scheduledId !== runningJobId) ctx.db.buildEnd.scheduledId.delete(job.scheduledId);
   }
   const board = [...ctx.db.piece.roundId.filter(rd.id)];
-  const pendingIds = new Set(board.filter(p => p.pending).map(p => p.id));
-  for (const job of [...ctx.db.bermDone.iter()]) if (pendingIds.has(job.pieceId)) ctx.db.bermDone.scheduledId.delete(job.scheduledId);
-
-  const counts = countBoard(board.map(p => ({ kind: p.kind as PieceKind, ...xy(p.index), pending: p.pending })));
+  const counts = countBoard(board.map(p => ({ kind: p.kind as PieceKind, ...xy(p.index) })));
   const evaluation = evaluate(counts, rulesFromRound(rd));
   for (const req of Object.values(evaluation.requirements)) {
     ctx.db.result.insert({ id: 0n, roundId: rd.id, kind: req.kind, pass: req.pass, reason: req.reason, fact: req.fact ?? '' });
@@ -676,44 +662,16 @@ function checkPlacement(ctx: Ctx, roundId: bigint, budget: number, kind: PieceKi
 export const placePiece = spacetimedb.reducer({ kind: t.string(), index: t.u8() }, (ctx, { kind, index }) => {
   const rd = requireBuilding(ctx);
   if (!(PIECE_KINDS as readonly string[]).includes(kind)) throw new SenderError(`Unknown piece "${kind}"`);
-  if (kind === 'berm') throw new SenderError('Berms are dug: press and hold');
   if (kind === 'ice_drill' && !rd.iceAvailable) throw new SenderError('No ice on this planet');
   checkPlacement(ctx, rd.id, rd.massBudget, kind as PieceKind, index);
-  ctx.db.piece.insert({ id: 0n, roundId: rd.id, kind, index, placedBy: ctx.sender, pending: false, completesAt: undefined });
+  ctx.db.piece.insert({ id: 0n, roundId: rd.id, kind, index, placedBy: ctx.sender });
 });
 
 export const removePiece = spacetimedb.reducer({ index: t.u8() }, (ctx, { index }) => {
   const rd = requireBuilding(ctx);
   const target = boardOf(ctx, rd.id).find(p => p.index === index);
   if (!target) throw new SenderError('Nothing to remove there');
-  if (target.pending) throw new SenderError('That berm is still being dug');
   ctx.db.piece.id.delete(target.id);
-});
-
-/** Press: starts digging. The berm completes after the gravity-based hold time unless cancelled. */
-export const startBerm = spacetimedb.reducer({ index: t.u8() }, (ctx, { index }) => {
-  const rd = requireBuilding(ctx);
-  checkPlacement(ctx, rd.id, rd.massBudget, 'berm', index);
-  const at = ctx.timestamp.microsSinceUnixEpoch + BigInt(bermHoldMs(rd.gravity)) * 1000n;
-  const pc = ctx.db.piece.insert({
-    id: 0n, roundId: rd.id, kind: 'berm', index, placedBy: ctx.sender, pending: true, completesAt: new Timestamp(at),
-  });
-  ctx.db.bermDone.insert({ scheduledId: 0n, scheduledAt: ScheduleAt.time(at), pieceId: pc.id });
-});
-
-/** Release early: abandons the dig (only the player digging it can cancel). */
-export const cancelBerm = spacetimedb.reducer({ index: t.u8() }, (ctx, { index }) => {
-  const rd = requireBuilding(ctx);
-  const target = boardOf(ctx, rd.id).find(p => p.index === index && p.pending && p.placedBy.equals(ctx.sender));
-  if (!target) return; // already finished, or someone else's
-  for (const job of [...ctx.db.bermDone.iter()]) if (job.pieceId === target.id) ctx.db.bermDone.scheduledId.delete(job.scheduledId);
-  ctx.db.piece.id.delete(target.id);
-});
-
-export const finishBerm = spacetimedb.reducer({ onSchedule: bermDone }, { job: bermDone.rowType }, (ctx, { job }) => {
-  if (!ctx.sender.equals(ctx.databaseIdentity)) throw new SenderError('Scheduled only');
-  const pc = ctx.db.piece.id.find(job.pieceId);
-  if (pc && pc.pending) ctx.db.piece.id.update({ ...pc, pending: false, completesAt: undefined });
 });
 
 /** Throttled by the client (~15/s). x, y in grid units; visible=false when the pointer leaves the grid. */

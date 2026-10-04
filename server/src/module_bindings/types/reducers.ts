@@ -7,7 +7,6 @@ import { type Infer as __Infer } from "spacetimedb";
 
 // Import all reducer arg schemas
 import BeginBuildReducer from "../begin_build_reducer";
-import CancelBermReducer from "../cancel_berm_reducer";
 import CommitRoundReducer from "../commit_round_reducer";
 import CreateRoomReducer from "../create_room_reducer";
 import JoinRoomReducer from "../join_room_reducer";
@@ -20,11 +19,9 @@ import PostHintReducer from "../post_hint_reducer";
 import RematchReducer from "../rematch_reducer";
 import RemovePieceReducer from "../remove_piece_reducer";
 import SetServerIdentityReducer from "../set_server_identity_reducer";
-import StartBermReducer from "../start_berm_reducer";
 import StartRoundReducer from "../start_round_reducer";
 
 export type BeginBuildParams = __Infer<typeof BeginBuildReducer>;
-export type CancelBermParams = __Infer<typeof CancelBermReducer>;
 export type CommitRoundParams = __Infer<typeof CommitRoundReducer>;
 export type CreateRoomParams = __Infer<typeof CreateRoomReducer>;
 export type JoinRoomParams = __Infer<typeof JoinRoomReducer>;
@@ -37,6 +34,5 @@ export type PostHintParams = __Infer<typeof PostHintReducer>;
 export type RematchParams = __Infer<typeof RematchReducer>;
 export type RemovePieceParams = __Infer<typeof RemovePieceReducer>;
 export type SetServerIdentityParams = __Infer<typeof SetServerIdentityReducer>;
-export type StartBermParams = __Infer<typeof StartBermReducer>;
 export type StartRoundParams = __Infer<typeof StartRoundReducer>;
 

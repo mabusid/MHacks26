@@ -18,9 +18,9 @@ const input = (mode: Parameters<typeof templateHint>[0]['mode'], read = boardRea
 });
 
 describe('cue schedule', () => {
-  it('runs facts first, then nudge → direction → exact, inside 2:30', () => {
-    expect(CUES.map(c => c.mode)).toEqual(['fact', 'fact', 'fact', 'nudge', 'direction', 'direction', 'exact', 'exact']);
-    expect(CUES.every(c => c.secondsLeft > 0 && c.secondsLeft < 150)).toBe(true);
+  it('runs facts first, then nudge → direction, with one exact move at the end, inside 1:30', () => {
+    expect(CUES.map(c => c.mode)).toEqual(['fact', 'fact', 'nudge', 'direction', 'direction', 'exact']);
+    expect(CUES.every(c => c.secondsLeft > 0 && c.secondsLeft < 90)).toBe(true);
   });
 });
 
@@ -33,7 +33,7 @@ describe('templateHint', () => {
     expect(templateHint(input('direction'))).toMatch(/^Daytime power short by 4.*lunar night/);
   });
   it('exact names pieces and tiles from the suggestion', () => {
-    expect(templateHint(input('exact'))).toMatch(/Try a reactor on [A-H][1-8]/);
+    expect(templateHint(input('exact'))).toMatch(/Try (a|an) [a-z₂O ]+ on [A-H][1-8]\.$/);
     expect(templateHint(input('exact'))).not.toMatch(/o₂/);
   });
   it('acknowledges progress, and says lock in when everything passes', () => {
@@ -47,9 +47,10 @@ describe('templateHint', () => {
 });
 
 describe('effectiveMode', () => {
-  it('escalates when the board has not changed since the last hint', () => {
+  it('escalates when the board has not changed, but never into an exact move early', () => {
     expect(effectiveMode('nudge', false, 'nudge')).toBe('direction');
-    expect(effectiveMode('direction', false, 'direction')).toBe('exact');
+    expect(effectiveMode('direction', false, 'direction')).toBe('direction');
+    expect(effectiveMode('exact', false, 'direction')).toBe('exact');
     expect(effectiveMode('direction', true, 'direction')).toBe('direction');
     expect(effectiveMode('fact', false, 'exact')).toBe('fact');
     expect(effectiveMode('nudge', false, 'fact')).toBe('nudge');

@@ -2,13 +2,13 @@
 
 import {
   BATTERY_COVERS, DRILL_WATER_UNITS, O2_TANK_UNITS, O2_UNIT_O2, O2_UNIT_WATER_USE, PIECES, REACTOR_OUTPUT,
-  WATER_TANK_UNITS, bermHoldMs, type PieceKind,
+  WATER_TANK_UNITS, type PieceKind,
 } from './pieces';
 import type { RoundRules } from './rules';
 
 const fmt = (n: number) => (n >= 10 || Number.isInteger(n) ? String(Math.round(n * 10) / 10) : n.toFixed(2));
 
-export function pieceEffect(kind: PieceKind, r: RoundRules, gravity: number): string {
+export function pieceEffect(kind: PieceKind, r: RoundRules): string {
   switch (kind) {
     case 'solar':
       return `+${fmt(r.solarPerArray)} power by day · sunlit tiles`;
@@ -27,6 +27,6 @@ export function pieceEffect(kind: PieceKind, r: RoundRules, gravity: number): st
         ? `+${O2_UNIT_O2} O₂ from the CO₂ air · −${PIECES.o2_unit.draw} power`
         : `+${O2_UNIT_O2} O₂ · uses ${O2_UNIT_WATER_USE} water · −${PIECES.o2_unit.draw} power`;
     case 'berm':
-      return `Shielding · free · hold ${(bermHoldMs(gravity) / 1000).toFixed(1)} s next to the habitat`;
+      return 'Radiation shielding · next to the habitat';
   }
 }

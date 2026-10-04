@@ -88,32 +88,32 @@ const cue = async (n: number, voice = 'template') => {
 };
 
 await step('template hints read the grid: empty board → nudge names the weak system (no numbers)', async () => {
-  const out = await cue(3);
+  const out = await cue(2);
   if (out.mode !== 'nudge' || /\d/.test(out.text) || out.voiced) throw new Error(JSON.stringify(out));
-  await until('caption', () => hint(3)?.text === out.text);
+  await until('caption', () => hint(2)?.text === out.text);
   return out.text;
 });
 
 await step('next cue gives the reason plus the researched fact (direction)', async () => {
-  const out = await cue(4);
+  const out = await cue(3);
   if (out.mode !== 'direction' || !/short by/.test(out.text)) throw new Error(JSON.stringify(out));
   return out.text;
 });
 
-await step('nothing changed since that hint → the next one escalates to exact pieces and tiles', async () => {
-  const out = await cue(5); // scheduled "direction" again
-  if (out.mode !== 'exact' || !/Try (a|an) [a-z₂ ]+ on [A-H][1-8]/.test(out.text)) throw new Error(JSON.stringify(out));
+await step('help is capped: an unchanged board does NOT escalate to an exact move before the final cue', async () => {
+  const out = await cue(4); // scheduled "direction"; old rules would have escalated to exact
+  if (out.mode !== 'direction' || /Try (a|an) /.test(out.text)) throw new Error(JSON.stringify(out));
   return out.text;
 });
 
-await step('the crew follows the hint → the next hint acknowledges progress', async () => {
+await step('the crew acts → the final cue acknowledges progress and names exactly one move', async () => {
   const tiles = [...db.tile.iter()].filter(t => t.roundId === room().currentRoundId).sort((a, b) => a.index - b.index);
   const free = tiles.find(t => t.kind === 'shaded' && ![19, 20, 26, 29, 34, 37, 43, 44].includes(t.index))!.index;
   await host.conn.reducers.placePiece({ kind: 'reactor', index: free });
-  for (const i of [19, 20, 26, 29]) await host.conn.reducers.startBerm({ index: i });
-  await until('berms dug', () => [...db.piece.iter()].filter(p => p.roundId === room().currentRoundId && p.kind === 'berm' && !p.pending).length === 4, 5000);
-  const out = await cue(6);
-  if (!/^Nice — /.test(out.text)) throw new Error(JSON.stringify(out));
+  for (const i of [19, 20, 26, 29]) await host.conn.reducers.placePiece({ kind: 'berm', index: i });
+  await until('pieces placed', () => [...db.piece.iter()].filter(p => p.roundId === room().currentRoundId).length === 5);
+  const out = await cue(5);
+  if (out.mode !== 'exact' || !/^Nice — /.test(out.text) || (out.text.match(/ on [A-H][1-8]/g) ?? []).length !== 1) throw new Error(JSON.stringify(out));
   return out.text;
 });
 
@@ -128,7 +128,7 @@ if (health.voice) {
 
   await step('Grok phrases a grid hint: audio + transcript caption', async () => {
     const before = audioBytes;
-    const out = await cue(7, 'grok');
+    const out = await cue(3, 'grok');
     if (!out.voiced || audioBytes - before < 24_000 || !out.text) throw new Error(`${JSON.stringify(out)} · ${audioBytes - before} bytes`);
     return `"${out.text}" · ${((audioBytes - before) / 48_000).toFixed(1)} s`;
   });

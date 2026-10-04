@@ -7,26 +7,25 @@ import MissionControlBar from '../components/MissionControlBar';
 import Palette from '../components/Palette';
 import PlanetCard from '../components/PlanetCard';
 import RequirementList from '../components/RequirementList';
-import { planetTheme } from '../format';
 import LeaveButton from '../LeaveButton';
 import { reducers } from '../module_bindings';
 import { PALETTE } from '../pieceArt';
 import type { RoomData } from '../useRoom';
 import { clock, useSecondsLeft } from '../useSecondsLeft';
 
-/** Build screen (docs/design.md): timer top center, grid + palette left, requirements right, Mission Control bottom. */
+/** Build screen (docs/design.md → Build): top bar · board + palette · requirements rail · Mission Control. */
 export default function Build({ data }: { data: RoomData }) {
-  const { current, requirements, params, tiles, pieces, cursors, members, me, isHost } = data;
+  const { current, requirements, params, tiles, pieces, cursors, members, me, isHost, room } = data;
   const left = useSecondsLeft(current?.buildEndsAt?.microsSinceUnixEpoch);
   const [showFacts, setShowFacts] = useState(false);
+  const [confirmLock, setConfirmLock] = useState(false);
   const [tool, setTool] = useState<Tool>('solar');
+  const [hoverInfo, setHoverInfo] = useState<string>();
   const [toast, setToast] = useState<string>();
   const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const place = useReducer(reducers.placePiece);
   const remove = useReducer(reducers.removePiece);
-  const startBerm = useReducer(reducers.startBerm);
-  const cancelBerm = useReducer(reducers.cancelBerm);
   const moveCursor = useReducer(reducers.moveCursor);
   const lock = useReducer(reducers.lockBuild);
 
@@ -36,7 +35,7 @@ export default function Build({ data }: { data: RoomData }) {
     toastTimer.current = setTimeout(() => setToast(undefined), 2500);
   }, []);
 
-  // Keyboard: 1–8 pick a piece, R = remove.
+  // Keyboard: 1–8 pick a piece, R = remove (arrows/Enter on the board itself).
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.target instanceof HTMLInputElement) return;
@@ -48,25 +47,44 @@ export default function Build({ data }: { data: RoomData }) {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  if (!current || !me) return null;
-  const rules = rulesFromRound(current);
+  // Mass flashes when it changes so the budget is noticed without reading.
   const massUsed = pieces.reduce((m, p) => m + PIECES[p.kind as PieceKind].mass, 0);
+  const [massFlash, setMassFlash] = useState(false);
+  const prevMass = useRef(massUsed);
+  useEffect(() => {
+    if (prevMass.current === massUsed) return;
+    prevMass.current = massUsed;
+    setMassFlash(true);
+    const t = setTimeout(() => setMassFlash(false), 400);
+    return () => clearTimeout(t);
+  }, [massUsed]);
+
+  if (!current || !me || !room) return null;
+  const rules = rulesFromRound(current);
   const massLeft = current.massBudget - massUsed;
   const tileKinds = tiles.map(t => t.kind as TileKind);
+  const host = members.find(m => room.host.isEqual(m.identity));
+  const urgent = left !== undefined && left <= 30;
 
   return (
-    <div className={`game ${planetTheme(current)}`}>
+    <div className="game">
       <header className="game-top">
-        <span className="game-planet">
-          {current.planetName}
+        <div className="game-context">
+          <span className="game-planet">{current.planetName}</span>
+          {host && <span className="host-chip">★ {host.name}</span>}
           <span className="game-leave">
             <LeaveButton />
           </span>
+        </div>
+        <span className={urgent ? 'game-timer urgent' : 'game-timer'} role="timer" aria-label={`${left ?? 0} seconds left`}>
+          {clock(left ?? 0)}
         </span>
-        <span className={left !== undefined && left <= 30 ? 'game-timer urgent' : 'game-timer'}>{clock(left ?? 0)}</span>
-        <span className={massLeft < 0 ? 'game-mass over' : 'game-mass'}>
-          {massUsed} / {current.massBudget} CU
-        </span>
+        <div className={`mass ${massLeft < 0 ? 'over' : ''} ${massFlash ? 'flash' : ''}`} aria-label={`Mass ${massUsed} of ${current.massBudget} cargo units`}>
+          <div className="mass-bar">
+            <div className="mass-fill" style={{ width: `${Math.min(100, (massUsed / current.massBudget) * 100)}%` }} />
+          </div>
+          <span className="mass-text">{massLeft < 0 ? `over by ${-massLeft} CU` : `${massUsed} / ${current.massBudget} CU`}</span>
+        </div>
       </header>
 
       <main className="game-board">
@@ -81,9 +99,8 @@ export default function Build({ data }: { data: RoomData }) {
             massLeft={massLeft}
             onPlace={i => place({ kind: tool, index: i }).catch(showError)}
             onRemove={i => remove({ index: i }).catch(showError)}
-            onDigStart={i => startBerm({ index: i }).catch(showError)}
-            onDigEnd={i => cancelBerm({ index: i }).catch(() => undefined)}
             onCursor={(x, y, visible) => moveCursor({ x, y, visible }).catch(() => undefined)}
+            onInfo={setHoverInfo}
           />
         ) : (
           <p className="muted">Loading terrain…</p>
@@ -91,33 +108,39 @@ export default function Build({ data }: { data: RoomData }) {
         <div className="toast-slot" role="status" aria-live="polite">
           {toast && <p className="toast">{toast}</p>}
         </div>
-        <Palette tool={tool} onTool={setTool} rules={rules} gravity={current.gravity} massLeft={massLeft} />
+        <Palette tool={tool} onTool={setTool} rules={rules} massLeft={massLeft} hoverInfo={hoverInfo} />
       </main>
 
       <aside className="game-side">
         <p className="label">Requirements</p>
-        <RequirementList requirements={requirements} />
+        <RequirementList requirements={requirements} params={params} />
         <button className="secondary small-btn" onClick={() => setShowFacts(s => !s)}>
           {showFacts ? 'Hide planet facts' : 'Planet facts & sources'}
         </button>
         {showFacts && <PlanetCard round={current} params={params} />}
-        {import.meta.env.DEV && tileKinds.length === 64 && (
-          <BoardReadPanel rules={rules} tiles={tileKinds} pieces={pieces} budget={current.massBudget} />
-        )}
-        {isHost && (
-          <button
-            className="secondary lock-btn"
-            onClick={() => {
-              if (window.confirm('Lock in now? The base is scored immediately.')) lock().catch(showError);
-            }}
-          >
-            Lock in early
-          </button>
-        )}
+        {import.meta.env.DEV && tileKinds.length === 64 && <BoardReadPanel rules={rules} tiles={tileKinds} pieces={pieces} budget={current.massBudget} />}
+        {isHost &&
+          (confirmLock ? (
+            <div className="lock-confirm" role="group" aria-label="Confirm lock in">
+              <p>Score the base now for everyone?</p>
+              <div className="row">
+                <button className="primary" onClick={() => lock().catch(showError)}>
+                  Lock in
+                </button>
+                <button className="secondary" onClick={() => setConfirmLock(false)}>
+                  Keep building
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button className="secondary lock-btn" onClick={() => setConfirmLock(true)}>
+              ★ Lock in early
+            </button>
+          ))}
       </aside>
 
       <footer className="game-bottom">
-        <MissionControlBar roomCode={data.room!.code} hint={data.latestHint} standby={`Mission Control standing by on ${current.planetName}.`} />
+        <MissionControlBar roomCode={room.code} hint={data.latestHint} standby={`Mission Control standing by on ${current.planetName}.`} />
       </footer>
     </div>
   );

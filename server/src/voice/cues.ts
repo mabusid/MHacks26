@@ -31,7 +31,7 @@ const MODE_INSTRUCTIONS: Record<CueMode, string> = {
   fact: 'Read the line exactly.',
   nudge: 'Say which system is weak in one short sentence. No numbers, no tile names.',
   direction: 'Name the problem and the researched fact behind it, in at most two short sentences. No tile names.',
-  exact: 'Tell the crew exactly which piece to put on which tile, as given, in at most two short sentences.',
+  exact: 'Tell the crew the ONE suggested move — which piece on which tile — in one short sentence.',
 };
 
 function boardFor(conn: DbConnection, rd: RoundRow) {
@@ -39,7 +39,7 @@ function boardFor(conn: DbConnection, rd: RoundRow) {
   for (const t of conn.db.tile.iter()) if (t.roundId === rd.id) tiles[t.index] = t.kind as TileKind;
   const board = [...conn.db.piece.iter()]
     .filter(p => p.roundId === rd.id)
-    .map(p => ({ kind: p.kind as PieceKind, ...xy(p.index), pending: p.pending }));
+    .map(p => ({ kind: p.kind as PieceKind, ...xy(p.index) }));
   const because: Partial<Record<RequirementKind, string>> = {};
   for (const r of conn.db.requirement.iter()) if (r.roundId === rd.id) because[r.kind as RequirementKind] = r.because;
   return { tiles, board, because };
@@ -50,7 +50,7 @@ function contextFor(rd: RoundRow, mode: CueMode, read: BoardRead, draft: string,
     `Mode: ${mode.toUpperCase()}. Time left: ${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, '0')}. Planet: ${rd.planetName}.`,
     read.worst ? `Problem: ${read.worst.reason}.` : 'Problem: none — every requirement passes.',
     read.worst && because[read.worst.kind] ? `Researched fact: ${because[read.worst.kind]}` : '',
-    read.suggestion.length ? `Suggested moves: ${read.suggestion.slice(0, 2).map(a => `${a.op} ${a.kind.replace('_', ' ')} on ${a.tile}`).join('; ')}.` : '',
+    mode === 'exact' && read.suggestion.length ? `Suggested move: ${read.suggestion.slice(0, 1).map(a => `${a.op} ${a.kind.replace('_', ' ')} on ${a.tile}`).join('')}.` : '',
     read.changes.newlyPassing.length ? `Progress since last hint: ${read.changes.newlyPassing.join(', ')} now passing — acknowledge it briefly.` : '',
     `Accurate draft to base your line on: "${draft}"`,
   ];

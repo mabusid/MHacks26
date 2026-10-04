@@ -37,7 +37,7 @@ export default function Home() {
   return (
     <div className="card home">
       <h1 className="title">Overburden</h1>
-      <p className="muted">Build a base on a real planet. 2:30 on the clock.</p>
+      <p className="muted">Build a base on a real planet. 90 seconds on the clock.</p>
 
       <input value={name} maxLength={NAME_MAX_LENGTH} onChange={e => setName(e.target.value)} placeholder="Your name" aria-label="Your name" />
 

@@ -133,7 +133,9 @@ export async function exoplanet(name: string): Promise<ExoplanetRow> {
 /** `<a refstr=… href=URL target=ref>Agol et al. 2021</a>` → { label, url }. */
 export function parseReflink(html: string | null): { label: string; url: string } {
   if (!html) return { label: ARCHIVE_LABEL, url: 'https://exoplanetarchive.ipac.caltech.edu/' };
-  const url = html.match(/href=([^\s>]+)/)?.[1] ?? '';
+  const href = html.match(/href=([^\s>]+)/)?.[1] ?? '';
+  // Some references are site-relative (e.g. "Calculated Value" → /docs/pscp_calc.html).
+  const url = href.startsWith('/') ? `https://exoplanetarchive.ipac.caltech.edu${href}` : href || 'https://exoplanetarchive.ipac.caltech.edu/';
   const label = html.replace(/<[^>]*>/g, '').trim();
   return { label: label ? `${label} via ${ARCHIVE_LABEL}` : ARCHIVE_LABEL, url };
 }

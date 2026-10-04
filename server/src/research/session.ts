@@ -144,8 +144,13 @@ export class ResearchSession {
     }
   }
 
+  /** Fields marked estimated — they can't set a twist (Plan.md → Data integrity). */
+  private estimated(): Set<ParamField> {
+    return new Set([...this.params.values()].filter(p => p.status === 'estimated').map(p => p.field));
+  }
+
   triggeredTwists(): Twist[] {
-    return triggeredTwists(this.profile());
+    return triggeredTwists(this.profile(), this.estimated());
   }
 
   chooseTwist(kind: Twist): void {
@@ -157,7 +162,7 @@ export class ResearchSession {
   /** Because-lines must cite a field the requirement's threshold is derived from. */
   writeCard(card: Card): void {
     if (!this.twist) throw new ResearchError('Choose a twist before writing the card');
-    const specs = describeRequirements(deriveRules(this.profile(), this.twist));
+    const specs = describeRequirements(deriveRules(this.profile(), this.twist, this.estimated()));
     for (const spec of specs) {
       const line = card.because[spec.kind];
       if (!line?.text.trim()) throw new ResearchError(`Missing because-line for ${spec.kind}`);
@@ -187,7 +192,7 @@ export class ResearchSession {
   /** The card's thresholds once a twist is chosen — tells the agent which field each because-line must cite. */
   requirementsPreview() {
     if (!this.twist) throw new ResearchError('Choose a twist first');
-    return describeRequirements(deriveRules(this.profile(), this.twist)).map(r => ({
+    return describeRequirements(deriveRules(this.profile(), this.twist, this.estimated())).map(r => ({
       kind: r.kind,
       title: r.title,
       threshold: r.threshold,

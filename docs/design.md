@@ -1,264 +1,157 @@
 # Overburden — UI design
 
-Layout, look, and **visual architecture** for every phase. Rules, copy, and visibility: [Plan.md](./Plan.md).
+Layout, look, and transitions for every phase. Rules, copy, and visibility: [Plan.md](./Plan.md).
 
-**Direction (target):** a **consistent 3D “planetary ops” look** — the crew is always looking at the same world (orbit → surface → build site), with **mission-control HUD** layered on top. Not Skribbl, not flat dashboard cards on a static SVG.
+**Direction:** one **3D world** behind everything (a persistent React Three Fiber scene: planet → landing site → build site), with a **mission-control HUD** in HTML on top. The interactive **build board stays an HTML grid**, tilted for depth (2.5D) — exact taps, crisp A–H / 1–8 labels, keyboard play, and phones all keep working. *(Decided after an independent design review: a 3D raycast board would cost precision, accessibility, and phone usability for little gain.)*
 
-**Content principle (unchanged):** less to read. Short labels, numbers over sentences, one line per idea. Detail (sources, full facts) is one click away, never on the main HUD during build.
-
-**Status:** this document describes the **target** UI. Implementation may still match the older 2D layout until the visual refactor lands; treat sections marked **(target)** as the source of truth for that work.
+**Content principle:** less to read. Short labels, numbers over sentences, one line per idea. Detail (sources, full facts) is one tap away, never on the main HUD during the build.
 
 ---
 
-## Feasibility — React, React Three Fiber, Next.js
+## Stack
 
-| Question | Answer |
+| Layer | Choice |
 | --- | --- |
-| **Can we get a 3D look with React Three Fiber (R3F)?** | **Yes.** An 8×8 base, instanced pieces, planet ground, and a shared “hero” camera are well within what R3F + Three.js handle in the browser. Multiplayer cursors, berm hold progress, and placement preview map cleanly to 3D highlights and optional HTML labels. |
-| **What should be 3D vs 2D?** | **3D:** planet surface, habitat, placed pieces, tile highlights, optional lobby/debrief “establishing” camera on the same scene. **2D (HTML/CSS):** menus, room code, requirements list, timer, mass budget, Mission Control bar, toasts, modals — fixed HUD overlays (industry standard: HTML for menus/HUD, 3D for the world). Use `@react-three/drei` `Html` only for labels tied to world positions (e.g. player nameplates above tiles); do **not** use `Html` for full-screen menus. |
-| **Keep Vite or move to Next.js?** | **Keep Vite + React for the game client** unless you add a separate marketing site. The app is WebSocket/subscription-driven with no need for SSR of game state. Next.js adds routing/build complexity without helping SpacetimeDB or realtime play. **Optional:** a small Next.js (or static) landing page later; the playable client stays a Vite SPA importing `packages/shared` and generated bindings. |
-| **Stack recommendation (target)** | **Vite + React + TypeScript + `@react-three/fiber` + `@react-three/drei`** for the 3D layer; existing CSS (or a thin design-token layer) for HUD. State and reducers unchanged — only presentation moves. |
-| **Risks** | Mobile GPU/thermal (keep meshes simple, limit post-processing); text readability on 3D (rely on HUD); accessibility (keyboard focus must stay on HTML overlays). Mitigate with low-poly assets, consistent HUD chrome, and testing on a mid-range phone. |
+| 3D world | `@react-three/fiber` 9 + `@react-three/drei` 10 (React 19 compatible) — **one `<Canvas>` mounted for the whole session**, behind the HUD, never remounted between phases. Low-poly procedural terrain, habitat, decorative pieces. Renders on demand outside camera moves; DPR capped at 1.5. |
+| Board | HTML/CSS grid (focusable buttons with aria-labels), CSS `rotateX` tilt ≤ 25° on wide screens, **flat top-down on phones**. Pieces drawn as SVG icons (same art in palette and on the board). |
+| HUD | Screen-space HTML panels with `--hud-*` design tokens (no in-world HTML). |
+| Fallback | If WebGL is unavailable or the context is lost, the scene is replaced by the CSS/SVG backdrop. The game is fully playable without 3D. |
 
 ---
 
-## Game UI best practices (applied to Overburden)
+## Best practices (how they apply here)
 
-These follow common HUD/menu guidance (readable at a glance, fixed “homes” for critical info, thematic consistency, minimal occlusion) and align with platform accessibility guidance on predictable layout and not relying on color alone ([HUD readability & hierarchy](https://pageflows.com/resources/game-hud/), [UI consistency](https://github.com/Roblox/creator-docs/blob/main/content/en-us/production/game-design/ui-ux-design.md), [XAG 112 navigation consistency](https://learn.microsoft.com/en-us/gaming/accessibility/xbox-accessibility-guidelines/112), [overlay vs in-scene UI](https://threejsresources.com/guides/ui-hud)).
-
-| Practice | How Overburden uses it |
+| Practice | Overburden |
 | --- | --- |
-| **Critical info only on the HUD** | Build: timer, mass budget, three requirement one-liners (+ expand for facts). No live pass/fail meters (per Plan). Everything else in collapsible panels or post-match debrief. |
-| **Fixed slots across phases** | Same **chrome positions** everywhere: top = mission title / planet / phase; center = **3D viewport**; bottom = primary voice line (Mission Control) when relevant; host primary action **bottom-right of the HUD panel**, not floating in the world. |
-| **Visual hierarchy** | Timer = largest type during build; planet name = secondary; tertiary = CU and requirement icons. Urgent (&lt; 0:30) = motion + color, not only color. |
-| **Consistency** | One **theme token set** (color, type, radius, panel material) for all HTML HUD. Crew colors match cursor/nameplate in 3D. Requirement icons (⚡ 💧 ⚠) same in briefing, build, debrief. |
-| **Don’t block the playfield** | HUD panels sit on **edges**; 3D board stays centered with safe padding. On narrow screens, stack HUD below the viewport — never cover the tile you’re placing on. |
-| **Diegetic vs non-diegetic** | **Diegetic:** base pieces, ground, dust/ice materials, habitat. **Non-diegetic:** room code, research log, timer, Mission Control — styled as **glass command UI**, not floating in-world billboards (except short player nameplates). |
-| **Accessibility** | Keyboard: 1–8, R, tab order through HUD only. Tooltips/errors as text, not color alone (valid = teal outline **and** cursor change; invalid = red **and** toast message). Respect `prefers-reduced-motion` for camera drift and urgent blink. Target WCAG-minded contrast on HUD text (4.5:1 body, 3:1 large timer). |
-| **Test & iterate** | Check layout at 360×640, 1280×720, ultrawide; two-tab multiplayer; worst case = full palette + all nameplates visible. |
+| Critical info only | Build HUD = timer, mass, 3 requirement lines, palette + one info line, Mission Control. No live pass/fail (Plan). |
+| Fixed homes | Top bar = context (planet, host, leave) · center = world/board · right rail = requirements · bottom = palette then Mission Control. Same positions in every phase that uses them. |
+| Hierarchy | Timer largest during the build; planet name secondary; everything else tertiary. |
+| Color is never alone | Valid tile = teal rim **+ dot**; invalid = dimmed, **no dot**; over budget = coral **+ "over by N"**; pass/fail = ✓/✗ glyphs. Tile types use **pattern + legend**, not only shade. |
+| Reserved colors | Teal = valid/primary, coral = invalid/urgent/fail, green = success, amber = host/estimated. **Crew colors avoid all four:** blue `#60a5fa`, pink `#f472b6`, yellow `#facc15`, violet `#a78bfa`. |
+| Don't block the play area | Panels sit on edges; the board never sits under a panel; toasts appear between board and palette. |
+| Touch | No hover-only information: selecting a tool marks **all valid tiles at once**; requirement details expand on tap; the info line mirrors any tooltip. Targets ≥ 40 px. |
+| Keyboard | Arrow keys move between tiles (DOM buttons), Enter places, 1–8 pick pieces, R = remove. |
+| Motion | Camera moves only in the briefing (hides loading) and debrief; ease-in-out 1.5–2.5 s. `prefers-reduced-motion`: no camera moves, no blink. **The build timer never starts while the camera is moving.** |
+| Contrast | HUD text ≥ 4.5:1, timer ≥ 3:1 large. |
 
 ---
 
-## Visual theme — “Orbital Command”
+## Theme — "Orbital Command"
 
-One art direction for every phase so screens feel like one product.
+Matte regolith, brushed-metal habitat, emissive teal only for interactive/selected, amber/coral for warnings. Calm, authoritative camera — no shake, no neon arcade.
 
-### Mood
+**Tokens** (CSS variables): `--hud-bg rgba(8,12,20,.88)` · `--hud-border` cool grey 16% · `--hud-accent #2dd4bf` · `--hud-warn #fbbf24` · `--hud-danger #f87171` · `--hud-ok #4ade80` · `--hud-text #e2e8f0` · `--hud-muted #8e9ab0` · `--hud-radius 14px` · `--hud-blur 12px` · monospace for numbers, codes, logs, Mission Control.
 
-- **Genre:** co-op space engineering briefing, not arcade sci-fi neon.
-- **Camera language:** slow, authoritative moves (lobby orbit → briefing push-in → build isometric/top-down tactical → debrief pull-back). Same planet mesh; only camera and lighting emphasis change.
-- **Materials:** matte regolith, brushed metal habitat, emissive accents only for **interactive** and **selected** states (teal), warnings (amber/red).
-
-### Design tokens (HUD — implement as CSS variables)
-
-| Token | Role | Target value (starting point) |
-| --- | --- | --- |
-| `--hud-bg` | Panel fill | Near-black blue `rgba(8, 12, 20, 0.88)` |
-| `--hud-border` | Panel edge | Cool grey 16% alpha |
-| `--hud-accent` | Primary actions, valid placement | Teal `#2dd4bf` |
-| `--hud-warn` | Host actions, estimated data | Amber `#fbbf24` |
-| `--hud-danger` | Urgent timer, fail, invalid | Coral `#f87171` |
-| `--hud-ok` | Success, pass | Green `#4ade80` |
-| `--hud-text` / `--hud-muted` | Body / secondary | `#e2e8f0` / `#8e9ab0` |
-| `--hud-mono` | Numbers, codes, research log | System monospace stack |
-| `--hud-radius` | Panels, buttons | `14px` |
-| `--hud-blur` | Glass panels | `12px` backdrop blur |
-
-### Planet palettes (3D ground + fog + light tint)
-
-Same **rule-driven** mapping as today (dust twist → rust, low solar → ice, berms+ice → airless grey, default exo → purple). Apply to:
-
-- Terrain albedo / fog color
-- Ambient + key light color
-- Subtle HUD accent tint (5–10% mix into `--hud-border`, not full recolor)
-
-**Do not** ship a different layout per planet — only materials and lighting.
-
-### Typography
-
-- **Display:** planet name, OVERBURDEN logotype — heavy, wide tracking.
-- **HUD:** UI sans (system stack).
-- **Data:** monospace for codes, timer, mass, research log, Mission Control line.
-
-### Motion
-
-- Camera: ease-in-out, 0.8–2.5 s between phase defaults; no handheld shake.
-- UI: 150–250 ms fades/slides on panel open; line-in for research log rows.
-- Reduced motion: disable camera drift, urgent blink, and nonessential transitions.
+**Planet palettes** (rule-driven, as today): dust twist → rust, low sunlight → icy amber/teal, airless with ice → grey, exoplanet → purple. Applied to terrain, fog, light tint, and a 5–10% tint on HUD borders. **Never a different layout per planet.**
 
 ---
 
-## Shell layout — all phases **(target)**
-
-Every screen uses the same **three-layer stack**:
+## Screen layer stack
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│  TOP BAR (phase label · planet name · optional leave)         │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│              FULL-VIEWPORT 3D SCENE (R3F Canvas)            │
-│         (planet / base site — interactive only in Build)    │
-│                                                             │
-├─────────────────────────────────────────────────────────────┤
-│  BOTTOM DOCK — Mission Control line (when voice is active)  │
-└─────────────────────────────────────────────────────────────┘
-        ┌──────────────────────┐
-        │  SIDE / CENTER HUD   │  ← HTML panels; position per phase
-        └──────────────────────┘
+┌──────────────────────────────────────────────┐
+│ TOP BAR (context)                            │   HTML
+├──────────────────────────────────────────────┤
+│        3D WORLD (persistent <Canvas>)        │   R3F, no pointer events
+│        + HUD panels / board on top           │   HTML
+├──────────────────────────────────────────────┤
+│ MISSION CONTROL (build only)                 │   HTML
+└──────────────────────────────────────────────┘
 ```
 
-- **3D layer:** always mounted once per session where possible (avoid remounting WebGL on every route change) to prevent flicker and reload cost.
-- **HUD layer:** React HTML on top of the canvas (`position: absolute` inset 0, pointer-events none on wrapper, `auto` on controls) — not drei `Html` for full panels.
-
----
-
-## Screens at a glance **(target)**
-
-| Phase | 3D scene | HUD organization |
+| Phase | 3D world | HUD |
 | --- | --- | --- |
-| **Home** | Distant planet / station exterior (non-interactive) | Center **one** login card: title, name, Create, Join |
-| **Lobby** | Slow orbit of target planet (or generic rock before research) | **Two-column HUD** over lower third: **Crew** (left) · **Mission intel** (right) |
-| **Briefing** | Push-in to landing zone; habitat visible, no grid lines | **Center card:** planet, 2 key numbers, 3 requirement lines, countdown; **Skip** host-only |
-| **Build** | Isometric/tactical view of **8×8 build pad** + habitat; pieces are 3D meshes | **Top:** timer (center), mass (right), planet + leave (left). **Right rail:** requirements + facts drawer. **Bottom:** piece palette. **Bottom dock:** Mission Control |
-| **Debrief** | Same site as build, time-frozen; optional success/fail lighting | Same **two-column HUD** as lobby: Crew · **Verdict + results** |
-
----
-
-## 3D world rules
-
-### Shared “site” model
-
-- One logical **outpost pad** (8×8 cells) embedded in terrain; habitat fixed center 2×2.
-- **Lobby / Briefing / Debrief:** show pad with **preview pieces** or empty pad + habitat only — **no placement**, no grid emphasis (no glowing cell lines).
-- **Build:** faint cell grid on pad only; hover preview as **raised outline** or emissive rim on the tile mesh.
-
-### Pieces **(target)**
-
-Replace emoji on the board with **simple low-poly meshes** (consistent scale, readable silhouette from isometric angle). Palette buttons show **the same icon/thumbnail** as the 3D mesh (render thumbnail or shared SVG ortho).
-
-### Multiplayer presence
-
-- **3D:** colored marker on pad + optional `Html` nameplate above (crew color = token list).
-- **Hide** offline players’ markers (unchanged rule).
-
-### Placement feedback **(target)**
-
-| Feedback | Treatment |
-| --- | --- |
-| Valid hover | Teal emissive edge + HUD tooltip with tile name |
-| Invalid hover | Red edge + toast between palette and pad |
-| Berm hold | Circular progress on pad (mesh or screen-space ring aligned to tile) |
-| Errors | Toast + short shake on pad (reduced-motion: toast only) |
+| **Home** | Slow orbit of a generic planet | One centered card: title, name, **Create room**, code + **Join** |
+| **Lobby** | Orbit of the destination once researched (generic before) | Split card: **Crew** · **Mission intel** |
+| **Briefing** | Camera pushes in to the landing site (~2 s) | Centered card: planet, 1–2 numbers, 3 requirement lines, countdown |
+| **Build** | Static terrain around the site | Top bar · 2.5D board + palette · right rail · Mission Control |
+| **Debrief** | Build site, camera pulls back slightly | Split card: **Crew** · **Verdict** |
 
 ---
 
 ## Phase specs
 
 ### Home
+Card over the orbiting planet. Primary = Create (teal fill); Join = code field + button. Clicking either also enables sound (browser autoplay rule). No top bar.
 
-- **3D:** hero planet or orbital shot; subtle auto-rotate.
-- **HUD:** single centered card (not split). Primary CTA = Create (accent fill); Join = secondary row with code field.
-- **Consistency:** card uses `--hud-*` tokens; no one-off colors.
-
-### Lobby — HUD columns (replaces “split card on SVG”)
-
+### Lobby
 ```
-┌─────────────────────────────────────────────────────────────┐
-│  [ 3D: planet orbit ]                                        │
-│                                                              │
-│  ┌─────────────────┐  ┌──────────────────────────────┐  │
-│  │ CREW            │  │ MISSION INTEL                 │  │
-│  │ MHKT  copy      │  │ (research log streaming…)     │  │
-│  │ ● Ana    host   │  │ → then planet + headline      │  │
-│  │ ○ open seat     │  │    + 2–3 key numbers          │  │
-│  │ Leave           │  │              [ START ] host   │  │
-│  └─────────────────┘  └──────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────┘
+┌────────────────────┬───────────────────────────────┐
+│ CREW               │ MISSION INTEL                  │
+│ MHKT  ⧉ copy       │ › Querying NASA archive…       │
+│ ■ Ana  ★ host      │ › Sunlight 0.65× Earth’s       │
+│ ■ Ben              │ → TRAPPIST-1 e                 │
+│ ○ open seat        │   headline · 2–3 key numbers   │
+│ [🔊 Sound on]      │                    [ START ]   │
+│ Leave              │   (host) or "Waiting for host" │
+└────────────────────┴───────────────────────────────┘
 ```
+- **Crew:** code (tap to copy), color swatch, ★ host, open seats, **Sound on/off** for this device, Leave.
+- **Intel:** research log streams (mono) → planet card. Host **Start** bottom-right; while research runs it reads "Researching…" (disabled). Dev test-planet loader lives here (dev only).
 
-- **Left — Crew:** room code (tap copy), swatches, host badge, open seats, Leave.
-- **Right — Intel:** streaming log (mono) → summary card; host **Start** aligned bottom-right inside panel.
-- **Dev:** test-planet loader lives inside Intel panel (dev only).
-
-### Briefing
-
-- **3D:** camera finishes push-in; pad visible.
-- **HUD:** centered translucent card (same width as today ~460px): planet name, 1–2 key numbers, **same 3 requirement rows** as build rail (icons + one line each), large countdown.
-- **~10 s**, not counted in build timer; host **Skip**.
-- Requirement copy **must match** build right-rail verbatim.
+### Briefing (~10 s, automatic)
+Centered card: planet name, 1–2 numbers, the **same 3 requirement lines as the build rail** (icon + one line), "Build starts in N". Host sees **Skip**. The camera push-in happens during this countdown.
 
 ### Build
-
 ```
-┌─────────────────────────────────────────────────────────────┐
-│ Mars · Leave          ⏱ 1:42                    12 / 20 CU │
-├───────────────────────────────────────┬─────────────────────┤
-│                                       │ REQUIREMENTS        │
-│         [ 3D build pad ]              │ ⚡ …                │
-│                                       │ 💧 …                │
-│         [ piece palette ]             │ ⚠ …                 │
-│                                       │ Planet facts ▸      │
-│                                       │ [ Lock in early ]   │
-├───────────────────────────────────────┴─────────────────────┤
-│ MISSION CONTROL  "…"  (typewriter · tap bar mute)          │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│ Mars · ★ Ana · Leave        ⏱ 1:02          ▓▓▓▓▓░░ 12/27 CU │
+├──────────────────────────────────────────┬───────────────────┤
+│      A  B  C  D  E  F  G  H              │ REQUIREMENTS      │
+│   1  ▢  ▢  ▨  ▢  ▢  ▢  ▢  ▢   (tilted)   │ ⚡ Power … ▸       │
+│   2  ▢  ☀  ▢  ▢  ▢  ▢  ▢  ▢              │ 💧 12 water … ▸    │
+│   …        [ HAB ]                       │ ⚠ 4 berms … ▸     │
+│   legend: ▢ sunlit ▨ shaded ❄ ice        │ Planet facts ▸     │
+│  ─ toast slot ─                          │                   │
+│  [pieces … ⛰ berm][✕ remove]             │ [Lock in early] ★ │
+│  Solar: +1.3 power by day · sunlit tiles │                   │
+├──────────────────────────────────────────┴───────────────────┤
+│ MISSION CONTROL  "Water’s short — this planet has ice…"       │
+└──────────────────────────────────────────────────────────────┘
 ```
-
-- **No crew column** — presence = 3D cursors/nameplates only.
-- **Timer:** top center, largest HUD element; urgent styling &lt; 0:30.
-- **Palette:** directly under 3D viewport (HTML), not inside the canvas.
-- **Requirements:** right rail; tap opens facts/sources drawer (same content as today).
-- **Mission Control:** full-width bottom dock; typewriter; tap to mute; muted state on bar.
-- **Interaction:** pointer raycast to tile index; keyboard 1–8, R unchanged.
+- **Top bar:** planet, ★ host name, Leave (left) · timer (center, largest; coral + blink under 0:30) · mass **bar + numbers** (right; coral + "over by N" when over; flashes on change).
+- **Board:** A–H / 1–8 edge labels; tile types by pattern + legend (sunlit bright, shaded dark + striped, ice blue); habitat 2×2; pieces as SVG icons; live named cursors in crew colors (offline hidden).
+- **Tool selected →** all valid tiles get a teal rim + dot; invalid tiles dim (no dot). Hover/focus puts the tile name and reason in the info line.
+- **Palette:** 8 pieces + Remove, all one click/tap (no press-and-hold anywhere). Disabled pieces say why ("over budget", "no ice here"). The **info line** under the palette says what the selected piece does *on this planet*.
+- **Right rail:** 3 requirement lines, **tap to expand** threshold + researched reason; Planet facts & sources; host **Lock in early** (in-HUD confirm, not a browser dialog); dev board read (dev only).
+- **Mission Control bar:** typewriter caption; tap = mute this device; "tap to enable sound" (amber) when the browser blocked audio.
 
 ### Debrief
-
-- **3D:** frozen build state or cleared pad with habitat; lighting reflects pass/fail.
-- **HUD:** same two-column shell as lobby.
-  - **Left:** Crew (unchanged).
-  - **Right:** **MISSION SUCCESS / FAILED** (display size), three results with ✓/✗ + one reason each, key fact callout, Sources link, host **Next planet**.
+- Stinger first (~1 s, full width): **TIME** or **LOCKED IN**, then "Scoring…", then the verdict.
+- **Crew** (left, as in the lobby). **Verdict** (right): **MISSION SUCCESS / FAILED**, three ✓/✗ rows with one reason each, the key real fact, Sources link, host **Next planet**.
 
 ---
 
-## Phones (&lt; 1024px) **(target)**
+## Transitions
 
-- **3D viewport:** fixed aspect (e.g. 1:1 or 4:3) at top of stack; pinch optional later — v1 **no orbit** during build.
-- **HUD order:** top bar → 3D pad → palette → requirements (collapsible) → Mission Control dock **sticky** bottom.
-- **Lobby / debrief:** stack Crew above Intel; 3D height ~40vh max so panels remain reachable.
+| From → to | Trigger | Screen | Player sees / does |
+| --- | --- | --- | --- |
+| Home → Lobby | Create / Join | HUD swaps; the canvas stays mounted | Code, crew, research streaming; sound enabled by the click |
+| Lobby (researching) | Host wants to start | Start disabled "Researching…" | Log rows stream; the fallback chain caps research at ~28 s |
+| Lobby → Briefing | Host **Start** | Camera push-in (~2 s) inside a 10 s countdown | Planet + 3 lines; host may **Skip** |
+| Briefing → Build | Countdown ends or Skip | Briefing card fades; HUD fades in (220 ms, opacity only) | 1:30 timer counts from the server's end time; welcome fact ~4 s later |
+| Build → Debrief | 0:00 or host Lock in | Stinger **TIME** / **LOCKED IN** → "Scoring…" → verdict | Placing stops immediately |
+| Debrief → Briefing | **Next planet** with one prepared | As Lobby → Briefing | Anyone who joined during the debrief is in the crew |
+| Debrief → Lobby | **Next planet**, none prepared | Lobby with research streaming | Joins open |
+| Any | Host leaves | Toast "Ana left · Ben is host" | Host controls appear on Ben's screen |
+| Any | Refresh | Same member rejoins (session token); HUD first, 3D fills in | Bar may say "tap to enable sound" |
+| Any | Join attempt mid-round | "Round in progress — join at the debrief" | — |
 
----
-
-## Build details (behavior unchanged; visual mapping)
-
-| Feature | Visual **(target)** |
-| --- | --- |
-| Leave room | Top-left text button in top bar |
-| Remove mode | Palette ✕; selected state = danger border |
-| Berm hold | Progress ring on tile |
-| Placement preview | Teal/red tile rim |
-| Placement errors | Toast under viewport |
-| Offline crew | Hide 3D cursor/nameplate |
-| Host lock-in | Bottom of requirements rail (warn styling) |
-| Dev board read | Collapsed section in requirements rail (dev only) |
+**Rule change (Plan.md):** players may join in the **lobby or the debrief**, so friends who arrive mid-round get in before the next planet.
 
 ---
 
-## Implementation notes (for developers; no code in this doc)
+## Phones (< 1024 px)
 
-1. **Introduce R3F in `client/`** behind a single `GameViewport` component; keep phase routing in React as today.
-2. **Single Canvas** per room session; swap camera presets and `interactive` flag by phase.
-3. **HUD:** extract shared primitives (`HudPanel`, `HudButton`, `RequirementRow`, `CrewList`) used on Home, Lobby, Briefing, Build, Debrief.
-4. **Deprecate** the full-screen SVG `BaseScene` for phase backdrops once 3D establishing shots ship; until then, 2D fallback is acceptable.
-5. **Performance budget:** &lt; 100 draw calls for pad + pieces; instancing for repeated piece types; no heavy post-processing on mobile.
-6. **Do not** put game logic in the render loop; grid index from raycast → existing reducers only.
+Board **flat (no tilt)**, full width (~40 px tiles at 360 px). Order: top bar → board → palette + info line → requirements as a **one-line chip row** (tap to expand) → Mission Control pinned at the bottom. Lobby/debrief halves stack (crew above intel/verdict). The 3D world shows behind at reduced detail.
 
 ---
 
-## Reference links
+## Implementation order
 
-- [Three.js / R3F: HTML HUD overlay vs in-scene UI](https://threejsresources.com/guides/ui-hud)
-- [drei `Html` (world-attached labels only)](https://drei.docs.pmnd.rs/misc/html)
-- [Game HUD readability & hierarchy (2024 overview)](https://pageflows.com/resources/game-hud/)
-- [UI consistency in games (Roblox creator docs)](https://github.com/Roblox/creator-docs/blob/main/content/en-us/production/game-design/ui-ux-design.md)
-- [Xbox Accessibility Guideline 112 — consistent navigation](https://learn.microsoft.com/en-us/gaming/accessibility/xbox-accessibility-guidelines/112)
+1. Tokens + crew colors; HUD primitives (top bar, requirement row with tap-to-expand, crew list).
+2. Persistent `<World>` canvas in `App` with per-phase camera presets; WebGL fallback to the SVG backdrop.
+3. Board: SVG piece icons, tile patterns + legend, valid-tile highlighting, tilt, one-click berms, keyboard tile navigation.
+4. Top bar host name + mass bar; in-HUD lock-in confirm; debrief stinger; host-change toast; lobby sound toggle.
+5. Module: allow joins during the debrief.
+6. Check at 360×640, 1280×720, ultrawide; two-tab play; reduced motion.

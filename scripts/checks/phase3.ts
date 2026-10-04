@@ -102,13 +102,13 @@ await step('players cannot call commit_round', () =>
 );
 
 let moonId = 0n;
-await step('dev endpoint commits the Moon: ready round, budget 20, 10 params, 3 requirements, 64 tiles', async () => {
+await step('dev endpoint commits the Moon: ready round, budget 33, 10 params, 3 requirements, 64 tiles', async () => {
   await commitFixture(code, 'moon');
   await until('moon ready', () => room()?.nextRoundId !== undefined);
   moonId = room()!.nextRoundId!;
   const rd = db.round.id.find(moonId)!;
   const { params, reqs, tiles } = roundRows(moonId);
-  if (rd.status.tag !== 'Ready' || rd.massBudget !== 20 || rd.cheapestMass !== 16) throw new Error(`round ${JSON.stringify({ status: rd.status, budget: rd.massBudget, cheapest: rd.cheapestMass })}`);
+  if (rd.status.tag !== 'Ready' || rd.massBudget !== 33 || rd.cheapestMass !== 28) throw new Error(`round ${JSON.stringify({ status: rd.status, budget: rd.massBudget, cheapest: rd.cheapestMass })}`);
   if (params.length !== 10 || reqs.length !== 3 || tiles.length !== 64) throw new Error(`rows ${params.length}/${reqs.length}/${tiles.length}`);
   const count = (k: string) => tiles.filter(t => t.kind === k).length;
   if (count('habitat') !== 4 || count('ice') !== 4) throw new Error('tile mix');
@@ -173,11 +173,11 @@ await step('host Start → Briefing for everyone with a ~10 s countdown; guest c
   return `${secs.toFixed(0)} s countdown`;
 });
 
-await step('build starts automatically when the countdown ends: Build phase, ~150 s timer, round active', async () => {
+await step('build starts automatically when the countdown ends: Build phase, ~90 s timer, round active', async () => {
   await until('auto build', () => room()!.phase.tag === 'Build', 13_000);
   const rd = db.round.id.find(room()!.currentRoundId!)!;
   const secs = (Number(rd.buildEndsAt!.microsSinceUnixEpoch / 1000n) - Date.now()) / 1000;
-  if (rd.status.tag !== 'Active' || rd.briefingEndsAt !== undefined || secs < 145 || secs > 151) {
+  if (rd.status.tag !== 'Active' || rd.briefingEndsAt !== undefined || secs < 85 || secs > 91) {
     throw new Error(`status ${rd.status.tag}, ${secs.toFixed(1)} s left`);
   }
   return `${secs.toFixed(0)} s left`;
