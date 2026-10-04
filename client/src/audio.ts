@@ -1,6 +1,6 @@
 // Mission Control audio playback. Browsers only allow audio after a user gesture, so the context is
 // created/resumed from clicks (Create, Join, the Mission Control bar). PCM16 24 kHz chunks are queued gaplessly.
-import { speakable } from '@overburden/shared';
+import { speakable } from '@mission-control/shared';
 
 const RATE = 24_000;
 const JITTER_S = 0.1;

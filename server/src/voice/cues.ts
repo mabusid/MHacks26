@@ -4,7 +4,7 @@
 import {
   BUILD_SECONDS, CUES, boardRead, effectiveMode, rulesFromRound, noParens, speakable, templateHint, winningBuilds, xy,
   type BoardRead, type Build, type CueMode, type PieceKind, type RequirementKind, type TileKind, type Twist,
-} from '@overburden/shared';
+} from '@mission-control/shared';
 import { config } from '../config';
 import type { DbConnection } from '../module_bindings';
 import { onConnected } from '../spacetime';

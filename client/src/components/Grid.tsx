@@ -1,5 +1,5 @@
 import { Suspense, lazy, useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { GRID_SIZE, PIECES, isHabitat, placementError, tileName, xy, type PieceKind, type TileKind } from '@overburden/shared';
+import { GRID_SIZE, PIECES, isHabitat, placementError, tileName, xy, type PieceKind, type TileKind } from '@mission-control/shared';
 import { crewColor } from '../format';
 import type { Cursor, Member, Piece } from '../module_bindings/types';
 import type { BoardLayout, BoardState } from './BoardCanvas';
@@ -41,7 +41,8 @@ function webglAvailable(): boolean {
 
 /**
  * The 2.5D build board (docs/design.md → Build). HTML buttons, so taps are exact and keyboard play works.
- * Selecting a tool marks every valid tile (teal rim + dot) and dims/hatches invalid ones — no hover needed.
+ * Selecting a piece that only fits some tiles (sunlit, ice, next to the habitat) marks those tiles (teal rim + dot);
+ * pieces that fit anywhere mark nothing. Hover/focus always highlights the tile under the pointer.
  */
 export default function Grid(props: Props) {
   const { tiles, pieces, cursors, members, me, tool, massLeft } = props;
@@ -52,7 +53,7 @@ export default function Grid(props: Props) {
   const planeRef = useRef<HTMLDivElement>(null);
   const boardRef = useRef<HTMLDivElement>(null);
   const cellRefs = useRef<(HTMLElement | null)[]>([]);
-  const [layout, setLayout] = useState<{ layout: BoardLayout; left: number; top: number; ink: string }>();
+  const [layout, setLayout] = useState<{ layout: BoardLayout; left: number; top: number; ink: string; ground: string }>();
   const [use3d, setUse3d] = useState(webglAvailable);
   const [ready3d, setReady3d] = useState(false);
 
@@ -126,6 +127,7 @@ export default function Grid(props: Props) {
       left: plane.offsetLeft + ox - halfW,
       top: plane.offsetTop + oy - halfH,
       ink: css.getPropertyValue('--ink').trim() || '#262d3f',
+      ground: css.getPropertyValue('--tile-ground').trim() || '#6b7a99',
       layout: {
         width: halfW * 2,
         height: halfH * 2,
@@ -155,6 +157,7 @@ export default function Grid(props: Props) {
     tiles,
     pieces: new Map(pieces.map(p => [p.index, p.kind as PieceKind])),
     valid,
+    marked: tool !== 'remove' && PIECES[tool].placement !== 'any',
     habitatCells: HABITAT_CELLS,
     hover,
     removing: tool === 'remove',
@@ -167,7 +170,7 @@ export default function Grid(props: Props) {
       {use3d && layout && (
         <div className="board-3d" style={{ left: layout.left, top: layout.top }} aria-hidden>
           <Suspense fallback={null}>
-            <BoardCanvas layout={layout.layout} state={boardState} ink={layout.ink} onReady={() => setReady3d(true)} onFail={() => setUse3d(false)} />
+            <BoardCanvas layout={layout.layout} state={boardState} ink={layout.ink} ground={layout.ground} onReady={() => setReady3d(true)} onFail={() => setUse3d(false)} />
           </Suspense>
         </div>
       )}
@@ -264,9 +267,12 @@ export default function Grid(props: Props) {
         </div>
       </div>
       <ul className="legend" aria-label="Tile types">
-        <li>
-          <span className="swatch-tile tile-lit" /> sunlit
-        </li>
+        {/* In 3D, sunlit ground is just ground: it only stands out when a solar array is selected. */}
+        {!(use3d && ready3d) && (
+          <li>
+            <span className="swatch-tile tile-lit" /> sunlit
+          </li>
+        )}
         <li>
           <span className="swatch-tile tile-shaded" /> shaded
         </li>

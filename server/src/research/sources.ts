@@ -2,7 +2,7 @@
 // tier 2 = curated data/solar_system.json. Every value leaves here with its source attached.
 
 import { readFileSync } from 'node:fs';
-import type { ParamField } from '@overburden/shared';
+import type { ParamField } from '@mission-control/shared';
 
 export interface SourcedValue {
   field: ParamField;

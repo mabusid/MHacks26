@@ -7,7 +7,7 @@
 import { Component, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import type { PieceKind, TileKind } from '@overburden/shared';
+import type { PieceKind, TileKind } from '@mission-control/shared';
 import PieceModel from './PieceModel';
 import StylePass from './StylePass';
 import { useToonRamp } from './toon';
@@ -29,6 +29,8 @@ export interface BoardState {
   pieces: ReadonlyMap<number, PieceKind>;
   /** Per tile: the selected tool can act here (place, or remove). */
   valid: readonly boolean[];
+  /** Mark the valid tiles: only when the tool restricts where it goes (sunlit, ice, next to the habitat). */
+  marked: boolean;
   habitatCells: ReadonlySet<number>;
   hover: number | null;
   removing: boolean;
@@ -36,19 +38,27 @@ export interface BoardState {
 
 const TILE_TOP: Record<string, number> = { lit: 0, ice: 0, shaded: -4 }; // shaded tiles sit lower: a cue besides color
 const TILE_THICK = 10;
-const TILE_COLOR: Record<string, string> = { lit: '#d9cca8', shaded: '#3a3e48', ice: '#9fd3ea' };
+/** 3D tiles are drawn this much smaller than their buttons, so every gap is wider than a pixel of the style pass
+ *  (a 2px gap drew as broken dashes). Hit areas are the HTML buttons, so taps are unaffected. */
+const TILE_INSET = 3;
+const ICE = '#9fd3ea';
 const ACCENT = '#2dd4bf';
 const BAD = '#f87171';
 
-function useTileMaterials(ramp: THREE.Texture) {
+/**
+ * Tiles in the planet's colors. Sunlit ground is just ground (it only lights up when a solar array is selected);
+ * shade and ice are always visible: shaded tiles are darker and sit lower, ice tiles are icy with crystals.
+ */
+function useTileMaterials(ramp: THREE.Texture, ground: string, ink: string) {
   return useMemo(() => {
-    const make = (color: string) => new THREE.MeshToonMaterial({ color, gradientMap: ramp });
-    const out: Record<string, { on: THREE.Material; dim: THREE.Material }> = {};
-    for (const [k, c] of Object.entries(TILE_COLOR)) {
-      out[k] = { on: make(c), dim: make(new THREE.Color(c).lerp(new THREE.Color('#0b0f17'), 0.55).getStyle()) };
-    }
-    return out;
-  }, [ramp]);
+    const make = (color: THREE.Color) => new THREE.MeshToonMaterial({ color, gradientMap: ramp });
+    const g = new THREE.Color(ground);
+    return {
+      lit: make(g.clone().lerp(new THREE.Color('#ffffff'), 0.12)),
+      shaded: make(g.clone().lerp(new THREE.Color(ink), 0.7)),
+      ice: make(new THREE.Color(ICE)),
+    } as Record<string, THREE.Material>;
+  }, [ramp, ground, ink]);
 }
 
 /** A flat square ring (tile rim), shared by every tile. */
@@ -63,13 +73,13 @@ function useRimGeometry(w: number, h: number, t: number) {
   }, [w, h, t]);
 }
 
-function Tile({ kind, crystals, pos, w, h, dim, raised, mats, ramp }: { kind: string; crystals: boolean; pos: [number, number]; w: number; h: number; dim: boolean; raised: boolean; mats: ReturnType<typeof useTileMaterials>; ramp: THREE.Texture }) {
+function Tile({ kind, crystals, pos, w, h, raised, mats, ramp }: { kind: string; crystals: boolean; pos: [number, number]; w: number; h: number; raised: boolean; mats: ReturnType<typeof useTileMaterials>; ramp: THREE.Texture }) {
   const top = (TILE_TOP[kind] ?? 0) + (raised ? 3 : 0);
   const m = mats[kind] ?? mats.lit;
   return (
     <group position={[pos[0], pos[1], 0]}>
-      <mesh position={[0, 0, top - TILE_THICK / 2]} material={dim ? m.dim : m.on}>
-        <boxGeometry args={[w, h, TILE_THICK]} />
+      <mesh position={[0, 0, top - TILE_THICK / 2]} material={m}>
+        <boxGeometry args={[w - TILE_INSET, h - TILE_INSET, TILE_THICK]} />
       </mesh>
       {kind === 'ice' && crystals && (
         // Ice crystals: a shape cue for ice, not only a color.
@@ -81,7 +91,7 @@ function Tile({ kind, crystals, pos, w, h, dim, raised, mats, ramp }: { kind: st
           ].map(([x, y, s], i) => (
             <mesh key={i} position={[x * w, y * h, s * w * 0.6]} scale={[1, 1, 1.6]}>
               <octahedronGeometry args={[s * w, 0]} />
-              <meshToonMaterial color={dim ? '#4f6670' : '#e0f4fc'} gradientMap={ramp} />
+              <meshToonMaterial color="#e0f4fc" gradientMap={ramp} />
             </mesh>
           ))}
         </group>
@@ -160,13 +170,12 @@ function CssCamera({ layout }: { layout: BoardLayout }) {
   return null;
 }
 
-function Board({ layout, state, ink, reducedMotion }: { layout: BoardLayout; state: BoardState; ink: string; reducedMotion: boolean }) {
+function Board({ layout, state, ink, ground, reducedMotion }: { layout: BoardLayout; state: BoardState; ink: string; ground: string; reducedMotion: boolean }) {
   const ramp = useToonRamp();
-  const mats = useTileMaterials(ramp);
+  const mats = useTileMaterials(ramp, ground, ink);
   const t0 = layout.tiles[0];
-  const rim = useRimGeometry(t0.w, t0.h, Math.max(1.5, t0.w * 0.05));
+  const rim = useRimGeometry(t0.w - TILE_INSET, t0.h - TILE_INSET, Math.max(1.5, t0.w * 0.05));
   const dotGeo = useMemo(() => new THREE.CylinderGeometry(t0.w * 0.08, t0.w * 0.08, 3, 8), [t0.w]);
-  const anyValid = state.valid.some(Boolean);
 
   return (
     <>
@@ -179,7 +188,7 @@ function Board({ layout, state, ink, reducedMotion }: { layout: BoardLayout; sta
         {/* The pad the tiles sit in (the dark gaps between tiles). */}
         <mesh position={[layout.board.cx, -layout.board.cy, -TILE_THICK - 4]}>
           <boxGeometry args={[layout.board.w + 8, layout.board.h + 8, 12]} />
-          <meshToonMaterial color="#1a1f2a" gradientMap={ramp} />
+          <meshToonMaterial color={ink} gradientMap={ramp} />
         </mesh>
         {layout.tiles.map((t, i) => {
           if (state.habitatCells.has(i)) return null;
@@ -189,16 +198,16 @@ function Board({ layout, state, ink, reducedMotion }: { layout: BoardLayout; sta
           const hovered = state.hover === i;
           const top = (TILE_TOP[kind] ?? 0) + (hovered && ok ? 3 : 0);
           const rimColor = hovered ? (ok ? (state.removing ? BAD : '#ccfbf1') : BAD) : state.removing ? BAD : ACCENT;
-          const showRim = hovered || (ok && anyValid);
+          const showRim = hovered || (ok && state.marked);
           return (
             <group key={i}>
-              <Tile kind={kind} crystals={!piece} pos={[t.cx, -t.cy]} w={t.w} h={t.h} dim={anyValid && !ok && !piece} raised={hovered && ok} mats={mats} ramp={ramp} />
+              <Tile kind={kind} crystals={!piece} pos={[t.cx, -t.cy]} w={t.w} h={t.h} raised={hovered && ok} mats={mats} ramp={ramp} />
               {showRim && (
                 <mesh geometry={rim} position={[t.cx, -t.cy, top + 0.6]}>
                   <meshBasicMaterial color={rimColor} />
                 </mesh>
               )}
-              {ok && !piece && !state.removing && (
+              {ok && state.marked && !piece && (
                 <mesh geometry={dotGeo} position={[t.cx, -t.cy, top + 1.5]} rotation={[Math.PI / 2, 0, 0]}>
                   <meshBasicMaterial color={ACCENT} />
                 </mesh>
@@ -233,7 +242,7 @@ class Boundary extends Component<{ children: ReactNode; onError: () => void }, {
   }
 }
 
-export default function BoardCanvas({ layout, state, ink, onReady, onFail }: { layout: BoardLayout; state: BoardState; ink: string; onReady: () => void; onFail: () => void }) {
+export default function BoardCanvas({ layout, state, ink, ground, onReady, onFail }: { layout: BoardLayout; state: BoardState; ink: string; ground: string; onReady: () => void; onFail: () => void }) {
   const reducedMotion = useMemo(() => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false, []);
   return (
     <Boundary onError={onFail}>
@@ -252,7 +261,7 @@ export default function BoardCanvas({ layout, state, ink, onReady, onFail }: { l
           onReady();
         }}
       >
-        <Board layout={layout} state={state} ink={ink} reducedMotion={reducedMotion} />
+        <Board layout={layout} state={state} ink={ink} ground={ground} reducedMotion={reducedMotion} />
       </Canvas>
     </Boundary>
   );

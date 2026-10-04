@@ -90,5 +90,5 @@ watch('packages/shared/src', { recursive: true }, (_event, file) => {
   }, 300);
 });
 
-run('client', 'pnpm', ['--filter', '@overburden/client', 'dev']);
-run('server', 'pnpm', ['--filter', '@overburden/server', 'dev']);
+run('client', 'pnpm', ['--filter', '@mission-control/client', 'dev']);
+run('server', 'pnpm', ['--filter', '@mission-control/server', 'dev']);

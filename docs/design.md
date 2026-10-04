@@ -1,4 +1,4 @@
-# Overburden — UI design
+# Mission Control — UI design
 
 Layout, look, and transitions for every phase. Rules, copy, and visibility: [Plan.md](./Plan.md). The 3D world's rendering style and camera: [look.md](./look.md).
 
@@ -21,12 +21,12 @@ Layout, look, and transitions for every phase. Rules, copy, and visibility: [Pla
 
 ## Best practices (how they apply here)
 
-| Practice | Overburden |
+| Practice | Mission Control |
 | --- | --- |
 | Critical info only | Build HUD = timer, mass, 3 requirement lines, palette + one info line, Mission Control. Requirement lines turn green + ✓ when met; no live numbers (Plan). |
 | Fixed homes | Top bar = context (planet, host, leave) · center = world/board · right rail = requirements · bottom = palette then Mission Control. Same positions in every phase that uses them. |
 | Hierarchy | Timer largest during the build; planet name secondary; everything else tertiary. |
-| Color is never alone | Valid tile = teal rim **+ dot**; invalid = dimmed, **no dot**; over budget = coral **+ "over by N"**; pass/fail = ✓/✗ glyphs. Tile types use **pattern + legend**, not only shade. |
+| Color is never alone | Valid tile (restricted pieces only) = teal rim **+ dot**; others unmarked; over budget = coral **+ "over by N"**; pass/fail = ✓/✗ glyphs. Tile types use **pattern + legend**, not only shade. |
 | Reserved colors | Teal = valid/primary, coral = invalid/urgent/fail, green = success, amber = host/estimated. **Crew colors avoid all four:** blue `#60a5fa`, pink `#f472b6`, yellow `#facc15`, violet `#a78bfa`. |
 | Don't block the play area | Panels sit on edges; the board never sits under a panel; toasts appear between board and palette. |
 | Touch | No hover-only information: selecting a tool marks **all valid tiles at once**; requirement details expand on tap; the info line mirrors any tooltip. Targets ≥ 40 px. |

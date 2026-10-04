@@ -3,7 +3,7 @@
 import { DbConnection, tables } from '../../client/src/module_bindings/index.ts';
 
 const URI = process.env.SPACETIME_URI ?? 'ws://localhost:3000';
-const DB = process.env.SPACETIME_DB ?? 'overburden';
+const DB = process.env.SPACETIME_DB ?? 'mission-control';
 
 type Player = { name: string; conn: DbConnection; hex: string; token: string };
 

@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { DbConnection, tables } from '../../client/src/module_bindings/index.ts';
 
 const URI = process.env.SPACETIME_URI ?? 'ws://localhost:3000';
-const DB = process.env.SPACETIME_DB ?? 'overburden';
+const DB = process.env.SPACETIME_DB ?? 'mission-control';
 const SERVER = process.env.SERVER_URL ?? 'http://localhost:8787';
 const RING = [19, 20, 26, 29, 34, 37, 43, 44]; // habitat-adjacent tiles
 

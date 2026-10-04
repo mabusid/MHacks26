@@ -1,4 +1,4 @@
-# Overburden — plan (simple)
+# Mission Control — plan (simple)
 
 Co-op **learning game** for **four players**. An agent researches a **random real planet** (solar system or exoplanet) from public space data, and **that research sets the win criteria** — the requirements, their thresholds, which pieces work, and the mass budget all come from the planet's real numbers. The crew has **2:00** to build a base on a shared grid that meets **three requirements** without going over the **mass budget**. There is no live score or counts — players reason from per-piece stats and the planet's facts; a requirement line just **turns green once it's met**, and the **voice assistant's hints** explain what's missing. The debrief ties the result back to the real science.
 
@@ -138,7 +138,7 @@ Mass is in **cargo units (CU)**. The **habitat** (2×2) is pre-placed at grid ce
 | **O₂ tank** | 4 | — | +6 O₂ | Anywhere | — |
 | **Ice drill** | 2 | −2 | +12 water | **Ice tiles only** | Water/ice presence |
 | **O₂ unit** | 1 | −1 | +12 O₂; **uses 6 water** unless atmosphere is CO₂-rich | Anywhere | Atmosphere composition |
-| **Berm** (Overburden) | 1 | — | Radiation shielding | Orthogonally adjacent to habitat | Radiation |
+| **Berm** | 1 | — | Radiation shielding | Orthogonally adjacent to habitat | Radiation |
 | **Thermal unit** | 1 | −1 | Heats or cools the habitat | Orthogonally adjacent to habitat | Temperature (thermal twist only) |
 
 **Placement:** every piece, including berms, places with one click/tap (no press-and-hold anywhere).

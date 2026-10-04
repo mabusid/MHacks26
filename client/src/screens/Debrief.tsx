@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useReducer } from 'spacetimedb/react';
-import { PIECES, PIECE_KINDS, rulesFromRound, solveRound, type Counts, type PieceKind, type TileKind } from '@overburden/shared';
+import { PIECES, PIECE_KINDS, rulesFromRound, solveRound, type Counts, type PieceKind, type TileKind } from '@mission-control/shared';
 import CrewStrip from '../components/CrewStrip';
 import StepDots from '../components/StepDots';
 import PieceIcon from '../components/PieceIcon';

@@ -2,7 +2,7 @@
 // card (`scriptedCard`). The agent reuses the prepared session and only writes the card, so a failed agent
 // falls back to the template without fetching again. Log lines are paced so the lobby can watch the research.
 
-import { PARAM_FIELDS, type ParamField, type Twist } from '@overburden/shared';
+import { PARAM_FIELDS, type ParamField, type Twist } from '@mission-control/shared';
 import type { Card, ResearchSession } from './session';
 import { curatedCard, solarSystemKeys, type SourcedValue, type ScaleInfo } from './sources';
 

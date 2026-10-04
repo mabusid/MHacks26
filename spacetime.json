@@ -1,6 +1,6 @@
 {
   "server": "local",
-  "database": "overburden",
+  "database": "mission-control",
   "module-path": "./spacetimedb",
   "generate": [
     { "language": "typescript", "out-dir": "./client/src/module_bindings" },

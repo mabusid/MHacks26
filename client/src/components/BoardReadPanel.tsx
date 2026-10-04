@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { boardRead, winningBuilds, xy, type PieceKind, type RoundRules, type TileKind } from '@overburden/shared';
+import { boardRead, winningBuilds, xy, type PieceKind, type RoundRules, type TileKind } from '@mission-control/shared';
 import type { Piece } from '../module_bindings/types';
 
 /** Dev builds only: what Mission Control will see at a cue (Phase 9) — worst failing requirement + suggestion. */

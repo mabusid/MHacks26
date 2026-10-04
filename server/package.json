@@ -1,5 +1,5 @@
 {
-  "name": "@overburden/server",
+  "name": "@mission-control/server",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -10,7 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@overburden/shared": "workspace:*",
+    "@mission-control/shared": "workspace:*",
     "spacetimedb": "2.10.*",
     "ws": "^8.18.0"
   },

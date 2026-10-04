@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FIXTURES } from '@overburden/shared';
+import { FIXTURES } from '@mission-control/shared';
 import { ResearchSession, type CommitArgs } from './session';
 import { exoplanetValues, parseReflink, type ExoplanetRow } from './sources';
 

@@ -1,4 +1,4 @@
-# Overburden (MHacks26)
+# Mission Control (MHacks26)
 
 Co-op learning game: four players build a base on a real planet researched from NASA data, with Grok Voice as Mission Control. Design in [docs/Plan.md](docs/Plan.md); build phases in [docs/Implementation.md](docs/Implementation.md).
 
@@ -52,12 +52,12 @@ pnpm check:phase7   # automatic research, provenance (live NASA archive)
 pnpm check:phase8   # research agent (live xAI), curated bodies, cached pack
 pnpm check:phase9   # Mission Control: cues, captions, audio broadcast, grid-aware hints
 pnpm build:pack     # rebuild data/cached_pack/ (offline fallback planets)
-cd /tmp && spacetime sql --server local overburden "SELECT * FROM server_info"   # query the local DB
+cd /tmp && spacetime sql --server local mission-control "SELECT * FROM server_info"   # query the local DB
 ```
 
-If a schema change can't migrate existing rows, reset the local DB: `cd /tmp && spacetime delete --server local overburden` (then `pnpm dev` republishes).
+If a schema change can't migrate existing rows, reset the local DB: `cd /tmp && spacetime delete --server local mission-control` (then `pnpm dev` republishes).
 
-Run ad-hoc `spacetime` commands from outside the repo, or rely on `spacetime.json` (database `overburden`, server `local`).
+Run ad-hoc `spacetime` commands from outside the repo, or rely on `spacetime.json` (database `mission-control`, server `local`).
 
 ## Manual UI check (two tabs)
 

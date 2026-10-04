@@ -1,4 +1,4 @@
-import { FIXTURES, fixtureParams, type Fixture } from '@overburden/shared';
+import { FIXTURES, fixtureParams, type Fixture } from '@mission-control/shared';
 import { db } from './spacetime';
 
 export type FixtureKey = keyof typeof FIXTURES;

@@ -1,5 +1,5 @@
 {
-  "name": "@overburden/client",
+  "name": "@mission-control/client",
   "private": true,
   "version": "0.0.1",
   "type": "module",
@@ -11,7 +11,7 @@
     "typecheck": "tsc -b"
   },
   "dependencies": {
-    "@overburden/shared": "workspace:*",
+    "@mission-control/shared": "workspace:*",
     "@react-three/drei": "^10.7.9",
     "@react-three/fiber": "^9.8.1",
     "react": "^19.2.8",

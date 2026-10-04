@@ -1,4 +1,4 @@
-# Overburden — look bible
+# Mission Control — look bible
 
 The visual R&D track for the 3D world. Layout, HUD, and phase specs: [design.md](./design.md). This page only covers **what the world looks like and how the camera moves**.
 
@@ -76,7 +76,7 @@ Themes (rule-driven as in design.md): space (neutral blue-grey), airless (grey +
 | Terrain, craters, landing pad | Pieces on the board (isometric CSS art) |
 | Habitat (outside the build) | All text, timer, requirements, Mission Control |
 
-The board is **3D in the same style** (`BoardCanvas.tsx`): tile slabs (shaded tiles sunken, ice tiles with crystals, so color is never the only cue), the habitat, and low-poly piece models (`PieceModel.tsx`) that drop onto the pad, drawn through the same toon ramp and style pass (finer pixels, lower edge threshold). The grid has a **slight forward tilt** (CSS `perspective(--persp) rotateX(--tilt)`, 25° on desktop and 20° on phones, no sideways twist), pivoting on the board's center. The 3D camera reproduces it exactly: eye at distance `--persp` in front of the pivot, 1 unit = 1 CSS px. Tile positions are measured from the DOM, so the transparent HTML grid on top still takes every tap, key, and aria label. Without WebGL the HTML/SVG board shows as before.
+The board is **3D in the same style** (`BoardCanvas.tsx`): tile slabs in the planet's ground color (`--tile-ground`; sunlit ground is just ground, while shaded tiles are darker and sunken and ice tiles are icy with crystals, always visible), the habitat, and low-poly piece models (`PieceModel.tsx`) that drop onto the pad, drawn through the same toon ramp and style pass (finer pixels, lower edge threshold). Valid-tile markers (teal rim + dot) appear only for pieces that are restricted to some tiles (solar → sunlit, ice drill → ice, berm/thermal → next to the habitat); pieces that fit anywhere mark nothing, and nothing is dimmed. Hover/focus always highlights the tile. The grid has a **slight forward tilt** (CSS `perspective(--persp) rotateX(--tilt)`, 25° on desktop and 20° on phones, no sideways twist), pivoting on the board's center. The 3D camera reproduces it exactly: eye at distance `--persp` in front of the pivot, 1 unit = 1 CSS px. Tile positions are measured from the DOM, so the transparent HTML grid on top still takes every tap, key, and aria label. Without WebGL the HTML/SVG board shows as before.
 
 ## Performance & fallback
 

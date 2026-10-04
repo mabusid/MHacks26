@@ -1,4 +1,4 @@
-# Overburden — technical execution plan
+# Mission Control — technical execution plan
 
 Phased build from an empty repo: monorepo scaffold, SpacetimeDB as authoritative game state, React client for the full round loop, then Node service for research and voice. Each phase ends with a **checkpoint** you can verify before continuing.
 

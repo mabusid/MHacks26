@@ -1,4 +1,4 @@
-import { PIECES, pieceEffect, type RoundRules } from '@overburden/shared';
+import { PIECES, pieceEffect, type RoundRules } from '@mission-control/shared';
 import { usablePieces } from '../pieceArt';
 import type { Tool } from './Grid';
 import PieceIcon from './PieceIcon';

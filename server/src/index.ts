@@ -1,5 +1,5 @@
 import { createServer, type ServerResponse } from 'node:http';
-import { SHARED_VERSION } from '@overburden/shared';
+import { SHARED_VERSION } from '@mission-control/shared';
 import { config } from './config';
 import { FIXTURE_KEYS, commitFixture, type FixtureKey } from './fixtures';
 import { SCRIPTED_TARGETS } from './research/scripted';

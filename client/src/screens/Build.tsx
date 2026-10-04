@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useReducer } from 'spacetimedb/react';
-import { PIECES, countBoard, evaluate, rulesFromRound, xy, type PieceKind, type TileKind } from '@overburden/shared';
+import { PIECES, countBoard, evaluate, rulesFromRound, xy, type PieceKind, type TileKind } from '@mission-control/shared';
 import BoardReadPanel from '../components/BoardReadPanel';
 import Grid, { type Tool } from '../components/Grid';
 import MissionControlBar from '../components/MissionControlBar';

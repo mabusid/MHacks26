@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 
-const KEY = 'overburden/muted';
+const KEY = 'mission-control/muted';
 
 /** Per-device mute for Mission Control audio (Phase 9). Captions stay on either way. */
 export function useMute(): [boolean, () => void] {

@@ -3,7 +3,7 @@
 // the same in the palette and on the board. Chunky parts only: anything thinner than ~0.06 vanishes in the pixel pass.
 
 import type { ReactNode } from 'react';
-import type { PieceKind } from '@overburden/shared';
+import type { PieceKind } from '@mission-control/shared';
 import type * as THREE from 'three';
 
 type M = { ramp: THREE.Texture };

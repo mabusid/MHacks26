@@ -4,7 +4,7 @@ import {
   BRIEFING_SECONDS, BUILD_SECONDS, GRID_SIZE, MAX_MEMBERS, PIECES, PIECE_KINDS, ROOM_TTL_SECONDS, PARAM_FIELDS, ROOM_CODE_ALPHABET, ROOM_CODE_LENGTH, TWISTS,
   countBoard, deriveRules, describeRequirements, evaluate, generateTiles, normalizeRoomCode, placementError, profileFromParams,
   rulesFromRound, solveRound, validateName, xy, type ParamRow, type PieceKind, type RequirementKind, type TileKind, type Twist,
-} from '@overburden/shared';
+} from '@mission-control/shared';
 
 const Phase = t.enum('Phase', ['Lobby', 'Briefing', 'Build', 'Debrief']);
 const RoundStatus = t.enum('RoundStatus', ['Researching', 'Ready', 'Active', 'Done']);

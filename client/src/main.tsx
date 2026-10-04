@@ -7,7 +7,7 @@ import App from './App';
 import './index.css';
 
 const URI = import.meta.env.VITE_SPACETIME_URI ?? 'ws://localhost:3000';
-const DB = import.meta.env.VITE_SPACETIME_DB ?? 'overburden';
+const DB = import.meta.env.VITE_SPACETIME_DB ?? 'mission-control';
 // Per tab (sessionStorage): a refresh reconnects as the same member, while separate tabs are
 // separate players — needed for testing four players on one machine.
 const TOKEN_KEY = `${URI}/${DB}/auth_token`;

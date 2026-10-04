@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { unlockAudio } from '../audio';
-import { MAX_MEMBERS } from '@overburden/shared';
+import { MAX_MEMBERS } from '@mission-control/shared';
 import { crewColor } from '../format';
 import LeaveButton from '../LeaveButton';
 import { useMute } from '../useMute';

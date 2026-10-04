@@ -3,7 +3,7 @@
 // Numbers still only come from fetches: the card is checked for grounding and fact-checked before it's used.
 // On any failure the caller uses the scripted card on the same prepared session (no second fetch).
 
-import type { ParamField, Twist } from '@overburden/shared';
+import type { ParamField, Twist } from '@mission-control/shared';
 import { config } from '../config';
 import { ungroundedNumbers } from './grounding';
 import type { Prepared } from './scripted';
@@ -17,7 +17,7 @@ const MAX_TURNS = 4;
 /** One rewrite after the first fact check; after that, flagged lines are replaced with templates. */
 const MAX_FACT_CHECKS = 2;
 
-const SYSTEM = `You are the research officer for Overburden, a co-op learning game where four players build a base on a REAL planet in 2 minutes.
+const SYSTEM = `You are the research officer for Mission Control, a co-op learning game where four players build a base on a REAL planet in 2 minutes.
 The planet is already chosen and its data fetched. Call write_mission ONCE with the twist and the card text.
 
 - twist: one of allowed_twists. Prefer one different from last_twist. Pick the one whose fact is most surprising or teaches the most.

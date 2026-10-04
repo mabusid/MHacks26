@@ -168,7 +168,7 @@ importers:
 
   client:
     dependencies:
-      '@overburden/shared':
+      '@mission-control/shared':
         specifier: workspace:*
         version: link:../packages/shared
       '@react-three/drei':
@@ -226,7 +226,7 @@ importers:
 
   server:
     dependencies:
-      '@overburden/shared':
+      '@mission-control/shared':
         specifier: workspace:*
         version: link:../packages/shared
       spacetimedb:
@@ -254,7 +254,7 @@ importers:
 
   spacetimedb:
     dependencies:
-      '@overburden/shared':
+      '@mission-control/shared':
         specifier: workspace:*
         version: link:../packages/shared
       spacetimedb:

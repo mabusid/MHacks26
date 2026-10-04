@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useReducer } from 'spacetimedb/react';
-import { NAME_MAX_LENGTH, ROOM_CODE_LENGTH, normalizeRoomCode, validateName } from '@overburden/shared';
+import { NAME_MAX_LENGTH, ROOM_CODE_LENGTH, normalizeRoomCode, validateName } from '@mission-control/shared';
 import { unlockAudio } from '../audio';
 import { reducers } from '../module_bindings';
 import { useReducerCall } from '../useReducerCall';
 
-const NAME_KEY = 'overburden/name';
+const NAME_KEY = 'mission-control/name';
 
 function savedName(): string {
   try {
@@ -41,8 +41,7 @@ export default function Home() {
   if (step === 'choose') {
     return (
       <div className="card home">
-        <h1 className="title">Overburden</h1>
-        <p className="muted">Land on a real planet. Build a base in 2 minutes.</p>
+        <h1 className="title">Mission Control</h1>
         <button className="primary big" onClick={() => setStep('create')}>
           Create a team
         </button>

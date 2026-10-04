@@ -23,6 +23,8 @@
   --ground-hi: #2b3445;
   /* Edge color shared with the 3D style pass: the palette's shadow tone (docs/look.md → Palette). */
   --ink: #262d3f;
+  /* Board ground tile color: the world palette's ground tone (World.tsx PALETTES). */
+  --tile-ground: #6b7a99;
   font: 16px/1.5 system-ui, 'Segoe UI', Roboto, sans-serif;
   color: var(--text);
   background: var(--bg);
@@ -34,6 +36,7 @@
   --ground-2: #0b0f17;
   --ground-hi: #2b3445;
   --ink: #262d3f;
+  --tile-ground: #6b7a99;
 }
 
 .theme-airless {
@@ -41,6 +44,7 @@
   --ground-2: #1c1e23;
   --ground-hi: #6a6e78;
   --ink: #2b2d33;
+  --tile-ground: #80838c;
 }
 
 .theme-dust {
@@ -48,6 +52,7 @@
   --ground-2: #2e140b;
   --ground-hi: #a85a38;
   --ink: #3f1a0e;
+  --tile-ground: #b45f3a;
 }
 
 .theme-ice {
@@ -55,6 +60,7 @@
   --ground-2: #1f2a2e;
   --ground-hi: #9a8150;
   --ink: #23323a;
+  --tile-ground: #a08547;
 }
 
 .theme-exo {
@@ -62,6 +68,7 @@
   --ground-2: #141029;
   --ground-hi: #634a96;
   --ink: #1d1533;
+  --tile-ground: #6e52a8;
 }
 
 * {
@@ -2141,4 +2148,9 @@ button:focus-visible {
   .piece-btn {
     width: 74px;
   }
+}
+
+/* 3D board legend: the shaded swatch matches the planet-colored shaded tiles. */
+.is-3d .swatch-tile.tile-shaded {
+  background: color-mix(in srgb, var(--tile-ground) 30%, var(--ink));
 }

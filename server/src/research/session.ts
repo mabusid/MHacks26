@@ -4,7 +4,7 @@
 import {
   PARAM_FIELDS, deriveRules, describeRequirements, profileFromParams, triggeredTwists,
   type ParamField, type ParamRow, type PlanetProfile, type RequirementKind, type Twist,
-} from '@overburden/shared';
+} from '@mission-control/shared';
 import {
   exoplanet, exoplanetPool, exoplanetValues, solarSystemBody, solarSystemKeys, type ScaleInfo, type SourcedValue,
 } from './sources';

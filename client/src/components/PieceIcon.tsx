@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { PieceKind } from '@overburden/shared';
+import type { PieceKind } from '@mission-control/shared';
 
 /**
  * Isometric 3D piece models — same art in the palette and on the board (design.md → Board).
