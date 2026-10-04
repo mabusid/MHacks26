@@ -6,6 +6,8 @@ Co-op **learning game** for **four players**. An agent researches a **random rea
 
 **Status:** design only. All numbers below are **starting values** — tune in playtest. Only the demo script is still open (**`[MISSING]`**).
 
+**Implementation order:** [Implementation.md](./Implementation.md)
+
 ---
 
 ## Overview
