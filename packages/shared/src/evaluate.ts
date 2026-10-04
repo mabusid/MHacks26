@@ -14,6 +14,8 @@ export interface RequirementResult {
   /** 0 = met, 1 = nothing in place. Used to pick the worst-failing requirement. */
   severity: number;
   reason: string;
+  /** The same problem the way Mission Control says it: conversational, no parentheses or symbols. */
+  spoken: string;
   /** Researched field most responsible for the shortfall (for hints and the debrief). */
   fact: keyof PlanetProfile | null;
 }
@@ -21,6 +23,8 @@ export interface RequirementResult {
 export interface Evaluation {
   load: number;
   dayPower: number;
+  /** Load the batteries must carry at night (the part the reactor doesn't cover). */
+  nightLoad: number;
   batteriesNeeded: number;
   batteriesEffective: number;
   water: number;
@@ -30,14 +34,18 @@ export interface Evaluation {
 }
 
 const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
+/** Night lengths in words (debrief reasons). */
+const NIGHT_WORDS = { 0: 'no night', 1: 'a short night', 2: 'a long night', 3: 'a very long night' } as const;
 
 export function evaluate(c: Counts, r: RoundRules): Evaluation {
   const load =
     HABITAT_LOAD + c.ice_drill * PIECES.ice_drill.draw + c.o2_unit * PIECES.o2_unit.draw + c.thermal_unit * PIECES.thermal_unit.draw;
   const reactor = c.reactor * REACTOR_OUTPUT;
   const dayPower = reactor + c.solar * r.solarPerArray;
-  const storageUnits = Math.ceil(Math.max(0, load - reactor) / BATTERY_COVERS);
-  const batteriesNeeded = storageUnits * r.nightBand;
+  // Whatever the reactor doesn't cover must come from batteries at night. One battery carries
+  // BATTERY_COVERS power through a short night; a long night (band 2) uses twice the charge, very long ×3.
+  const nightLoad = Math.max(0, load - reactor);
+  const batteriesNeeded = Math.ceil((nightLoad * r.nightBand) / BATTERY_COVERS);
   // Batteries only help if something can charge them.
   const batteriesEffective = c.solar > 0 ? c.battery : 0;
 
@@ -53,8 +61,18 @@ export function evaluate(c: Counts, r: RoundRules): Evaluation {
         : nightShort > 0
           ? c.battery > 0 && c.solar === 0
             ? 'Batteries have nothing to charge them'
-            : `Night storage short by ${nightShort} batter${nightShort === 1 ? 'y' : 'ies'} (night band ${r.nightBand})`
+            : `Night storage short by ${nightShort} batter${nightShort === 1 ? 'y' : 'ies'}: ${fmt(nightLoad)} power through ${NIGHT_WORDS[r.nightBand]} needs ${batteriesNeeded}`
           : 'Power covered day and night',
+    spoken:
+      dayShort > 0
+        ? dayPower === 0
+          ? 'Right now nothing is powering the habitat.'
+          : 'Even in daylight you’re not making enough power.'
+        : nightShort > 0
+          ? c.battery > 0 && c.solar === 0
+            ? 'Those batteries have nothing to charge them.'
+            : 'When night falls, your batteries won’t last until sunrise.'
+          : 'Power looks good, day and night.',
     fact: dayShort > 0 ? 'insolation' : nightShort > 0 ? 'nightHours' : null,
   };
 
@@ -73,6 +91,12 @@ export function evaluate(c: Counts, r: RoundRules): Evaluation {
         : o2Short > 0
           ? `Oxygen short by ${o2Short} units`
           : 'Water and oxygen last the mission',
+    spoken:
+      waterShort >= o2Short && waterShort > 0
+        ? 'The crew will run out of water before the mission ends.'
+        : o2Short > 0
+          ? 'The crew will run out of air before the mission ends.'
+          : 'Water and air will last the whole mission.',
     fact: waterShort >= o2Short && waterShort > 0 ? 'waterIce' : o2Short > 0 ? 'surfacePressureBar' : null,
   };
 
@@ -84,6 +108,7 @@ export function evaluate(c: Counts, r: RoundRules): Evaluation {
       pass: short === 0,
       severity: short / r.bermsRequired,
       reason: short ? `Shielding short by ${short} berm${short === 1 ? '' : 's'} next to the habitat` : 'Habitat shielded',
+      spoken: short ? 'The habitat walls aren’t shielded enough yet.' : 'The habitat is shielded.',
       fact: short ? 'radiationDoseMSvPerDay' : null,
     };
   } else if (r.twist === 'thermal') {
@@ -93,16 +118,22 @@ export function evaluate(c: Counts, r: RoundRules): Evaluation {
       pass: short === 0,
       severity: r.thermalLoad ? short / r.thermalLoad : 0,
       reason: short ? `Thermal control short by ${short} unit${short === 1 ? '' : 's'} next to the habitat` : 'Habitat temperature controlled',
+      spoken: short ? 'The habitat can’t hold a livable temperature yet.' : 'The habitat temperature is under control.',
       fact: short ? 'meanTempK' : null,
     };
   } else {
-    const needed = storageUnits * stormBand(r);
+    const needed = Math.ceil((nightLoad * stormBand(r)) / BATTERY_COVERS);
     const short = Math.max(0, needed - batteriesEffective);
     twist = {
       kind: 'twist',
       pass: short === 0,
       severity: needed ? short / needed : 0,
-      reason: short ? `Storm reserve short by ${short} batter${short === 1 ? 'y' : 'ies'} (dust can hide the sun for days)` : 'Storm reserve covered',
+      reason: short
+        ? `Storm reserve short by ${short} batter${short === 1 ? 'y' : 'ies'}: dust can hide the sun for days`
+        : nightLoad === 0
+          ? 'Storm-proof: the reactor never needs the sun'
+          : 'Storm reserve covered',
+      spoken: short ? 'A dust storm could hide the sun for days, and your reserve won’t last.' : 'You can ride out a dust storm.',
       fact: short ? 'dustStorms' : null,
     };
   }
@@ -110,6 +141,7 @@ export function evaluate(c: Counts, r: RoundRules): Evaluation {
   return {
     load,
     dayPower,
+    nightLoad,
     batteriesNeeded,
     batteriesEffective,
     water,

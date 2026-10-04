@@ -108,17 +108,17 @@
   "because": [
     {
       "kind": "power",
-      "text": "A lunar night lasts ~15 Earth days, so solar alone can’t carry you.",
+      "text": "A lunar night lasts about 15 Earth days, with no sunlight at all.",
       "field": "nightHours"
     },
     {
       "kind": "life_support",
-      "text": "Water ice sits in permanently shadowed craters (LCROSS).",
+      "text": "LCROSS found water ice in permanently shadowed craters.",
       "field": "waterIce"
     },
     {
       "kind": "twist",
-      "text": "No atmosphere: surface dose is ~1.4 mSv/day (Chang’e 4).",
+      "text": "With no atmosphere, Chang’e 4 measured about 1.4 mSv of radiation a day.",
       "field": "radiationDoseMSvPerDay"
     }
   ],

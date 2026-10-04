@@ -102,13 +102,12 @@ await step('tile rules are enforced server-side', async () => {
   return rejects('unknown', guest.conn.reducers.placePiece({ kind: 'warp_drive', index: 0 }), /Unknown piece/);
 });
 
-await step('ice drill goes on ice; the budget caps total mass (Moon: 33 CU)', async () => {
+await step('ice drill goes on ice; the budget caps total mass (Moon: 31 CU)', async () => {
   const ice = tileOf('ice');
   handedOut.add(ice);
   await guest.conn.reducers.placePiece({ kind: 'ice_drill', index: ice }); // 2
-  await host.conn.reducers.placePiece({ kind: 'reactor', index: freeTile() }); // + 14 = 16
-  await host.conn.reducers.placePiece({ kind: 'reactor', index: freeTile() }); // + 14 = 30, + the solar (1) = 31
-  return rejects('over budget', host.conn.reducers.placePiece({ kind: 'reactor', index: freeTile() }), /Over budget: 45\/33/);
+  await host.conn.reducers.placePiece({ kind: 'reactor', index: freeTile() }); // + 18 = 20, + the solar (1) = 21
+  return rejects('over budget', host.conn.reducers.placePiece({ kind: 'reactor', index: freeTile() }), /Over budget: 39\/31/);
 });
 
 await step('anyone can remove any piece (refund); removing empty ground is refused', async () => {

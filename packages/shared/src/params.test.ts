@@ -31,10 +31,19 @@ describe('fixture cards', () => {
     }
   });
 
-  it('describes thresholds from the rules', () => {
-    const [power, life, twist] = describeRequirements(deriveRules(FIXTURES.moon.profile, 'radiation'));
-    expect(power.threshold).toMatch(/×3 storage/);
-    expect(life.threshold).toMatch(/Ice drills work here/);
-    expect(twist.threshold).toBe('4 berms next to the habitat');
+  it('states the planet’s conditions, never the piece counts', () => {
+    const moon = FIXTURES.moon.profile;
+    const [power, life, twist] = describeRequirements(deriveRules(moon, 'radiation'), moon);
+    expect(power.summary).toBe('Power through 15-day nights');
+    expect(life.summary).toBe('Water and air for 4 crew, 30 sols');
+    expect(twist.summary).toMatch(/^Shield from 1\.\d mSv a day$/);
+    const titan = FIXTURES.titan.profile;
+    expect(describeRequirements(deriveRules(titan, 'thermal'), titan)[2].summary).toMatch(/^Keep the habitat livable at −\d+ °C$/);
+    // No "N batteries", "12 water", "4 berms": the card is facts, the palette has the per-piece stats.
+    for (const f of Object.values(FIXTURES)) {
+      for (const spec of describeRequirements(deriveRules(f.profile, f.twist), f.profile)) {
+        expect(`${spec.summary} ${spec.threshold}`).not.toMatch(/\d+ (batter|berm|thermal unit|water unit|O₂ unit|solar|tank)/i);
+      }
+    }
   });
 });

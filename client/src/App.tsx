@@ -18,11 +18,12 @@ export default function App() {
   const inRoom = data.connected && !!data.me && !!data.room;
   const phase: WorldPhase = inRoom ? (data.room!.phase.tag.toLowerCase() as WorldPhase) : 'home';
   const round = data.current ?? data.next;
+  const theme = planetTheme(inRoom ? round : undefined);
 
   return (
-    <div className="app">
+    <div className={`app ${theme}`}>
       <Suspense fallback={<div className="world" />}>
-        <World phase={phase} theme={planetTheme(inRoom ? round : undefined)} />
+        <World phase={phase} theme={theme} />
       </Suspense>
       <div className={`veil veil-${phase}`} />
       <div className="layer">{!data.connected ? <Stage><p className="muted">Connecting…</p></Stage> : <Screen data={data} phase={phase} />}</div>

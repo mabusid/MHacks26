@@ -130,3 +130,22 @@ describe('curated bodies', async () => {
     });
   }
 });
+
+describe('scripted research (prepare → card → commit)', async () => {
+  process.env.RESEARCH_PACE_MS = '0';
+  const { pickTwist, prepare, scriptedCard, commitCard } = await import('./scripted');
+
+  it('prefers a twist the room did not just play', () => {
+    for (let i = 0; i < 20; i++) expect(pickTwist(['radiation', 'thermal'], 'radiation')).toBe('thermal');
+    expect(pickTwist(['radiation'], 'radiation')).toBe('radiation');
+  });
+
+  it('prepares a curated body with no model calls, then commits its card', async () => {
+    const { s, commits } = session();
+    const p = await prepare(s, 'mars');
+    expect(s.missingFields()).toEqual([]);
+    const name = await commitCard(s, scriptedCard(s, p));
+    expect(commits).toHaveLength(1);
+    expect(commits[0]).toMatchObject({ planetName: name, twist: s.chosenTwist });
+  });
+});

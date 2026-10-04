@@ -458,7 +458,7 @@ export const commitRound = spacetimedb.reducer(
       throw new SenderError(e instanceof Error ? e.message : String(e));
     }
 
-    const specs = describeRequirements(rules);
+    const specs = describeRequirements(rules, profile);
     const because = new Map<string, { text: string; field: string }>();
     for (const b of args.because) because.set(b.kind, b);
     for (const spec of specs) {

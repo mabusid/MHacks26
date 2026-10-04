@@ -18,7 +18,7 @@ export interface PieceDef {
 export const PIECES: Record<PieceKind, PieceDef> = {
   solar: { label: 'Solar array', mass: 1, draw: 0, placement: 'lit' },
   battery: { label: 'Battery', mass: 2, draw: 0, placement: 'any' },
-  reactor: { label: 'Reactor', mass: 14, draw: 0, placement: 'any' },
+  reactor: { label: 'Reactor', mass: 18, draw: 0, placement: 'any' },
   water_tank: { label: 'Water tank', mass: 4, draw: 0, placement: 'any' },
   o2_tank: { label: 'O₂ tank', mass: 4, draw: 0, placement: 'any' },
   ice_drill: { label: 'Ice drill', mass: 2, draw: 2, placement: 'ice' },
@@ -44,8 +44,8 @@ export const O2_UNIT_O2 = 12;
 /** Water an O₂ unit electrolyzes when there's no CO₂ atmosphere. */
 export const O2_UNIT_WATER_USE = 6;
 export const BUDGET_MIN = 14;
-export const BUDGET_MAX = 38;
-export const BUDGET_SLACK = 1.15;
+export const BUDGET_MAX = 40;
+export const BUDGET_SLACK = 1.1;
 /** Debrief copy (NASA BVAD): 1 water unit ≈ 30 kg, 1 O₂ unit ≈ 8.4 kg. */
 export const KG_PER_WATER_UNIT = 30;
 export const KG_PER_O2_UNIT = 8.4;
@@ -62,4 +62,4 @@ export function massOf(counts: Counts): number {
 /** Build phase length (Plan.md → Round structure). */
 export const BUILD_SECONDS = 90;
 /** Automatic briefing transition before the build (host can skip). */
-export const BRIEFING_SECONDS = 10;
+export const BRIEFING_SECONDS = 12;

@@ -40,18 +40,25 @@ describe('boardRead', () => {
     });
   }
 
-  it('suggests removing a piece when the board is over budget', () => {
-    const { tiles, rules, budget, winners } = setup('titan');
-    // 2 reactors + 2 water tanks = 36 CU > 34 budget; shortest fix: drop a reactor, add 2 O₂ tanks.
+  it('steers an empty board to the cheapest build, which on the Moon is solar + storage, not the reactor', () => {
+    const { tiles, rules, budget, winners } = setup('moon');
+    const read = boardRead([], tiles, rules, budget, winners);
+    expect(read.overCommitted).toBe(false);
+    expect(read.suggestion.some(a => a.kind === 'reactor')).toBe(false);
+    expect(read.suggestion.some(a => a.kind === 'ice_drill')).toBe(true);
+  });
+
+  it('flags an over-committed board and swaps out the heaviest piece first', () => {
+    const { tiles, rules, budget, winners } = setup('moon');
+    // Reactor + shipped water: nothing can be added to win within the Moon budget.
     const board: PlacedPiece[] = [
       { kind: 'reactor', x: 0, y: 0 },
-      { kind: 'reactor', x: 1, y: 0 },
+      { kind: 'water_tank', x: 1, y: 0 },
       { kind: 'water_tank', x: 2, y: 0 },
-      { kind: 'water_tank', x: 3, y: 0 },
     ];
     const read = boardRead(board, tiles, rules, budget, winners);
-    expect(read.massLeft).toBe(budget - 36);
-    expect(read.suggestion.filter(a => a.op === 'remove').map(a => a.kind)).toEqual(['reactor']);
+    expect(read.overCommitted).toBe(true);
+    expect(read.suggestion[0]).toMatchObject({ op: 'remove', kind: 'reactor' });
     const after = apply(board, read.suggestion);
     expect(evaluate(countBoard(after), rules).allPass).toBe(true);
     expect(boardRead(after, tiles, rules, budget, winners).massLeft).toBeGreaterThanOrEqual(0);

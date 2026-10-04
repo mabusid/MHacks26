@@ -14,5 +14,6 @@ export * from './boardRead';
 export * from './requirements';
 export * from './pieceInfo';
 export * from './hints';
+export * from './speech';
 export * from './params';
 export * from './fixtures';

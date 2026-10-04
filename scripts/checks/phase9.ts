@@ -87,9 +87,9 @@ const cue = async (n: number, voice = 'template') => {
   return body;
 };
 
-await step('template hints read the grid: empty board → nudge names the weak system (no numbers)', async () => {
+await step('template hints read the grid: empty board → nudge names the weak system and the planet fact', async () => {
   const out = await cue(2);
-  if (out.mode !== 'nudge' || /\d/.test(out.text) || out.voiced) throw new Error(JSON.stringify(out));
+  if (out.mode !== 'nudge' || !/^(Nice work[^.]*\. )?Heads up, crew\./.test(out.text) || out.voiced) throw new Error(JSON.stringify(out));
   await until('caption', () => hint(2)?.text === out.text);
   return out.text;
 });

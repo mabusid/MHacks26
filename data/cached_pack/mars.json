@@ -113,7 +113,7 @@
     },
     {
       "kind": "life_support",
-      "text": "The air is 95% CO₂, and water ice sits just under the surface (Phoenix).",
+      "text": "The air is 95% CO₂, and Phoenix found water ice just under the surface.",
       "field": "co2Atmosphere"
     },
     {

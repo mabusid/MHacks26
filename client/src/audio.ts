@@ -1,5 +1,6 @@
 // Mission Control audio playback. Browsers only allow audio after a user gesture, so the context is
 // created/resumed from clicks (Create, Join, the Mission Control bar). PCM16 24 kHz chunks are queued gaplessly.
+import { speakable } from '@overburden/shared';
 
 const RATE = 24_000;
 const JITTER_S = 0.1;
@@ -64,7 +65,7 @@ export function playPcm(buf: ArrayBuffer): void {
 export function speak(text: string): void {
   if (muted || !('speechSynthesis' in window) || !text) return;
   window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
+  const u = new SpeechSynthesisUtterance(speakable(text));
   u.rate = 1.05;
   window.speechSynthesis.speak(u);
 }

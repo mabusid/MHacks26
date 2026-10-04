@@ -149,8 +149,27 @@ export class ResearchSession {
     return new Set([...this.params.values()].filter(p => p.status === 'estimated').map(p => p.field));
   }
 
+  /** Fields nobody has measured, with the reason (the agent writes from these too). */
+  estimatedNotes(): { field: ParamField; note: string }[] {
+    return [...this.params.values()].filter(p => p.status === 'estimated' && p.num === null).map(p => ({ field: p.field, note: p.note }));
+  }
+
   triggeredTwists(): Twist[] {
     return triggeredTwists(this.profile(), this.estimated());
+  }
+
+  get chosenTwist(): Twist | undefined {
+    return this.twist;
+  }
+
+  /** The card a twist would produce — lets the agent see every option before choosing. */
+  requirementsFor(kind: Twist) {
+    return describeRequirements(deriveRules(this.profile(), kind, this.estimated()), this.profile()).map(r => ({
+      kind: r.kind,
+      title: r.title,
+      threshold: r.threshold,
+      cite_one_of: r.derivedFrom,
+    }));
   }
 
   chooseTwist(kind: Twist): void {
@@ -162,7 +181,7 @@ export class ResearchSession {
   /** Because-lines must cite a field the requirement's threshold is derived from. */
   writeCard(card: Card): void {
     if (!this.twist) throw new ResearchError('Choose a twist before writing the card');
-    const specs = describeRequirements(deriveRules(this.profile(), this.twist, this.estimated()));
+    const specs = describeRequirements(deriveRules(this.profile(), this.twist, this.estimated()), this.profile());
     for (const spec of specs) {
       const line = card.because[spec.kind];
       if (!line?.text.trim()) throw new ResearchError(`Missing because-line for ${spec.kind}`);
@@ -192,12 +211,7 @@ export class ResearchSession {
   /** The card's thresholds once a twist is chosen — tells the agent which field each because-line must cite. */
   requirementsPreview() {
     if (!this.twist) throw new ResearchError('Choose a twist first');
-    return describeRequirements(deriveRules(this.profile(), this.twist, this.estimated())).map(r => ({
-      kind: r.kind,
-      title: r.title,
-      threshold: r.threshold,
-      cite_one_of: r.derivedFrom,
-    }));
+    return this.requirementsFor(this.twist);
   }
 
   scaleOf(fetchId: string): ScaleInfo | undefined {

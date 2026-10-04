@@ -118,7 +118,7 @@
     },
     {
       "kind": "twist",
-      "text": "The surface sits around −179 °C (94 K).",
+      "text": "The surface sits around −179 °C, just 94 K.",
       "field": "meanTempK"
     }
   ],

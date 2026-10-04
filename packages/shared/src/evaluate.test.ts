@@ -8,14 +8,15 @@ const moon = deriveRules(FIXTURES.moon.profile, 'radiation');
 const counts = (c: Partial<Counts>): Counts => ({ ...emptyCounts(), ...c });
 
 describe('evaluate', () => {
-  it('passes the Moon cheapest build', () => {
+  it('a reactor build meets the Moon requirements (the budget is what rules it out)', () => {
     expect(evaluate(counts({ reactor: 1, ice_drill: 1, o2_tank: 2, berm: 4 }), moon).allPass).toBe(true);
   });
 
   it('explains each failure and names the responsible fact', () => {
     const e = evaluate(counts({ solar: 2, o2_tank: 2, berm: 1 }), moon);
     expect(e.requirements.power).toMatchObject({ pass: false, fact: 'nightHours' });
-    expect(e.requirements.power.reason).toMatch(/Night storage short by 6 batteries/);
+    // 4 power through a very long night (×3) at 3 per battery → 4 batteries.
+    expect(e.requirements.power.reason).toBe('Night storage short by 4 batteries: 4 power through a very long night needs 4');
     expect(e.requirements.life_support).toMatchObject({ pass: false, fact: 'waterIce', reason: 'Water short by 12 units' });
     expect(e.requirements.twist).toMatchObject({ pass: false, fact: 'radiationDoseMSvPerDay' });
   });
@@ -50,5 +51,16 @@ describe('evaluate', () => {
     expect(e.requirements.twist).toMatchObject({ pass: false, fact: 'dustStorms' });
     expect(e.requirements.twist.reason).toMatch(/^Storm reserve short by 2 batteries/);
     expect(evaluate(counts({ solar: 8, battery: 4, water_tank: 2, o2_unit: 1 }), mars).requirements.twist.pass).toBe(true);
+  });
+
+  it('a reactor rides out dust storms with no batteries (Curiosity vs Opportunity)', () => {
+    const mars = deriveRules(FIXTURES.mars.profile, 'dust');
+    const e = evaluate(counts({ reactor: 1, water_tank: 2, o2_unit: 1 }), mars);
+    expect(e.requirements.twist).toMatchObject({ pass: true, reason: 'Storm-proof: the reactor never needs the sun' });
+  });
+
+  it('spoken lines never give away counts', () => {
+    const e = evaluate(counts({ solar: 2, o2_tank: 2, berm: 1 }), moon);
+    for (const r of Object.values(e.requirements)) expect(r.spoken).not.toMatch(/\d/);
   });
 });

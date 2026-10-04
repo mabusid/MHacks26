@@ -1,6 +1,6 @@
 # Overburden — plan (simple)
 
-Co-op **learning game** for **four players**. An agent researches a **random real planet** (solar system or exoplanet) from public space data, and **that research sets the win criteria** — the requirements, their thresholds, which pieces work, and the mass budget all come from the planet's real numbers. The crew has **1:30** to build a base on a shared grid that meets **three requirements**. There is no live score — the **voice assistant's hints** are the only feedback. The debrief ties the result back to the real science.
+Co-op **learning game** for **four players**. An agent researches a **random real planet** (solar system or exoplanet) from public space data, and **that research sets the win criteria** — the requirements, their thresholds, which pieces work, and the mass budget all come from the planet's real numbers. The crew has **1:30** to build a base on a shared grid that meets **three requirements** without going over the **mass budget**. There is no live score — players reason from per-piece stats and the planet's facts, and the **voice assistant's hints** are the only feedback. The debrief ties the result back to the real science.
 
 **Pitch:** a fun way to touch research/space data that rarely gets attention — real planets give a sense of **scale and variety**.
 
@@ -16,7 +16,7 @@ Co-op **learning game** for **four players**. An agent researches a **random rea
 | | |
 | --- | --- |
 | Players | 4, co-op in one room, each on their own device |
-| Round length | ~2 min total (briefing ~10s, **build 1:30**, debrief ~20s) |
+| Round length | ~2 min total (briefing ~12s, **build 1:30**, debrief ~20s) |
 | Variety | Random real planet per round; **same loop, same timer, same pieces** — **research sets the win criteria** (thresholds, twist, usable pieces, mass budget) |
 | View | Persistent **3D world** behind the HUD (React Three Fiber); the build board is an HTML grid tilted for depth (2.5D). See [design.md](./design.md) |
 | Authority | **SpacetimeDB** — shared state, reducers, subscriptions; clients render only |
@@ -27,11 +27,11 @@ Co-op **learning game** for **four players**. An agent researches a **random rea
 ## Design pillars
 
 1. **Learning first.** Every number the game uses comes from a cited source (or is labeled *estimated*). Briefing, hints, and debrief all repeat the planet's **headline fact**.
-2. **Research decides how you win.** The agent's findings become the round's **Mission Requirements Card**: each requirement shows its threshold, the researched fact it came from, and the source. Different research → different criteria, not just different numbers on the same answer.
+2. **Research decides how you win.** The agent's findings become the round's **Mission Requirements Card**. The card states the planet's **conditions** (night length, crew needs, radiation, temperature) plus the researched fact and source — **never piece counts**. Players read each piece's stats *on this planet* and work out the build; that reasoning is the puzzle and the lesson. Different research → different criteria, not just different numbers on the same answer.
 3. **Short and readable.** At most **3 requirements**, 8 piece types, ~8–12 pieces in a winning base.
 4. **Tradeoffs, not chores.** Every piece trades **landed mass**, **build time**, or **power** against another — and the planet's real data decides which trade wins.
 5. **Shared everything.** No roles. Everyone can place every piece; the short timer and the "what should we build?" discussion drive cooperation.
-6. **Hints are the feedback.** No live pass/fail. Players reason from per-piece stats; Mission Control watches the grid and talks — fun facts early, increasingly specific hints later.
+6. **Hints are the feedback.** No live pass/fail. Players reason from per-piece stats; Mission Control watches the grid and talks — fun facts early, then hints that name the weak system **and the researched fact behind it**.
 
 ---
 
@@ -52,7 +52,7 @@ Co-op **learning game** for **four players**. An agent researches a **random rea
 
 ```
 Lobby (create / join with code)  ← research agent runs here, in background
-    → Briefing   (~10s)   automatic transition: planet + 3 one-line requirements, countdown
+    → Briefing   (~12s)   automatic transition: planet, headline fact, goal line, 3 one-line requirements, countdown
     → Build      (1:30)   place pieces on shared grid, voice hints, no live score
     → Evaluate   (instant) server formula
     → Debrief    (~20s)   per-requirement result, reason, the real fact behind it, sources
@@ -63,7 +63,7 @@ Lobby (create / join with code)  ← research agent runs here, in background
 | --- | --- |
 | **Room + code** | Host creates room; up to 4 join with a 4-letter code, during the lobby or the debrief (not mid-round). No spectators in v1. |
 | **Research** | Starts automatically on room create; next planet pre-researched during each debrief so rematch is instant. Host's **Start** is enabled once a round is committed. |
-| **Briefing** | Short automatic transition (~10 s countdown, host can skip); not counted against the build timer. The build starts on its own. |
+| **Briefing** | Short automatic transition (~12 s countdown, host can skip); not counted against the build timer. The build starts on its own. |
 | **Build** | Timer runs server-side; ends at 0:00 (or host locks early). |
 | **Evaluate** | Reducer applies the evaluation formula; writes result + reason. |
 | **Rematch** | New round id, new planet, grid and mass budget reset. |
@@ -74,9 +74,20 @@ Lobby (create / join with code)  ← research agent runs here, in background
 
 The round's win criteria are **produced by the research agent** from the planet's real data. The structure is fixed (3 requirements, same formula), but **every threshold, which twist applies, which pieces are usable, and the mass budget** come from researched values. Players see them on the **Mission Requirements Card** in the briefing — each line says *what*, *how much*, and *because of which real fact*:
 
-> **Power through the night** — store 6 power of night load × 3 · *because a lunar night lasts ~14 Earth days* (NASA Moon Fact Sheet)
-> **Life support** — 12 water + 12 O₂ units · *ice is available in shadowed craters* (LCROSS) · *no usable atmosphere for O₂*
-> **Radiation shielding** — 4 berms · *surface dose ~1.4 mSv/day, no atmosphere* (Chang'e 4 LND)
+> **Power through 15-day nights** · *A lunar night lasts about 15 Earth days, with no sunlight at all.* (NASA Moon Fact Sheet)
+> **Water and air for 4 crew, 30 sols** · *LCROSS found water ice in permanently shadowed craters.*
+> **Shield from 1.4 mSv a day** · *With no atmosphere, Chang’e 4 measured about 1.4 mSv of radiation a day.*
+
+Tapping a line adds the rule behind it in words (e.g. "Solar only works by day. At night the load runs on a reactor, or on batteries that solar charged."). The numbers players reason with live on the **pieces** (palette info line), phrased in the card's terms:
+
+| Piece | Info line on the Moon |
+| --- | --- |
+| Battery | "Carries 1 power through one of these long nights · needs solar to charge" |
+| Water tank | "Ships half the mission’s water" |
+| Ice drill | "Mines all the mission’s water · −2 power · ice tiles" |
+| Berm | "Shields one habitat wall tile from radiation" (card: "plan on covering half of its 8 wall tiles") |
+
+Exact shortfalls ("Night storage short by 4 batteries…") appear only in the **debrief**, next to the cheapest base that would have worked.
 
 Crew size (**4**, one per player) and mission length (**30 sols**) are fixed so rounds stay comparable; everything else comes from research.
 
@@ -87,7 +98,7 @@ Crew size (**4**, one per player) and mission length (**30 sols**) are fixed so 
 | **Power** (always) | Insolation, dust, night length (or likely tidal locking) | Solar output per array; **night storage** needed (night band; none on a tidally locked world's day side) |
 | **Life support** (always) | BVAD crew rates; water/ice presence; atmosphere composition | Water & O₂ thresholds (from BVAD); whether the **ice drill** is usable (ice tiles exist); whether the **O₂ unit** needs water or uses CO₂ |
 | **Twist** (one) | Radiation dose, atmosphere, temperature, dust record | Which twist applies and its threshold (see below) |
-| **Mass budget** | All of the above | Cheapest winning build under these criteria × 1.15 (see **Evaluation**) |
+| **Mass budget** | All of the above | Cheapest winning build under these criteria × 1.10 (see **Mass budget**) |
 
 ### Twists (agent picks one from what its research triggers)
 
@@ -121,8 +132,8 @@ Mass is in **cargo units (CU)**. The **habitat** (2×2) is pre-placed at grid ce
 | Piece | Mass | Power | Gives | Placement | Planet data it depends on |
 | --- | --- | --- | --- | --- | --- |
 | **Solar array** | 1 | +3 × insolation (cap 2.0), day only | Power | Lit tiles | Insolation, dust |
-| **Battery** | 2 | — | Covers 3 power of night load per night band (unused where there's no night) | Anywhere; needs ≥ 1 solar to charge | Night length, dust |
-| **Reactor** (fission) | 14 | +6 flat, day and night | Power | Anywhere | — (the "dark world" answer) |
+| **Battery** | 2 | — | Carries 3 power through a short night; a long night (band 2) halves that, a very long one (band 3) thirds it (unused where there's no night) | Anywhere; needs ≥ 1 solar to charge | Night length, dust |
+| **Reactor** (fission) | 18 | +6 flat, day and night | Power | Anywhere | — (the "dark world" answer) |
 | **Water tank** | 4 | — | +6 water | Anywhere | — |
 | **O₂ tank** | 4 | — | +6 O₂ | Anywhere | — |
 | **Ice drill** | 2 | −2 | +12 water | **Ice tiles only** | Water/ice presence |
@@ -135,26 +146,28 @@ Mass is in **cargo units (CU)**. The **habitat** (2×2) is pre-placed at grid ce
 ### Core tradeoffs
 
 - **Ship it vs make it:** tanks are heavy (4 CU) but need no power; drill / O₂ unit are light but cost power — worth it only where the planet has ice or CO₂ air.
-- **Solar vs reactor:** solar + batteries is cheap on bright worlds with short nights; the reactor (14 CU) wins only on dark or very long-night worlds.
+- **Solar vs reactor:** solar + batteries is cheaper wherever there's usable sunlight — even through the Moon's 15-day night; the reactor (18 CU) wins only on dark worlds (Ceres, Titan, Europa), or as Mars's storm-proof alternative.
 - **Grid placement:** drills need ice tiles (often shaded), solar needs lit tiles, berms and thermal units compete with solar for the lit habitat-adjacent tiles.
 
 ### Balance (tuned with the solver over all real planets)
 
-Constants were chosen by sweeping 288 combinations against every planet in the cached pack (each planet's real data, 30 tile layouts). Before tuning, one planet-blind build (reactor + tanks) won on **10/10** planets and the reactor was required on 10/10; after tuning (plus separate twist lines and tidal-locking nights), the best planet-blind build wins on **4/10**, there are **8 distinct cheapest builds**, and the reactor is required on **4/10** (current pack; rerun after `pnpm build:pack`, which redraws the exoplanets). Every planet stays winnable on 30/30 layouts.
+Constants are checked with the solver against every cached-pack planet (30 tile layouts each) and the live exoplanet pool, **using memorised shortcut rules as the baseline** — "always nuclear" (reactor + drill-or-water-tanks + 2 O₂ tanks) and "always solar" (solar + batteries + shipped water + O₂ unit) — not a single fixed build. With the reactor at 18 CU and 1.10 slack, "always nuclear" no longer fits on the Moon, Mercury, or Mars; it only wins on the dark worlds where it's the real answer. Every planet stays winnable on 30/30 layouts; the live pool (65 rows × twists × 3 layouts) is 309/309 winnable with budgets 17–38 CU.
 
 | Planet (twist) | Cheapest build | CU | What the data teaches |
 | --- | --- | --- | --- |
-| **Moon south pole** (radiation) | 2 solar + 6 batteries + ice drill + 2 O₂ tanks + 4 berms | 28 | Full sunlight but ~15-day nights → storage; ice in shadowed craters |
+| **Moon south pole** (radiation) | 2 solar + 6 batteries + ice drill + 2 O₂ tanks + 4 berms | 28 | Full sunlight but ~15-day nights → storage; ice in shadowed craters. Reactor shortcut: 32 > 31 budget |
 | **Mercury** (radiation) | 1 solar + 6 batteries + ice drill + 2 O₂ tanks + 4 berms | 27 | 6.7× sunlight, 88-day nights; MESSENGER's polar ice |
-| **Mars** (dust) | Reactor + O₂ unit (CO₂ air) + 2 water tanks | 23 | Dust halves solar; make O₂ from the air (MOXIE) |
-| **Ceres** (radiation) | Reactor + ice drill + 2 O₂ tanks + 4 berms | 28 | 13% sunlight; Dawn's crater ice |
-| **Titan / Europa** (thermal) | Reactor + 2 water tanks + 2 O₂ tanks + 2 thermal units | 32 | ~1–4% sunlight and bitter cold |
-| **Wide-orbit exoplanets** (radiation) | 1 solar + 4 batteries + 3 water tanks + O₂ unit + 4 berms | 26 | Rotation unknown → plan for ×2 nights; no measured ice or CO₂ — ship water |
+| **Mars** (dust) | 11 solar + 5 batteries + ice drill + O₂ unit | 24 | Dust halves solar, storms need an extra night; mine the ice, make O₂ from the CO₂ air (MOXIE). Reactor + O₂ unit + water tanks also fits (27): Curiosity's nuclear answer |
+| **Ceres** (radiation) | Reactor + ice drill + 2 O₂ tanks + 4 berms | 32 | 13% sunlight; Dawn's crater ice |
+| **Titan / Europa** (thermal) | Reactor + 2 water tanks + 2 O₂ tanks + 2 thermal units | 36 | ~1–4% sunlight and bitter cold |
+| **Wide-orbit exoplanets** (radiation) | 1 solar + 4 batteries + 3 water tanks + O₂ unit + 4 berms | 26 | Rotation unknown → plan for long nights; no measured ice or CO₂ — ship water |
 | **Tidally locked exoplanets** (thermal) | 1–6 solar + 3 water tanks + O₂ unit + 1 thermal unit | 15–20 | Orbit ≤ 20 days → always day on the star side, no batteries; sunlight sets the array count |
 
 ### Mass budget
 
-`budget = ceil(cheapest winning build × 1.15)`, clamped to **14–38 CU**. If the cheapest build is over 38 CU, redraw the planet.
+`budget = ceil(cheapest winning build × 1.10)`, clamped to **14–40 CU**. If the cheapest build is over 40 CU, redraw the planet. One difficulty level: 10% headroom is enough for one inefficient choice, not for ignoring the planet.
+
+The debrief shows the crew's base mass next to the cheapest possible build (`cheapest_mass`) — a "perfect build" is the optional mastery goal.
 
 ### Data integrity
 
@@ -181,7 +194,7 @@ An **estimated** value can't set a twist (no thresholds from guesses) — except
 | --- | --- |
 | Build timer | Whether each requirement currently passes |
 | Mass used / remaining | Aggregate production totals |
-| Placed pieces |  |
+| Placed pieces | The cheapest build (shown in the debrief) |
 | Per-piece stats **on this planet** on hover (e.g. "Solar: +1.3 power here (0.43× Earth sunlight)") |  |
 | Mission Requirements Card — thresholds + the fact behind each (no checkmarks) |  |
 | Headline fact + planet card (re-openable) |  |
@@ -198,16 +211,16 @@ load      = 4 + 2·drills + 1·o2_units + 1·thermal_units
 reactor   = 6 · reactors
 solar     = Σ lit solar arrays · 3 · min(insolation, 2) · (dust ? 0.5 : 1)
 band      = no night (tidally locked) → 0 · night ≤ 24 h → 1 · ≤ 10 Earth days → 2 · longer → 3 · unknown → 2
-storage   = ceil(max(0, load − reactor) / 3)
+night     = max(0, load − reactor)                                # what batteries must carry
 
 Power      : reactor + solar ≥ load
-             AND batteries ≥ storage · band
+             AND batteries ≥ ceil(night · band / 3)
              AND (batteries = 0 OR solar arrays ≥ 1)
 Water      : 6·water_tanks + 12·drills − (co2_atmosphere ? 0 : 6·o2_units) ≥ 12
 O₂         : 6·o2_tanks + 12·o2_units ≥ 12
 Radiation  : berms adjacent to habitat ≥ required (4 or 6, from researched dose)
 Thermal    : thermal units adjacent to habitat ≥ required (1 or 2, from researched temperature)
-Dust       : charged batteries ≥ storage · (band + 1)          # storm reserve
+Dust       : charged batteries ≥ ceil(night · (band + 1) / 3)   # storm reserve; a reactor covering the load needs none
 ```
 
 - **Evaluation** runs once at 0:00 and stores per-requirement pass/fail + reason.
@@ -233,6 +246,7 @@ Dust       : charged batteries ≥ storage · (band + 1)          # storm reserv
 | **Output** | Node broadcasts Grok's audio to **all devices in the room** over WebSocket; transcript written to the `hint` table → **captions on every screen**. |
 | **Mute** | Local toggle per device (audio off, captions stay). Default on. |
 | **Grounding** | Never does math and never invents numbers — it only phrases the board read, facts, and tiles it was given. |
+| **Spoken text** | Sounds like a flight controller on the radio ("Heads up, crew…", "Nice work, power’s covered."). Hints use conversational problem lines (`RequirementResult.spoken`), not the debrief's terse reasons. **Nothing spoken has parentheses or symbols:** captions go through `noParens` ("craters (LCROSS)" → "craters, according to LCROSS"); everything sent to Grok or `speechSynthesis` also goes through `speakable` (~ → about, × → times, O₂ → oxygen, °C → degrees Celsius). Agent-written fun facts and because-lines are written to be read aloud. |
 | **Style** | ≤ 2 sentences. Hints name one requirement and the researched fact behind it; only the final cue names **one** piece + tile. |
 | **Acknowledge progress** | If a requirement flipped to passing since the last cue, open with a short "Nice — power's covered." |
 | **No repeats, capped help** | If the board hasn't changed since the last hint, escalate one level instead of repeating — but never into an exact move before the final cue (the voice confirms reasoning, it doesn't solve the round). If audio is still playing when a cue fires, skip that cue. |
@@ -245,10 +259,12 @@ Dust       : charged batteries ≥ storage · (band + 1)          # storm reserv
 | --- | --- | --- |
 | **1:25** | Welcome + fun fact | "Welcome to the Moon's south pole, where one night lasts about two Earth weeks." |
 | **1:12** | Fun fact | "LCROSS crashed into a shadowed crater here and found water in the plume." |
-| **1:00** | Hint — **nudge** (which system is weak) | "Your crew is going to run short on water or air." |
-| **0:45** | Hint — **direction** (problem + researched fact) | "Water short by 12 units. Water ice sits in permanently shadowed craters." |
-| **0:30** | Hint — **direction** | "Daytime power short by 4. A lunar night lasts ~15 Earth days, so solar alone can't carry you." |
-| **0:15** | Hint — **exact** (one piece + tile) | "Try an ice drill on C6." |
+| **1:00** | Hint — **nudge** (which system is weak + the researched fact why) | "Heads up, crew. Your people are going to run short on water or air. Remember, LCROSS found water ice in permanently shadowed craters." |
+| **0:45** | Hint — **direction** (problem in words + researched fact, **no counts**) | "The crew will run out of water before the mission ends. Remember, LCROSS found water ice in permanently shadowed craters." |
+| **0:30** | Hint — **direction** (or **budget**, when nothing can be added to win) | "This plan won’t fit in the cargo budget. A reactor is heavy to fly in. Could sunlight and batteries do that job for less?" |
+| **0:15** | Hint — **exact** (one piece + tile) | "Try putting an ice drill on C6." |
+
+**Suggestion target:** the cheapest winning build that still contains everything the crew placed (respects their choices, teaches the planet's cheap answer). If none exists, the crew is **over-committed**: the fewest-changes build, removing the heaviest piece first, and the hint questions that piece instead of naming a requirement.
 
 Fun facts come from the research agent (see `write_card`), so they're sourced and fact-checked like everything else — and Grok speaks them **verbatim**. Hints: the server writes an accurate template from the board read and Grok phrases it (same facts, tiles, and numbers); if Grok is unavailable the template itself is the caption and each browser speaks it. Hint levels are a floor: "no repeats" escalates when the same level would repeat.
 
@@ -257,6 +273,13 @@ Fun facts come from the research agent (see `write_card`), so they're sourced an
 ## Research pipeline
 
 Runs in the **lobby** (and during debrief for the next round) so players never wait.
+
+**Fast path (two stages):**
+
+1. **Prepare** (server, no model, ~1 s): pick the destination (50/50 curated / exoplanet, no repeats; exoplanets: nearest of 5 random pool rows), fetch it, record every value, mark unknowns with fixed notes. Streams log lines ("Exploring nearby star systems for rocky worlds…").
+2. **Write** (agent, one forced `write_mission` call + one fact check, typically 2–5 s): choose the twist (preferring one different from the room's last) and write the headline, because-lines, and fun facts. Validation errors go back to the model (max 4 turns).
+
+While the agent writes, the lobby log keeps moving: every ~1.4 s it streams a planet-specific **exploring** line ("Tracing where the water ice hides…", "Checking whether one side always faces the star…") — narration only, no numbers or claims. If the agent errors or passes **12 s**, the scripted card goes onto the **same prepared planet** — no second fetch. The whole run is capped at **20 s**, then the cached pack.
 
 **Principle: tools fetch, the agent interprets.** Numbers and their sources come from tools, never from the model's memory. The model's job is choosing, connecting, and explaining.
 
@@ -277,7 +300,7 @@ Runs in the **lobby** (and during debrief for the next round) so players never w
 
 **Tier 3 rules:** a search result may replace an *estimated* field only if its URL is on the domain allowlist (`nasa.gov`, `esa.int`, `arxiv.org`, `iopscience.iop.org`, `nature.com`, `science.org`, `aanda.org`). Every tier-3 value is stored with its quote + URL and **manually reviewed** before it goes into the pack.
 
-### What the agent actually does (where an LLM adds value)
+### What the research does (server steps 1–3 and 7; the agent does 4–5)
 
 1. **Pick an interesting planet** from the filtered pool (nearby, unusual star, famous system) rather than a uniform random row. 50% solar system / 50% exoplanet; no repeats in a session.
 2. **Fetch** via tier 1 or 2 and **map** fetched fields to the profile with `set_parameter(fetch_id, field)`.
@@ -287,24 +310,14 @@ Runs in the **lobby** (and during debrief for the next round) so players never w
 6. **Narrate** to `research_log` as it goes (shown in the lobby/briefing — the research is part of the show), e.g. *"Querying NASA Exoplanet Archive… TRAPPIST-1 e: 0.66× Earth's sunlight."*
 7. **Commit** via `commit_round`. The reducer checks every parameter has a source or estimate note, **computes the thresholds**, runs the winnability check, and sets the mass budget.
 
-### Agent tools
+### Agent tool
 
-| Tool | Returns / does |
-| --- | --- |
-| `list_candidates(filter)` | Short list of eligible planets (name, distance, star type) to choose from |
-| `fetch_exoplanet(name)` | Tier 1 rows with `fetch_id`, source, `reflink` |
-| `fetch_solar_system_body(name)` | Tier 2 rows with `fetch_id`, source |
-| `set_parameter(fetch_id, field)` | Copies a fetched value into the round profile |
-| `mark_estimated(field, note)` | Applies the fixed default + explanation |
-| `choose_twist(kind, justification, param_ref)` | Must be a twist the parameters trigger |
-| `write_card(because_lines[], headline, scale_text, fun_facts[3])` | Each line and fun fact references a parameter row |
-| `log_step(text)` | Streams to `research_log` |
-| `commit_round()` | Server validates, computes thresholds, winnability, budget |
+One forced tool call, `write_mission(twist, headline, because{power, life_support, twist}, fun_facts[3])`. The prompt carries the prepared planet's data as plain-English lines (measured values with sources, unknowns with their notes), `allowed_twists`, `last_twist`, and the requirements (with `cite_one_of`) for each allowed twist. The server checks grounding, field-name leaks, cause-and-effect, and card structure, then runs the fact check; any error goes back to the model as the tool result.
 
 ### Rules
 
 - No numbers from model memory; no search during a live round; no agent calls during build.
-- **Fallback chain:** agent (22 s) → scripted research (curated body or live exoplanet, ~3 s) → **cached pack**. Overall budget 28 s — research runs while the crew gathers and during the debrief, so nobody waits on it.
+- **Fallback chain:** prepare → agent card (12 s) → scripted card on the same planet → **cached pack**. Overall budget 20 s — research runs while the crew gathers and during the debrief, so nobody waits on it.
 - **Cached pack** (`data/cached_pack/`, `pnpm build:pack`): 10 planets — all 6 solar-system bodies + 4 live exoplanets — built through the same provenance-checked session and verified accepted (winnable) by the module. Tier-3 web enrichment is not done yet.
 
 ### Agent safeguards (implemented)
@@ -364,7 +377,9 @@ Each stored requirement row: `{ round_id, kind: power | life_support | twist, th
 
 ## Debrief (learning moment)
 
-- Per-requirement pass/fail with the reason in plain language, linked back to the research line that set it.
+- Per-requirement pass/fail with the reason, and **under each row the researched fact that set it** (the because-line).
+- **Did you know?** — the headline fact, every round, win or lose.
+- **Answer key**, win or lose: the cheapest base that works here (piece counts + CU) next to the crew's mass — the counts players never saw during the build.
 - The **real fact behind the result**: "You ran out of power on night 3 — the Moon's night lasts about 14 Earth days."
 - Real-world units: "Your crew needed ~360 kg of water and ~100 kg of oxygen for 30 sols."
 - Scale card: distance (light-years), size vs Earth, sunlight vs Earth.
@@ -397,7 +412,7 @@ Each stored requirement row: `{ round_id, kind: power | life_support | twist, th
 2. Research agent (or cached pack) commits a planet; all clients show the same Mission Requirements Card, with every threshold traceable to a sourced parameter.
 3. Two different planets produce different requirement cards (different twist or thresholds); `set_parameter` rejects a value with no matching `fetch_id`.
 4. Winnability check rejects an impossible planet and sets the budget for a valid one.
-5. Opening cues speak sourced fun facts; later cues reflect the **current grid** (failing requirement, its researched fact, and a specific piece + tile at 0:30).
+5. Opening cues speak sourced fun facts; later cues reflect the **current grid** (failing requirement, its researched fact, and a specific piece + tile at 0:15).
 6. A hint plays on all four devices; muting one device silences only that device while captions remain.
 7. Host disconnects mid-build; another member becomes host and the round continues.
 8. Timer hits 0:00; evaluation and debrief match the formula.

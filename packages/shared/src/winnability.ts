@@ -65,11 +65,11 @@ export function winningBuilds(rules: RoundRules, tiles: Tiles, maxMass = Infinit
 
 export type Solve = { ok: true; cheapest: Build; budget: number } | { ok: false; reason: string };
 
-/** Cheapest winning build → mass budget = ceil(cheapest × BUDGET_SLACK), clamped BUDGET_MIN–BUDGET_MAX; reject if nothing fits under BUDGET_MAX. */
-export function solveRound(rules: RoundRules, tiles: Tiles): Solve {
+/** Cheapest winning build → mass budget = ceil(cheapest × slack), clamped BUDGET_MIN–BUDGET_MAX; reject if nothing fits under BUDGET_MAX. */
+export function solveRound(rules: RoundRules, tiles: Tiles, slack = BUDGET_SLACK): Solve {
   const builds = winningBuilds(rules, tiles, BUDGET_MAX);
   if (!builds.length) return { ok: false, reason: `No winning build fits under ${BUDGET_MAX} CU` };
   const cheapest = builds.reduce((best, b) => (b.mass < best.mass ? b : best));
-  const budget = Math.min(BUDGET_MAX, Math.max(BUDGET_MIN, Math.ceil(cheapest.mass * BUDGET_SLACK)));
+  const budget = Math.min(BUDGET_MAX, Math.max(BUDGET_MIN, Math.ceil(cheapest.mass * slack)));
   return { ok: true, cheapest, budget };
 }

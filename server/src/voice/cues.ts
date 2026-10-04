@@ -2,7 +2,7 @@
 // Scheduled here from round.build_ends_at (re-armed on reconnect), ~1 s early to absorb speech latency.
 
 import {
-  BUILD_SECONDS, CUES, boardRead, effectiveMode, rulesFromRound, templateHint, winningBuilds, xy,
+  BUILD_SECONDS, CUES, boardRead, effectiveMode, rulesFromRound, noParens, speakable, templateHint, winningBuilds, xy,
   type BoardRead, type Build, type CueMode, type PieceKind, type RequirementKind, type TileKind, type Twist,
 } from '@overburden/shared';
 import { config } from '../config';
@@ -29,9 +29,9 @@ const rooms = new Map<bigint, RoomVoice>();
 
 const MODE_INSTRUCTIONS: Record<CueMode, string> = {
   fact: 'Read the line exactly.',
-  nudge: 'Say which system is weak in one short sentence. No numbers, no tile names.',
-  direction: 'Name the problem and the researched fact behind it, in at most two short sentences. No tile names.',
-  exact: 'Tell the crew the ONE suggested move — which piece on which tile — in one short sentence.',
+  nudge: 'Say which system is weak and the researched fact that explains it, in at most two short sentences. No tile names.',
+  direction: 'Name the problem and the researched fact behind it, or question the heavy choice if the plan is over budget, in at most two short sentences. No tile names.',
+  exact: 'Say the problem, then the ONE suggested move, which piece on which tile, in at most two short sentences.',
 };
 
 function boardFor(conn: DbConnection, rd: RoundRow) {
@@ -48,11 +48,13 @@ function boardFor(conn: DbConnection, rd: RoundRow) {
 function contextFor(rd: RoundRow, mode: CueMode, read: BoardRead, draft: string, because: Partial<Record<RequirementKind, string>>, secondsLeft: number): string {
   const lines = [
     `Mode: ${mode.toUpperCase()}. Time left: ${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, '0')}. Planet: ${rd.planetName}.`,
-    read.worst ? `Problem: ${read.worst.reason}.` : 'Problem: none — every requirement passes.',
-    read.worst && because[read.worst.kind] ? `Researched fact: ${because[read.worst.kind]}` : '',
+    read.worst ? `Problem: ${read.worst.spoken}` : 'Problem: none, every requirement passes.',
+    read.worst && because[read.worst.kind] ? `Researched fact: ${speakable(because[read.worst.kind]!)}` : '',
     mode === 'exact' && read.suggestion.length ? `Suggested move: ${read.suggestion.slice(0, 1).map(a => `${a.op} ${a.kind.replace('_', ' ')} on ${a.tile}`).join('')}.` : '',
     read.changes.newlyPassing.length ? `Progress since last hint: ${read.changes.newlyPassing.join(', ')} now passing — acknowledge it briefly.` : '',
-    `Accurate draft to base your line on: "${draft}"`,
+    read.overCommitted ? 'The plan cannot fit the cargo budget: the crew must swap a heavy piece for a lighter approach.' : '',
+    `Accurate draft to base your line on: ${speakable(draft)}`,
+    'Never say how many pieces they need — the crew works out the counts. Only the planet facts may contain numbers.',
   ];
   return lines.filter(Boolean).join('\n');
 }
@@ -94,17 +96,18 @@ export async function fireCue(conn: DbConnection, roomId: bigint, cueIndex: numb
   const utterance = {
     onAudio: (chunk: Buffer) => broadcastAudio(roomId, chunk),
     onTranscript: (text: string, done: boolean) => {
-      if (done && text.trim()) void post(text.trim(), true);
+      // Captions show what was said, cleaned the same way as every other spoken line.
+      if (done && text.trim()) void post(noParens(text.trim()), true);
     },
   };
   try {
     const secondsLeft = rd.buildEndsAt ? Math.max(0, Math.round((Number(rd.buildEndsAt.microsSinceUnixEpoch / 1000n) - Date.now()) / 1000)) : cue.secondsLeft;
     const spoken =
       mode === 'fact'
-        ? await state.grok.sayVerbatim(draft, utterance)
+        ? await state.grok.sayVerbatim(speakable(draft), utterance)
         : await state.grok.sayHint(contextFor(rd, mode, read, draft, because, secondsLeft), MODE_INSTRUCTIONS[mode], utterance);
     state.speakingUntil = Date.now() + state.grok.lastSeconds * 1000;
-    return { mode, text: spoken.trim() || draft, voiced: true };
+    return { mode, text: noParens(spoken.trim()) || draft, voiced: true };
   } catch (e) {
     console.warn(`[voice] room ${roomId} cue ${cueIndex}: ${e instanceof Error ? e.message : e} — template fallback`);
     await post(draft, false); // clients speak it themselves

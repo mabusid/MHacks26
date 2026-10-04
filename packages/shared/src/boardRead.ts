@@ -13,8 +13,10 @@ export type Action = { op: 'add' | 'remove'; kind: PieceKind; tile: string };
 export interface BoardRead {
   evaluation: Evaluation;
   worst: RequirementResult | null;
-  /** Fewest changes from the current board to a winning build within budget. Empty when already winning. */
+  /** Steps from the current board to the target winning build. Empty when already winning. */
   suggestion: Action[];
+  /** Failing, and nothing can be ADDED to win within the budget: the crew must swap something heavy out. */
+  overCommitted: boolean;
   massUsed: number;
   massLeft: number;
   summary: string;
@@ -36,7 +38,17 @@ function signatureOf(board: readonly PlacedPiece[]): string {
     .join(',');
 }
 
-function closest(builds: readonly Build[], current: Counts): Build | undefined {
+/**
+ * The build Mission Control steers toward. If the crew's pieces can still grow into a winning build, the
+ * cheapest such build (it respects their choices and teaches the planet's cheap answer). Otherwise the
+ * fewest-changes build, so the advice is a swap, not a teardown.
+ */
+function targetBuild(builds: readonly Build[], current: Counts): { build: Build | undefined; overCommitted: boolean } {
+  let cheapest: Build | undefined;
+  for (const b of builds) {
+    if (PIECE_KINDS.every(k => b.counts[k] >= current[k]) && (!cheapest || b.mass < cheapest.mass)) cheapest = b;
+  }
+  if (cheapest) return { build: cheapest, overCommitted: false };
   let best: Build | undefined;
   let bestDist = Infinity;
   for (const b of builds) {
@@ -46,14 +58,14 @@ function closest(builds: readonly Build[], current: Counts): Build | undefined {
       bestDist = dist;
     }
   }
-  return best;
+  return { build: best, overCommitted: true };
 }
 
 function planActions(board: readonly PlacedPiece[], tiles: Tiles, target: Counts, current: Counts, order: PieceKind[]): Action[] {
   const actions: Action[] = [];
   const remaining = [...board];
-  // Remove the pieces farthest from the habitat first.
-  for (const kind of PIECE_KINDS) {
+  // Heaviest kinds first (that's what frees the budget), farthest from the habitat first within a kind.
+  for (const kind of [...PIECE_KINDS].sort((a, b) => PIECES[b].mass - PIECES[a].mass)) {
     const extra = current[kind] - target[kind];
     if (extra <= 0) continue;
     const victims = remaining.filter(p => p.kind === kind).sort((a, b) => distanceToHabitat(pieceIndex(b)) - distanceToHabitat(pieceIndex(a)));
@@ -115,11 +127,14 @@ export function boardRead(
   const worst = failing.length ? failing.reduce((a, b) => (b.severity > a.severity ? b : a)) : null;
 
   let suggestion: Action[] = [];
+  let overCommitted = false;
   if (worst) {
-    const target = closest(
+    const found = targetBuild(
       winners.filter(b => b.mass <= budget),
       current
     );
+    const target = found.build;
+    overCommitted = found.overCommitted;
     if (target) {
       const first = REQUIREMENT_PIECES[worst.kind];
       const order = [...first, ...PIECE_KINDS.filter(k => !first.includes(k))];
@@ -139,6 +154,7 @@ export function boardRead(
     evaluation,
     worst,
     suggestion,
+    overCommitted,
     massUsed,
     massLeft: budget - massUsed,
     summary: summarize(board, tiles, massUsed, budget),

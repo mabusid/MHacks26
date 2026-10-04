@@ -113,7 +113,7 @@
     },
     {
       "kind": "life_support",
-      "text": "No water or CO₂ has been detected, so supplies must be shipped.",
+      "text": "No water or CO₂ air has been detected there yet.",
       "field": "waterIce"
     },
     {

@@ -16,6 +16,8 @@
   --ground-1: #1b2230;
   --ground-2: #0b0f17;
   --ground-hi: #2b3445;
+  /* Edge color shared with the 3D style pass: the palette's shadow tone (docs/look.md → Palette). */
+  --ink: #262d3f;
   font: 16px/1.45 system-ui, 'Segoe UI', Roboto, sans-serif;
   color: var(--text);
   background: var(--bg);
@@ -26,34 +28,44 @@
   --ground-1: #1b2230;
   --ground-2: #0b0f17;
   --ground-hi: #2b3445;
+  --ink: #262d3f;
 }
 
 .theme-airless {
   --ground-1: #4a4d55;
   --ground-2: #1c1e23;
   --ground-hi: #6a6e78;
+  --ink: #2b2d33;
 }
 
 .theme-dust {
   --ground-1: #8a4428;
   --ground-2: #2e140b;
   --ground-hi: #a85a38;
+  --ink: #3f1a0e;
 }
 
 .theme-ice {
   --ground-1: #7a6232;
   --ground-2: #1f2a2e;
   --ground-hi: #9a8150;
+  --ink: #23323a;
 }
 
 .theme-exo {
   --ground-1: #4b3478;
   --ground-2: #141029;
   --ground-hi: #634a96;
+  --ink: #1d1533;
 }
 
 * {
   box-sizing: border-box;
+}
+
+/* 1px tinted outline for piece art, matching the world's edge lines (never flat black). */
+.app {
+  --ink-outline: drop-shadow(1px 0 0 var(--ink)) drop-shadow(-1px 0 0 var(--ink)) drop-shadow(0 1px 0 var(--ink)) drop-shadow(0 -1px 0 var(--ink));
 }
 
 body {
@@ -202,9 +214,15 @@ button:disabled {
   transition: background 600ms ease;
 }
 
+/* Planet horizon along the bottom (docs/look.md → Camera): keep it bright, only settle the sky behind the card. */
 .veil-home,
 .veil-lobby {
-  background: radial-gradient(ellipse at 30% 50%, rgba(6, 9, 15, 0.1) 0%, rgba(6, 9, 15, 0.75) 75%);
+  background: radial-gradient(ellipse at 50% 40%, rgba(6, 9, 15, 0.4) 0%, rgba(6, 9, 15, 0.1) 60%, transparent 85%);
+}
+
+/* Base framed left of the briefing card: a light veil so the hero shot stays readable. */
+.veil-briefing {
+  background: radial-gradient(ellipse at center, rgba(6, 9, 15, 0.35) 0%, rgba(6, 9, 15, 0.2) 70%);
 }
 
 .veil-build {
@@ -949,7 +967,7 @@ button:disabled {
 .tile .piece-svg {
   width: 100%;
   height: 100%;
-  filter: drop-shadow(1px 4px 0 rgba(0, 0, 0, 0.35));
+  filter: var(--ink-outline) drop-shadow(1px 4px 0 rgba(0, 0, 0, 0.35));
 }
 
 .habitat {
@@ -967,7 +985,7 @@ button:disabled {
 .habitat-svg {
   width: 118%;
   height: 118%;
-  filter: drop-shadow(1px 5px 0 rgba(0, 0, 0, 0.4));
+  filter: var(--ink-outline) drop-shadow(1px 5px 0 rgba(0, 0, 0, 0.4));
 }
 
 .cursor {
@@ -1062,7 +1080,7 @@ button:disabled {
 .piece-btn .piece-svg {
   width: 34px;
   height: 30px;
-  filter: drop-shadow(0 2px 1px rgba(0, 0, 0, 0.45));
+  filter: var(--ink-outline) drop-shadow(0 2px 1px rgba(0, 0, 0, 0.45));
 }
 
 .piece-btn.selected {
@@ -1248,6 +1266,39 @@ button:disabled {
   font-size: 1rem;
   border-left: 3px solid var(--accent);
   padding-left: 0.7rem;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.result-text {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.result-why {
+  font-size: 0.82rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.answer-key {
+  display: grid;
+  gap: 0.15rem;
+  font-size: 0.9rem;
+}
+
+.answer-key strong {
+  font-family: var(--mono);
+  color: var(--text);
+}
+
+.goal {
+  font-size: 0.95rem;
+}
+
+.goal strong {
+  font-family: var(--mono);
+  color: var(--accent);
 }
 
 .link-btn {

@@ -17,7 +17,11 @@ export default function Briefing({ data }: { data: RoomData }) {
     <div className="card briefing">
       <p className="label">Mission briefing</p>
       <h1 className="planet-name">{current.planetName}</h1>
+      <p className="headline">{current.headline}</p>
       <p className="muted">{keyFacts(params).slice(0, 2).join(' · ')}</p>
+      <p className="goal">
+        Meet all 3 before time runs out · stay under <strong>{current.massBudget} CU</strong>
+      </p>
       <RequirementList requirements={requirements} />
       <p className="countdown">
         Build starts in <strong>{left ?? '…'}</strong>

@@ -148,7 +148,7 @@ In `packages/shared`:
   - suggestion: from the winnability enumeration, the winning count-vector with the **fewest adds/removes** from the current board (tie → least mass), mapped to tiles (first valid free tile nearest the habitat, A–H × 1–8)
   - board summary text (pieces + coordinates, free ice/lit/adjacent tiles, mass left)
   - change since last read (newly passing requirements, board unchanged?)
-- **Winnability:** brute-force counts (~90k combos) + tile feasibility (ice tiles, lit tiles, ≤ 8 habitat-adjacent tiles) → cheapest CU → `budget = clamp(ceil(min × 1.15), 14, 38)` or `reject` (constants retuned in the UI overhaul — see Plan.md → Balance).
+- **Winnability:** brute-force counts (~90k combos) + tile feasibility (ice tiles, lit tiles, ≤ 8 habitat-adjacent tiles) → cheapest CU → `budget = clamp(ceil(min × 1.10), 14, 40)` or `reject` (constants retuned in the UI overhaul — see Plan.md → Balance).
 - Seeded PRNG + tile generator (12 shaded, 4 ice; polar bodies put ice inside shade).
 
 Constants (piece stats, 12/12, crew 4, 30 sols, BVAD kg) in `pieces.ts`; test fixtures for Moon / Mars / Titan / bright exoplanet in `fixtures.ts` (approximate values — sourced profiles come in Phase 8).
@@ -158,7 +158,7 @@ Implementation notes: suggestions fill the habitat-adjacent ring last so berms a
 ### Checkpoint 2
 
 - [x] Vitest: Moon, Mars, Titan, bright-exoplanet fixtures reproduce the Plan.md balance table (cheapest build + CU + budget).
-- [x] Winnability returns a budget in 14–38 or `reject` (grid can't fit / over 38 CU).
+- [x] Winnability returns a budget in 14–40 or `reject` (grid can’t fit / over 40 CU).
 - [x] Following the board-read suggestion from an empty board wins on all four fixtures; over-budget boards get a remove suggestion.
 
 ---
@@ -188,7 +188,7 @@ Dev path: `log_research`/`commit_round` callable via `spacetime call` with the o
 - [x] Invalid research rejected (untriggered twist, missing source, unknown citation field, wrong fun-fact count); valid fixture gets a budget; players can't call `commit_round`.
 - [x] `pnpm check:phase3` (9 checks; `--wait-end` also waits out the scheduled build end).
 
-Note: with the current constants every *legitimate* profile is winnable (one reactor + tanks always fits under 38 CU), so the winnability rejection path is covered by unit tests with synthetic rules.
+Note: with the current constants every *legitimate* profile is winnable (one reactor + tanks always fits under 40 CU), so the winnability rejection path is covered by unit tests with synthetic rules.
 
 Round rules (solar per array, night band, thermal load, CO₂, ice, berms) are stored as columns on `round`, derived server-side; the Node service reconnects automatically (startup race with `spacetime dev`, breaking republishes).
 
