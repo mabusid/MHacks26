@@ -7,6 +7,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import BaseScene from './BaseScene';
 import StylePass from './StylePass';
+import { useToonRamp } from './toon';
 
 export type WorldPhase = 'home' | 'lobby' | 'briefing' | 'build' | 'debrief';
 
@@ -86,19 +87,6 @@ function faceColors(geo: THREE.BufferGeometry, colorAt: (x: number, y: number, z
   flat.setAttribute('color', new THREE.BufferAttribute(colors, 3));
   flat.computeVertexNormals();
   return flat;
-}
-
-// ── Shared toon material language ───────────────────────────────────────────────────────────────
-
-/** The one shading ramp every object uses: 4 flat light steps. */
-function useToonRamp() {
-  return useMemo(() => {
-    const steps = new Uint8Array([80, 140, 205, 255]);
-    const tex = new THREE.DataTexture(steps, steps.length, 1, THREE.RedFormat);
-    tex.minFilter = tex.magFilter = THREE.NearestFilter;
-    tex.needsUpdate = true;
-    return tex;
-  }, []);
 }
 
 // ── Scene pieces ────────────────────────────────────────────────────────────────────────────────

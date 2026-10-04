@@ -25,6 +25,7 @@ const fragmentShader = /* glsl */ `
   uniform float far;
   uniform vec3 ink;
   uniform float levels;
+  uniform float edge;
 
   float viewZ(vec2 uv) {
     return -perspectiveDepthToViewZ(texture2D(tDepth, uv).r, near, far);
@@ -49,7 +50,7 @@ const fragmentShader = /* glsl */ `
     dz += max(viewZ(uv - vec2(px.x, 0.0)) - z, 0.0);
     dz += max(viewZ(uv + vec2(0.0, px.y)) - z, 0.0);
     dz += max(viewZ(uv - vec2(0.0, px.y)) - z, 0.0);
-    float depthEdge = step(0.08, dz / z);
+    float depthEdge = step(edge, dz / z);
 
     // Normal crease: only the nearer side of a sharp fold lights up.
     float crease = 0.0;
@@ -67,14 +68,15 @@ const fragmentShader = /* glsl */ `
     if (depthEdge > 0.0) c = mix(c * 0.45, ink, 0.35);   // tinted outline, never flat black
     else if (crease > 0.0) c = c * 1.3 + 0.02;           // light crease highlight
 
-    gl_FragColor = vec4(c, 1.0);
+    gl_FragColor = vec4(c, color.a); // alpha kept, so a canvas without a sky stays see-through
     #include <colorspace_fragment>
     // Step the tones in display space so fog and glow band instead of smoothing.
     gl_FragColor.rgb = floor(gl_FragColor.rgb * levels + 0.5) / levels;
   }
 `;
 
-export default function StylePass({ enabled, pixel, ink }: { enabled: boolean; pixel: number; ink: string }) {
+/** `edge`: relative depth jump that draws an outline. Big scenes want ~0.08; a small diorama seen from far away needs less. */
+export default function StylePass({ enabled, pixel, ink, edge = 0.08 }: { enabled: boolean; pixel: number; ink: string; edge?: number }) {
   const { gl, size, viewport, invalidate } = useThree();
 
   useEffect(() => invalidate(), [enabled, invalidate]);
@@ -98,6 +100,7 @@ export default function StylePass({ enabled, pixel, ink }: { enabled: boolean; p
         far: { value: 200 },
         ink: { value: new THREE.Color() },
         levels: { value: 20 },
+        edge: { value: 0.08 },
       },
       depthTest: false,
       depthWrite: false,
@@ -140,7 +143,8 @@ export default function StylePass({ enabled, pixel, ink }: { enabled: boolean; p
 
   useEffect(() => {
     res.material.uniforms.ink.value.set(ink);
-  }, [res, ink]);
+    res.material.uniforms.edge.value = edge;
+  }, [res, ink, edge]);
 
   // Priority 1: we own rendering for this canvas.
   useFrame(({ scene, camera }) => {
@@ -154,6 +158,8 @@ export default function StylePass({ enabled, pixel, ink }: { enabled: boolean; p
     u.near.value = cam.near;
     u.far.value = cam.far;
 
+    const clearColor = gl.getClearColor(new THREE.Color());
+    const clearAlpha = gl.getClearAlpha();
     gl.setRenderTarget(res.beauty);
     gl.render(scene, camera);
 
@@ -175,6 +181,7 @@ export default function StylePass({ enabled, pixel, ink }: { enabled: boolean; p
     scene.overrideMaterial = null;
     for (const o of res.hidden) o.visible = true;
     scene.background = background;
+    gl.setClearColor(clearColor, clearAlpha);
 
     u.tColor.value = res.beauty.texture;
     u.tDepth.value = res.beauty.depthTexture;

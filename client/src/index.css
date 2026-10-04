@@ -802,6 +802,8 @@ button:disabled {
   --tile-edge: 6px;
   --tilt-x: 46deg;
   --tilt-z: -16deg;
+  --persp: 980px;
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -817,9 +819,57 @@ button:disabled {
     '. cols'
     'rows board';
   /* perspective() on the same transform so an ancestor animation can't flatten it. */
-  transform: perspective(980px) rotateX(var(--tilt-x)) rotateZ(var(--tilt-z));
+  /* BoardCanvas reads these same variables (and the transform-origin) to line the 3D board up with this one. */
+  transform: perspective(var(--persp)) rotateX(var(--tilt-x)) rotateZ(var(--tilt-z));
   transform-origin: 50% 65%;
   transform-style: preserve-3d;
+  position: relative;
+  z-index: 1;
+}
+
+/* The 3D board (BoardCanvas) behind the HTML grid. The grid stays on top as a transparent input layer. */
+.board-3d {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.board-3d canvas {
+  display: block;
+}
+
+/* R3F re-enables pointer events on its wrapper; the canvas overhangs the palette, so force it inert. */
+.board-3d * {
+  pointer-events: none !important;
+}
+
+.is-3d .board {
+  background: transparent;
+  box-shadow: none;
+}
+
+.is-3d .tile,
+.is-3d .tile.valid,
+.is-3d .tile.hovered.valid,
+.is-3d .tile.hovered.invalid,
+.is-3d .tile.invalid:not(.has-piece) {
+  background: transparent;
+  box-shadow: none;
+  opacity: 1;
+  filter: none;
+  transform: none;
+}
+
+.is-3d .tile::before,
+.is-3d .tile .piece-svg,
+.is-3d .valid-dot,
+.is-3d .habitat {
+  display: none;
+}
+
+/* Focus is shown in 3D (the focused tile lifts and gets a light rim, same as hover). */
+.is-3d .tile:focus-visible {
+  outline: none;
 }
 
 .grid-cols,
@@ -1339,7 +1389,12 @@ button:disabled {
     padding: 0.4rem 0 0.6rem;
   }
 
-  .board-plane {
+  /* Flat HTML board on phones; with 3D pieces a gentle tilt shows their sides and keeps rows ≥ 40px tall. */
+  .board-scene.is-3d {
+    --tilt-x: 22deg;
+  }
+
+  .board-scene:not(.is-3d) .board-plane {
     transform: none;
   }
 

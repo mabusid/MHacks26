@@ -1,8 +1,12 @@
-import { useMemo, useRef, useState } from 'react';
+import { Suspense, lazy, useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { GRID_SIZE, PIECES, isHabitat, placementError, tileName, xy, type PieceKind, type TileKind } from '@overburden/shared';
 import { crewColor } from '../format';
 import type { Cursor, Member, Piece } from '../module_bindings/types';
+import type { BoardLayout, BoardState } from './BoardCanvas';
 import PieceIcon from './PieceIcon';
+
+// three.js stays out of the main bundle; until it loads (or if WebGL is missing) the HTML/SVG board shows.
+const BoardCanvas = lazy(() => import('./BoardCanvas'));
 
 export type Tool = PieceKind | 'remove';
 
@@ -24,6 +28,16 @@ interface Props {
 const LETTERS = 'ABCDEFGH';
 const CURSOR_INTERVAL_MS = 66; // ~15 updates/s
 const TILE_WORD: Record<string, string> = { lit: 'sunlit', shaded: 'shaded', ice: 'ice' };
+const HABITAT_CELLS = new Set(Array.from({ length: GRID_SIZE * GRID_SIZE }, (_, i) => i).filter(i => isHabitat(xy(i).x, xy(i).y)));
+
+function webglAvailable(): boolean {
+  try {
+    const c = document.createElement('canvas');
+    return !!(c.getContext('webgl2') || c.getContext('webgl'));
+  } catch {
+    return false;
+  }
+}
 
 /**
  * The 2.5D build board (docs/design.md → Build). HTML buttons, so taps are exact and keyboard play works.
@@ -34,6 +48,13 @@ export default function Grid(props: Props) {
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
   const lastSent = useRef(0);
   const [hover, setHover] = useState<number | null>(null);
+  const sceneRef = useRef<HTMLDivElement>(null);
+  const planeRef = useRef<HTMLDivElement>(null);
+  const boardRef = useRef<HTMLDivElement>(null);
+  const cellRefs = useRef<(HTMLElement | null)[]>([]);
+  const [layout, setLayout] = useState<{ layout: BoardLayout; left: number; top: number; ink: string }>();
+  const [use3d, setUse3d] = useState(webglAvailable);
+  const [ready3d, setReady3d] = useState(false);
 
   const byIndex = useMemo(() => new Map(pieces.map(p => [p.index, p])), [pieces]);
   const taken = useMemo(() => new Set(pieces.map(p => p.index)), [pieces]);
@@ -83,11 +104,77 @@ export default function Grid(props: Props) {
     if (nx >= 0 && ny >= 0 && nx < GRID_SIZE && ny < GRID_SIZE) focusTile(ny * GRID_SIZE + nx);
   }
 
+  // Measure the live DOM so the 3D board matches the CSS one exactly, at any size and tilt.
+  const measure = useCallback(() => {
+    const scene = sceneRef.current, plane = planeRef.current, board = boardRef.current;
+    if (!scene || !plane || !board) return;
+    const css = getComputedStyle(scene);
+    const [ox, oy] = getComputedStyle(plane).transformOrigin.split(' ').map(parseFloat);
+    const deg = (v: string) => (parseFloat(v) || 0) * (Math.PI / 180);
+    const tiles = Array.from({ length: GRID_SIZE * GRID_SIZE }, (_, i) => {
+      const el = cellRefs.current[i];
+      const w = el?.offsetWidth ?? 0, h = el?.offsetHeight ?? 0;
+      return { cx: board.offsetLeft + (el?.offsetLeft ?? 0) + w / 2 - ox, cy: board.offsetTop + (el?.offsetTop ?? 0) + h / 2 - oy, w, h };
+    });
+    const hab = tiles.filter((_, i) => isHabitat(xy(i).x, xy(i).y));
+    const cell = tiles[0].w;
+    // Canvas centered on the transform-origin, with room above the pad for piece heights.
+    const halfW = Math.ceil(Math.max(ox, plane.offsetWidth - ox) + cell * 2);
+    const halfH = Math.ceil(Math.max(oy, plane.offsetHeight - oy) + cell * 2.5);
+    setLayout({
+      left: plane.offsetLeft + ox - halfW,
+      top: plane.offsetTop + oy - halfH,
+      ink: getComputedStyle(scene).getPropertyValue('--ink').trim() || '#262d3f',
+      layout: {
+        width: halfW * 2,
+        height: halfH * 2,
+        perspective: parseFloat(css.getPropertyValue('--persp')) || 980,
+        tiltX: deg(css.getPropertyValue('--tilt-x')),
+        tiltZ: deg(css.getPropertyValue('--tilt-z')),
+        cell,
+        tiles,
+        board: { cx: board.offsetLeft + board.offsetWidth / 2 - ox, cy: board.offsetTop + board.offsetHeight / 2 - oy, w: board.offsetWidth, h: board.offsetHeight },
+        habitat: { cx: hab.reduce((a, t) => a + t.cx, 0) / hab.length, cy: hab.reduce((a, t) => a + t.cy, 0) / hab.length },
+      },
+    });
+  }, []);
+
+  // Re-measure when 3D turns on: phones switch from the flat board to a gentle tilt then.
+  useLayoutEffect(measure, [measure, ready3d]);
+
+  useLayoutEffect(() => {
+    measure();
+    const ro = new ResizeObserver(measure);
+    if (planeRef.current) ro.observe(planeRef.current);
+    window.addEventListener('resize', measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, [measure]);
+
+  const valid = tiles.map((_, i) => errorAt(i) === null);
+  const boardState: BoardState = {
+    tiles,
+    pieces: new Map(pieces.map(p => [p.index, p.kind as PieceKind])),
+    valid,
+    habitatCells: HABITAT_CELLS,
+    hover,
+    removing: tool === 'remove',
+  };
+
   const others = cursors.filter(c => c.visible && !c.identity.isEqual(me.identity) && members.some(m => m.identity.isEqual(c.identity) && m.online));
 
   return (
-    <div className="board-scene">
-      <div className="board-plane">
+    <div ref={sceneRef} className={`board-scene${use3d && ready3d ? ' is-3d' : ''}`}>
+      {use3d && layout && (
+        <div className="board-3d" style={{ left: layout.left, top: layout.top }} aria-hidden>
+          <Suspense fallback={null}>
+            <BoardCanvas layout={layout.layout} state={boardState} ink={layout.ink} onReady={() => setReady3d(true)} onFail={() => setUse3d(false)} />
+          </Suspense>
+        </div>
+      )}
+      <div ref={planeRef} className="board-plane">
         <div className="grid-cols" aria-hidden>
           {LETTERS.split('').map(l => (
             <span key={l}>{l}</span>
@@ -99,6 +186,7 @@ export default function Grid(props: Props) {
           ))}
         </div>
         <div
+          ref={boardRef}
           className="board"
           role="grid"
           aria-label="Build grid"
@@ -111,7 +199,17 @@ export default function Grid(props: Props) {
         >
           {tiles.map((kind, i) => {
             const { x, y } = xy(i);
-            if (isHabitat(x, y)) return <div key={i} className="tile tile-habitat-cell" aria-hidden />;
+            if (isHabitat(x, y))
+              return (
+                <div
+                  key={i}
+                  ref={el => {
+                    cellRefs.current[i] = el;
+                  }}
+                  className="tile tile-habitat-cell"
+                  aria-hidden
+                />
+              );
             const p = byIndex.get(i);
             const ok = errorAt(i) === null;
             const cls = ['tile', `tile-${kind}`, ok ? 'valid' : 'invalid', hover === i ? 'hovered' : '', p ? 'has-piece' : ''].join(' ');
@@ -120,6 +218,7 @@ export default function Grid(props: Props) {
                 key={i}
                 ref={el => {
                   refs.current[i] = el;
+                  cellRefs.current[i] = el;
                 }}
                 className={cls}
                 aria-label={info(i)}

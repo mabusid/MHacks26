@@ -76,7 +76,7 @@ Themes (rule-driven as in design.md): space (neutral blue-grey), airless (grey +
 | Terrain, craters, landing pad | Pieces on the board (isometric CSS art) |
 | Habitat (outside the build) | All text, timer, requirements, Mission Control |
 
-The board is **not** pixelated: it has to stay exact for taps and labels. To share the language, piece art (board, palette, habitat) gets a 1px outline in `--ink`, the theme's `shadow` color (the same tint as the world's edges); the theme class sits on `.app` so the HUD can read it.
+The board is **3D in the same style** (`BoardCanvas.tsx`): tile slabs (shaded tiles sunken, ice tiles with crystals, so color is never the only cue), the habitat, and low-poly piece models (`PieceModel.tsx`) that drop onto the pad, drawn through the same toon ramp and style pass (finer pixels, lower edge threshold). Its camera reproduces the CSS transform of `.board-plane` (`perspective(--persp) rotateX(--tilt-x) rotateZ(--tilt-z)` around the transform-origin, measured from the DOM), so the transparent HTML grid on top still takes every tap, key, and aria label. Without WebGL the HTML/SVG board shows as before. Phones get a gentle 22° tilt in 3D mode (rows stay ≥ ~40 px).
 
 ## Performance & fallback
 
