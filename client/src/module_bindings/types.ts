@@ -24,6 +24,13 @@ export const BuildEnd = __t.object("BuildEnd", {
 });
 export type BuildEnd = __Infer<typeof BuildEnd>;
 
+export const BuildStart = __t.object("BuildStart", {
+  scheduledId: __t.u64(),
+  scheduledAt: __t.scheduleAt(),
+  roundId: __t.u64(),
+});
+export type BuildStart = __Infer<typeof BuildStart>;
+
 export const Member = __t.object("Member", {
   identity: __t.identity(),
   roomId: __t.u64(),
@@ -73,6 +80,7 @@ export const Requirement = __t.object("Requirement", {
   roundId: __t.u64(),
   kind: __t.string(),
   title: __t.string(),
+  summary: __t.string(),
   threshold: __t.string(),
   derivedFrom: __t.array(__t.string()),
   because: __t.string(),
@@ -121,6 +129,7 @@ export const Round = __t.object("Round", {
   headline: __t.string(),
   scaleText: __t.string(),
   funFacts: __t.array(__t.string()),
+  briefingEndsAt: __t.option(__t.timestamp()),
   buildEndsAt: __t.option(__t.timestamp()),
 });
 export type Round = __Infer<typeof Round>;

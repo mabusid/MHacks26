@@ -33,18 +33,14 @@ export default function Home() {
   }
 
   return (
-    <main className="screen">
-      <p className="label">Mission control</p>
-      <h1>Overburden</h1>
-      <p className="muted">Four crew. One real planet. Two and a half minutes to build a base that survives.</p>
+    <div className="card home">
+      <h1 className="title">Overburden</h1>
+      <p className="muted">Build a base on a real planet. 2:30 on the clock.</p>
 
-      <label className="field">
-        Your name
-        <input value={name} maxLength={NAME_MAX_LENGTH} onChange={e => setName(e.target.value)} placeholder="e.g. Sam" />
-      </label>
+      <input value={name} maxLength={NAME_MAX_LENGTH} onChange={e => setName(e.target.value)} placeholder="Your name" aria-label="Your name" />
 
       <button
-        className="primary"
+        className="primary big"
         disabled={!nameCheck.ok || pending}
         onClick={() => {
           remember();
@@ -69,12 +65,12 @@ export default function Home() {
           placeholder="CODE"
           aria-label="Room code"
         />
-        <button type="submit" disabled={!nameCheck.ok || code.length !== ROOM_CODE_LENGTH || pending}>
+        <button type="submit" className="big" disabled={!nameCheck.ok || code.length !== ROOM_CODE_LENGTH || pending}>
           Join
         </button>
       </form>
 
       {error && <p className="error">{error}</p>}
-    </main>
+    </div>
   );
 }

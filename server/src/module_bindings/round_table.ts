@@ -34,5 +34,6 @@ export default __t.row({
   headline: __t.string(),
   scaleText: __t.string().name("scale_text"),
   funFacts: __t.array(__t.string()).name("fun_facts"),
+  briefingEndsAt: __t.option(__t.timestamp()).name("briefing_ends_at"),
   buildEndsAt: __t.option(__t.timestamp()).name("build_ends_at"),
 });

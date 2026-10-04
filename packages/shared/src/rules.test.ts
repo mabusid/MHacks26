@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { FIXTURES } from './fixtures';
-import { deriveRules, nightBand, thermalLoadFor, triggeredTwists } from './rules';
+import { deriveRules, nightBand, rulesFromRound, thermalLoadFor, triggeredTwists } from './rules';
 
 describe('nightBand', () => {
   it('maps night length to bands, unknown → 2', () => {
@@ -49,5 +49,12 @@ describe('deriveRules', () => {
   });
   it('rejects a twist the data does not support', () => {
     expect(() => deriveRules(FIXTURES.titan.profile, 'radiation')).toThrow(/not supported/);
+  });
+});
+
+describe('rulesFromRound', () => {
+  it('round-trips derived rules through round columns', () => {
+    const rules = deriveRules(FIXTURES.mars.profile, 'dust');
+    expect(rulesFromRound(rules)).toEqual(rules);
   });
 });

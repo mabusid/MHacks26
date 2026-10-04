@@ -65,3 +65,20 @@ export const PHASE_LABEL: Record<string, string> = {
   Build: 'Build',
   Debrief: 'Debrief',
 };
+
+/** 2–3 short numbers for the lobby and briefing (less to read than the full facts). */
+export function keyFacts(params: readonly PlanetParameter[]): string[] {
+  const get = (f: string) => params.find(p => p.field === f);
+  const out: string[] = [];
+  const sun = get('insolation');
+  if (sun?.num !== undefined) {
+    const pct = sun.num * 100;
+    out.push(pct < 10 ? `${pct.toFixed(1)}% of Earth’s sunlight` : `${Math.round(pct)}% of Earth’s sunlight`);
+  }
+  const night = get('nightHours');
+  if (night?.num !== undefined) out.push(night.num > 48 ? `${Math.round(night.num / 24)}-day nights` : `${Math.round(night.num)}-hour nights`);
+  else if (night) out.push('night length unknown');
+  const temp = get('meanTempK');
+  if (temp?.num !== undefined) out.push(`${Math.round(temp.num - 273.15)} °C`);
+  return out;
+}

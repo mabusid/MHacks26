@@ -36,6 +36,18 @@ const server = createServer(async (req, res) => {
   send(res, 404, { error: 'Not found' });
 });
 
+// Dev: when `spacetime dev` republishes a schema change, this process can reload with new bindings a moment
+// before the module updates and fail to decode an old row inside the SDK. That connection is about to be
+// dropped and reconnected anyway, so log and keep running instead of dying (tsx watch won't restart a crash).
+process.on('uncaughtException', err => {
+  if (config.dev && /node_modules[\\/].*spacetimedb/.test(err.stack ?? '')) {
+    console.warn(`[server] SDK error (likely schema republish in progress): ${err.message}`);
+    return;
+  }
+  console.error(err);
+  process.exit(1);
+});
+
 startSpacetime();
 server.listen(config.port, () => {
   console.log(`[server] listening on :${config.port} (shared ${SHARED_VERSION}, xAI key ${config.xaiApiKey ? 'set' : 'missing — template hints only'})`);

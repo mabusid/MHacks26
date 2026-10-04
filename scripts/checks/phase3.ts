@@ -1,4 +1,4 @@
-// Checkpoint 3: commit_round (fixture path), validation, start/briefing/build transitions.
+// Checkpoint 3: commit_round (fixture path), validation, start → auto briefing → build transitions.
 // Needs `pnpm dev` running. Run: pnpm check:phase3   (add --wait-end to also wait out the 2:30 build timer)
 import { execFileSync } from 'node:child_process';
 import { homedir } from 'node:os';
@@ -159,20 +159,44 @@ await step('a valid owner commit replaces the unused Moon round (old rows delete
   return `Titan budget ${db.round.id.find(room()!.nextRoundId!)!.massBudget} CU`;
 });
 
-await step('host Start → Briefing for everyone; guest cannot begin the build', async () => {
+await step('host Start → Briefing for everyone with a ~10 s countdown; guest cannot skip', async () => {
   await host.conn.reducers.startRound({});
   await until('briefing', () => room()!.phase.tag === 'Briefing' && room()!.currentRoundId !== undefined && room()!.nextRoundId === undefined);
   await until('guest briefing', () => [...guest.conn.db.room.iter()].some(r => r.code === code && r.phase.tag === 'Briefing'));
-  return rejects('guest begin', guest.conn.reducers.beginBuild({}), /Only the host/);
+  const rd = db.round.id.find(room()!.currentRoundId!)!;
+  const secs = (Number(rd.briefingEndsAt!.microsSinceUnixEpoch / 1000n) - Date.now()) / 1000;
+  if (secs < 8 || secs > 11) throw new Error(`briefing ends in ${secs.toFixed(1)} s`);
+  await rejects('guest skip', guest.conn.reducers.beginBuild({}), /Only the host/);
+  return `${secs.toFixed(0)} s countdown`;
 });
 
-await step('host Begin build → Build phase, timer ends ~150 s from now, round active', async () => {
-  await host.conn.reducers.beginBuild({});
-  await until('build', () => room()!.phase.tag === 'Build');
+await step('build starts automatically when the countdown ends: Build phase, ~150 s timer, round active', async () => {
+  await until('auto build', () => room()!.phase.tag === 'Build', 13_000);
   const rd = db.round.id.find(room()!.currentRoundId!)!;
   const secs = (Number(rd.buildEndsAt!.microsSinceUnixEpoch / 1000n) - Date.now()) / 1000;
-  if (rd.status.tag !== 'Active' || secs < 145 || secs > 151) throw new Error(`status ${rd.status.tag}, ${secs.toFixed(1)} s left`);
+  if (rd.status.tag !== 'Active' || rd.briefingEndsAt !== undefined || secs < 145 || secs > 151) {
+    throw new Error(`status ${rd.status.tag}, ${secs.toFixed(1)} s left`);
+  }
   return `${secs.toFixed(0)} s left`;
+});
+
+await step('host Skip starts the build at once, and the cancelled auto-start never fires', async () => {
+  const [h2] = await Promise.all([connect()]);
+  await h2.conn.reducers.createRoom({ name: 'Skipper' });
+  const r2 = () => [...h2.conn.db.room.iter()].find(r => [...h2.conn.db.member.iter()].some(m => m.roomId === r.id && m.identity.toHexString() === h2.hex));
+  await until('room 2', () => !!r2());
+  await commitFixture(r2()!.code, 'titan');
+  await until('ready 2', () => r2()!.nextRoundId !== undefined);
+  await h2.conn.reducers.startRound({});
+  await until('briefing 2', () => r2()!.phase.tag === 'Briefing');
+  await h2.conn.reducers.beginBuild({});
+  await until('build 2', () => r2()!.phase.tag === 'Build', 1500);
+  const endsAt = h2.conn.db.round.id.find(r2()!.currentRoundId!)!.buildEndsAt!.microsSinceUnixEpoch;
+  await new Promise(r => setTimeout(r, 11_000));
+  const after = h2.conn.db.round.id.find(r2()!.currentRoundId!)!.buildEndsAt!.microsSinceUnixEpoch;
+  if (after !== endsAt || r2()!.phase.tag !== 'Build') throw new Error('auto-start fired after skip');
+  await h2.conn.reducers.leaveRoom({});
+  h2.conn.disconnect();
 });
 
 if (WAIT_END) {

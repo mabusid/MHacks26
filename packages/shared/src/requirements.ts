@@ -7,24 +7,29 @@ import type { PlanetProfile, RoundRules } from './rules';
 export interface RequirementSpec {
   kind: RequirementKind;
   title: string;
+  /** One line for the briefing and the build screen. */
+  summary: string;
   threshold: string;
   /** Profile fields this threshold was derived from; a because-line must reference one of them. */
   derivedFrom: (keyof PlanetProfile)[];
 }
 
 const NIGHT_WORDS = { 1: 'short nights', 2: 'long nights (×2 storage)', 3: 'very long nights (×3 storage)' } as const;
+const NIGHT_SHORT = { 1: '', 2: '×2 night storage', 3: '×3 night storage' } as const;
 
 export function describeRequirements(r: RoundRules): RequirementSpec[] {
   const heating = r.thermalLoad ? ` + ${r.thermalLoad} heating` : '';
   const power: RequirementSpec = {
     kind: 'power',
     title: 'Power, day and night',
+    summary: r.nightBand > 1 ? `Power day + night (${NIGHT_SHORT[r.nightBand]})` : 'Power day + night',
     threshold: `Cover the base load (${HABITAT_LOAD}${heating}) plus any machines; ${NIGHT_WORDS[r.nightBand]}`,
     derivedFrom: ['insolation', 'nightHours'],
   };
   const life: RequirementSpec = {
     kind: 'life_support',
     title: 'Life support',
+    summary: `${WATER_NEED} water + ${O2_NEED} O₂`,
     threshold:
       `${WATER_NEED} water + ${O2_NEED} O₂ units for ${CREW} crew × ${MISSION_SOLS} sols ` +
       `(~${WATER_NEED * KG_PER_WATER_UNIT} kg water, ~${Math.round(O2_NEED * KG_PER_O2_UNIT)} kg O₂). ` +
@@ -34,9 +39,9 @@ export function describeRequirements(r: RoundRules): RequirementSpec[] {
   };
   const twist: RequirementSpec =
     r.twist === 'radiation'
-      ? { kind: 'twist', title: 'Radiation shielding', threshold: `${r.bermsRequired} berms next to the habitat`, derivedFrom: ['radiationDoseMSvPerDay', 'surfacePressureBar'] }
+      ? { kind: 'twist', title: 'Radiation shielding', summary: `${r.bermsRequired} berms by the habitat`, threshold: `${r.bermsRequired} berms next to the habitat`, derivedFrom: ['radiationDoseMSvPerDay', 'surfacePressureBar'] }
       : r.twist === 'thermal'
-        ? { kind: 'twist', title: 'Thermal control', threshold: `+${r.thermalLoad} power for heating or cooling`, derivedFrom: ['meanTempK'] }
-        : { kind: 'twist', title: 'Dust storms', threshold: 'Solar output halved; night storage one band higher', derivedFrom: ['dustStorms'] };
+        ? { kind: 'twist', title: 'Thermal control', summary: `+${r.thermalLoad} power for heat`, threshold: `+${r.thermalLoad} power for heating or cooling`, derivedFrom: ['meanTempK'] }
+        : { kind: 'twist', title: 'Dust storms', summary: 'Dust: solar halved', threshold: 'Solar output halved; night storage one band higher', derivedFrom: ['dustStorms'] };
   return [power, life, twist];
 }

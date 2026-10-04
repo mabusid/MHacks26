@@ -52,7 +52,7 @@ Co-op **learning game** for **four players**. An agent researches a **random rea
 
 ```
 Lobby (create / join with code)  ← research agent runs here, in background
-    → Briefing   (~20s)   planet card, research log, **Mission Requirements Card**
+    → Briefing   (~10s)   automatic transition: planet + 3 one-line requirements, countdown
     → Build      (2:30)   place pieces on shared grid, voice hints, no live score
     → Evaluate   (instant) server formula
     → Debrief    (~20s)   per-requirement result, reason, the real fact behind it, sources
@@ -63,7 +63,7 @@ Lobby (create / join with code)  ← research agent runs here, in background
 | --- | --- |
 | **Room + code** | Host creates room; up to 4 join with a 4-letter code. No spectators in v1. |
 | **Research** | Starts automatically on room create; next planet pre-researched during each debrief so rematch is instant. Host's **Start** is enabled once a round is committed. |
-| **Briefing** | Not counted against the build timer. Host taps **Begin build**. |
+| **Briefing** | Short automatic transition (~10 s countdown, host can skip); not counted against the build timer. The build starts on its own. |
 | **Build** | Timer runs server-side; ends at 0:00 (or host locks early). |
 | **Evaluate** | Reducer applies the evaluation formula; writes result + reason. |
 | **Rematch** | New round id, new planet, grid and mass budget reset. |

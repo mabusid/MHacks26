@@ -1,7 +1,7 @@
 import { schema, table, t, SenderError, type InferSchema, type ReducerCtx } from 'spacetimedb/server';
 import { ScheduleAt, Timestamp, type Identity } from 'spacetimedb';
 import {
-  BUILD_SECONDS, MAX_MEMBERS, PARAM_FIELDS, ROOM_CODE_ALPHABET, ROOM_CODE_LENGTH, TWISTS,
+  BRIEFING_SECONDS, BUILD_SECONDS, MAX_MEMBERS, PARAM_FIELDS, ROOM_CODE_ALPHABET, ROOM_CODE_LENGTH, TWISTS,
   deriveRules, describeRequirements, generateTiles, normalizeRoomCode, profileFromParams, solveRound, validateName,
   type ParamRow, type RequirementKind, type Twist,
 } from '@overburden/shared';
@@ -75,6 +75,7 @@ const round = table(
     headline: t.string(),
     scaleText: t.string(),
     funFacts: t.array(t.string()),
+    briefingEndsAt: t.option(t.timestamp()),
     buildEndsAt: t.option(t.timestamp()),
   }
 );
@@ -103,6 +104,7 @@ const requirement = table(
     roundId: t.u64().index('btree'),
     kind: t.string(),
     title: t.string(),
+    summary: t.string(),
     threshold: t.string(),
     derivedFrom: t.array(t.string()),
     because: t.string(),
@@ -130,6 +132,16 @@ const researchLog = table(
   }
 );
 
+// One-shot schedule that starts the build when the briefing countdown runs out.
+const buildStart = table(
+  { name: 'build_start' },
+  {
+    scheduledId: t.u64().primaryKey().autoInc(),
+    scheduledAt: t.scheduleAt(),
+    roundId: t.u64(),
+  }
+);
+
 // One-shot schedule that ends the build phase.
 const buildEnd = table(
   { name: 'build_end' },
@@ -154,7 +166,7 @@ const ParamInput = t.object('ParamInput', {
 const BecauseInput = t.object('BecauseInput', { kind: t.string(), text: t.string(), field: t.string() });
 
 const spacetimedb = schema({
-  serverConfig, session, room, member, round, planetParameter, requirement, tile, researchLog, buildEnd,
+  serverConfig, session, room, member, round, planetParameter, requirement, tile, researchLog, buildStart, buildEnd,
 });
 export default spacetimedb;
 
@@ -392,6 +404,7 @@ export const commitRound = spacetimedb.reducer(
       headline: args.headline,
       scaleText: args.scaleText,
       funFacts: args.funFacts,
+      briefingEndsAt: undefined,
       buildEndsAt: undefined,
     });
     for (const p of rows) ctx.db.planetParameter.insert({ id: 0n, roundId: rd.id, ...p, num: p.num ?? undefined, flag: p.flag ?? undefined });
@@ -402,6 +415,7 @@ export const commitRound = spacetimedb.reducer(
         roundId: rd.id,
         kind: spec.kind satisfies RequirementKind,
         title: spec.title,
+        summary: spec.summary,
         threshold: spec.threshold,
         derivedFrom: spec.derivedFrom,
         because: line.text,
@@ -415,23 +429,45 @@ export const commitRound = spacetimedb.reducer(
 
 // ── Phases ──────────────────────────────────────────────────────────────────────────────────────
 
+const MICROS = 1_000_000n;
+
+/** Briefing → build. Shared by the scheduled auto-start and the host's Skip; no-op if already started. */
+function startBuild(ctx: Ctx, roundId: bigint, runningJobId?: bigint) {
+  const rd = ctx.db.round.id.find(roundId);
+  const r = rd && ctx.db.room.id.find(rd.roomId);
+  if (!rd || !r || r.currentRoundId !== rd.id || r.phase.tag !== 'Briefing' || rd.status.tag !== 'Ready') return;
+  // Cancel the pending auto-start (the running job's own row is removed by the scheduler).
+  for (const job of [...ctx.db.buildStart.iter()]) {
+    if (job.roundId === rd.id && job.scheduledId !== runningJobId) ctx.db.buildStart.scheduledId.delete(job.scheduledId);
+  }
+  const endsAt = ctx.timestamp.microsSinceUnixEpoch + BigInt(BUILD_SECONDS) * MICROS;
+  ctx.db.round.id.update({ ...rd, status: { tag: 'Active' }, briefingEndsAt: undefined, buildEndsAt: new Timestamp(endsAt) });
+  ctx.db.buildEnd.insert({ scheduledId: 0n, scheduledAt: ScheduleAt.time(endsAt), roundId: rd.id });
+  ctx.db.room.id.update({ ...r, phase: { tag: 'Build' } });
+}
+
+/** Host: lobby → briefing. The build starts automatically when the briefing countdown ends. */
 export const startRound = spacetimedb.reducer(ctx => {
   const r = requireHost(ctx);
   if (r.phase.tag !== 'Lobby') throw new SenderError('The game has already started');
   const next = r.nextRoundId !== undefined ? ctx.db.round.id.find(r.nextRoundId) : undefined;
   if (!next || next.status.tag !== 'Ready') throw new SenderError('No planet is ready yet');
+  const at = ctx.timestamp.microsSinceUnixEpoch + BigInt(BRIEFING_SECONDS) * MICROS;
+  ctx.db.round.id.update({ ...next, briefingEndsAt: new Timestamp(at) });
+  ctx.db.buildStart.insert({ scheduledId: 0n, scheduledAt: ScheduleAt.time(at), roundId: next.id });
   ctx.db.room.id.update({ ...r, phase: { tag: 'Briefing' }, currentRoundId: next.id, nextRoundId: undefined });
 });
 
+/** Host: skip the rest of the briefing countdown. */
 export const beginBuild = spacetimedb.reducer(ctx => {
   const r = requireHost(ctx);
   if (r.phase.tag !== 'Briefing' || r.currentRoundId === undefined) throw new SenderError('Not in the briefing');
-  const rd = ctx.db.round.id.find(r.currentRoundId);
-  if (!rd) throw new SenderError('Round missing');
-  const endsAt = ctx.timestamp.microsSinceUnixEpoch + BigInt(BUILD_SECONDS) * 1_000_000n;
-  ctx.db.round.id.update({ ...rd, status: { tag: 'Active' }, buildEndsAt: new Timestamp(endsAt) });
-  ctx.db.buildEnd.insert({ scheduledId: 0n, scheduledAt: ScheduleAt.time(endsAt), roundId: rd.id });
-  ctx.db.room.id.update({ ...r, phase: { tag: 'Build' } });
+  startBuild(ctx, r.currentRoundId);
+});
+
+export const autoStartBuild = spacetimedb.reducer({ onSchedule: buildStart }, { job: buildStart.rowType }, (ctx, { job }) => {
+  if (!ctx.sender.equals(ctx.databaseIdentity)) throw new SenderError('Scheduled only');
+  startBuild(ctx, job.roundId, job.scheduledId);
 });
 
 /** Scheduled at build start. Evaluation is added in Phase 6. */

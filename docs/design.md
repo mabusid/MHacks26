@@ -2,47 +2,119 @@
 
 Layout only. Rules and visibility: [Plan.md](./Plan.md). **Look:** mission control / space briefing — not Skribbl’s art style.
 
-## Skribbl.io → Overburden (structure only)
+**Principle: less to read.** Short labels, numbers over sentences, one line per idea. Detail (sources, full facts) is one click away, never on the main screen.
 
-| Skribbl | Overburden |
+## Screens at a glance
+
+| Screen | Frame |
 | --- | --- |
-| Top bar — code, round | Code, planet, phase, build timer, mass (CU), mute |
-| Center — canvas | **8×8 grid**, live cursors (A–H / 1–8 labels) |
-| Right — players | **Crew** (4, colors, host); **Mission** tab = requirements card (no pass/fail) |
-| Bottom — chat | **Mission Control captions** (read-only; v1 no player chat) |
-| Tools by canvas | **Piece palette**, remove mode, berm hold progress |
+| **Home** | Base-scene backdrop + one clean menu card |
+| **Lobby** | Base-scene backdrop + **split card** (team \| planet) |
+| **Briefing** | Short automatic transition (~10 s countdown) between Start and the build |
+| **Build** | Full game screen: grid left, requirements right, timer top center, Mission Control bottom |
+| **Debrief** | Same **split card** as the lobby |
 
-Co-op, not a scoreboard. Palette under the grid on narrow screens; mission card in a drawer so the grid stays large.
+## Base-scene backdrop (Home, Lobby, Briefing, Debrief)
 
-## Top bar
+A large, dimmed illustration of a base on a planet surface: habitat in the middle with a few placed pieces around it (solar arrays, tanks, a drill, berms). **Not a grid** — no tile lines, nothing clickable. It sits behind every non-build screen so they feel like one place. Tinted per planet once one is chosen (airless grey, dusty rust, icy amber/teal, exoplanet purple).
 
-Room code (copy), planet name (opens planet card), phase, timer during build only (`build_ends_at` on client), mass used/budget, mute (audio off, captions on). Host: start briefing, begin build, lock early, rematch.
+## Home
 
-## Phases
-
-**Home** — create / join (code + name); no game shell.
-
-**Lobby** — center: research log; right: crew; host starts briefing when round is ready.
-
-**Briefing** — Mission Requirements Card + headline fact; host **Begin build** (no auto-advance).
-
-**Build** — primary shell:
+Backdrop + a single centered card:
 
 ```
-┌ top bar ─────────────────────────────────────────────────────────┐
-├─────────────────────────────┬──────────────────────────────────┤
-│  8×8 grid (habitat, tiles,  │  Crew + [Mission] drawer         │
-│  cursors)                   │                                  │
-│  piece palette              │                                  │
-├─────────────────────────────┴──────────────────────────────────┤
-│  Hint captions (voice transcript)                              │
-└────────────────────────────────────────────────────────────────┘
+        ┌────────────────────┐
+        │     OVERBURDEN     │
+        │ name [__________]  │
+        │ [  CREATE ROOM  ]  │
+        │ code [____] [JOIN] │
+        └────────────────────┘
 ```
 
-Place / remove / berm hold; hover for planet-specific piece stats. Do not show live requirement pass/fail or resource totals (Plan.md).
+Big, clearly labeled buttons; one short tagline at most.
 
-**Debrief** — pass/fail per requirement, facts, sources; host rematch.
+## Split card (Lobby, Debrief)
 
-## Visual notes
+One wide rectangle in the middle of the screen, **cut down the center** into two halves:
 
-Subtle planet background behind grid; clear lit / shaded / ice tiles; named cursors. Demo at **≥1024px** width; phones stack top → grid → palette → captions.
+```
+┌──────────────────┬──────────────────────┐
+│  TEAM            │  PLANET              │
+│  code  MHKT ⧉    │                      │
+│  ● Ana   host    │  (lobby: research    │
+│  ● Ben           │   log → planet       │
+│  ● Cy            │   summary)           │
+│  ○ open seat     │                      │
+│                  │  [ host action ]     │
+└──────────────────┴──────────────────────┘
+```
+
+- **Left — team:** room code (tap to copy), crew with colors (same colors as their cursors), host badge, open seats, Leave.
+- **Right — planet:** changes by phase.
+  - **Lobby:** research log while researching → then planet name, one headline fact, 2–3 key numbers (e.g. sunlight, night length, temperature). Host: **Start**.
+  - **Debrief:** see below.
+
+## Briefing — transition into the match
+
+Shown **briefly and automatically** after the host presses Start, then the build begins on its own — no Begin build click.
+
+```
+┌─────────────────────────────────────────┐
+│              MARS                       │
+│   43% of Earth’s sunlight · −63 °C      │
+│                                         │
+│   ⚡ Power, day and night               │
+│   💧 12 water + 12 O₂                    │
+│   ⚠ Dust: solar output halved          │
+│                                         │
+│        Build starts in  7               │
+└─────────────────────────────────────────┘
+```
+
+- Same backdrop, one centered card: planet name, 1–2 numbers, the **3 requirements as one line each**, a big countdown.
+- **~10 s**, not counted against the 2:30 build timer. Host can **Skip** to start immediately.
+- The same 3 one-liners stay on the right side of the build screen, so nothing here has to be memorized.
+
+## Build
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ planet          ⏱ 1:42 (big, top center)        12/20 CU   │
+├──────────────────────────────────────┬──────────────────────┤
+│                                      │  REQUIREMENTS        │
+│   8×8 placement grid                 │  ⚡ Power  day+night  │
+│   (A–H / 1–8 labels,                 │  💧 12 water + 12 O₂  │
+│    live named cursors)               │  ⚠ 4 berms           │
+│                                      │                      │
+│   piece palette                      │  (tap for planet     │
+│                                      │   facts + sources)   │
+├──────────────────────────────────────┴──────────────────────┤
+│ MISSION CONTROL ▸ "Water's short, and this planet has ice…" │
+│ (text types out as it speaks · tap this bar to mute/unmute) │
+└─────────────────────────────────────────────────────────────┘
+```
+
+- **No crew panel.** Crew presence = **live named cursors** on the grid in each player's color.
+- **Timer:** top center, largest element; turns red under 0:30.
+- **Grid left, requirements right.** Requirements are the 3 one-liners (no pass/fail, per Plan.md); tapping opens planet facts and sources.
+- **Piece palette** directly under the grid; hover/long-press a piece for its stats on this planet.
+- **Mission Control bar** along the bottom: the line **types out in sync with the voice** (typewriter). **Tap the bar to mute/unmute** this device — no separate speaker icon. Muted state is shown on the bar; text still types out.
+- **Mass** (used / budget) top right — players need it for every placement decision.
+
+## Debrief (split card)
+
+- **Left:** team (same as lobby).
+- **Right:** big **MISSION SUCCESS / FAILED**, then the 3 requirements each with ✓/✗ and **one short reason**, plus the single real fact behind the result (e.g. “Lunar night ≈ 14 Earth days”). Sources behind a “Sources” link. Host: **Next planet**.
+
+## Phones (< 1024px)
+
+Home / split card: halves stack (team above planet). Build: top bar → grid → palette → requirements (collapsible) → Mission Control bar pinned at the bottom.
+
+## Not yet placed (to decide)
+
+- **Leave room** during the build — small menu in the top bar?
+- **Host-only controls** during the build (lock in early).
+- **Remove mode** and **berm hold progress** on the grid.
+- **Placement errors** (e.g. “Solar needs a sunlit tile”) — brief toast near the grid.
+- **Offline crew** during the build, now that the crew panel is gone — dim/hide their cursor?
+- **Dev planet loader** — keep in the lobby’s right half, dev builds only.

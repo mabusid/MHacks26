@@ -15,6 +15,7 @@ export default __t.row({
   roundId: __t.u64().name("round_id"),
   kind: __t.string(),
   title: __t.string(),
+  summary: __t.string(),
   threshold: __t.string(),
   derivedFrom: __t.array(__t.string()).name("derived_from"),
   because: __t.string(),

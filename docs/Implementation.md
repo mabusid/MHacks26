@@ -178,7 +178,7 @@ Tables: `planet_parameter`, `requirement`, `tile`, `research_log`.
 5. Write `requirement` rows (threshold + `derived_from` + because-text) and headline / scale text / 3 `fun_facts` on `round`.
 6. Set `round.status = ready` and `room.next_round_id`. **Does not change room phase** (so prefetch during debrief is safe).
 
-Player reducers: `start_round` (host; lobby → briefing using `next_round_id`), `begin_build` (host; briefing → build, sets `build_ends_at = now + 150s`, inserts scheduled build-end and hint-cue rows).
+Player reducers: `start_round` (host; lobby → briefing using `next_round_id`; schedules the build start ~10 s later), `begin_build` (host; skips the rest of the briefing). Both paths run the same start-build step: briefing → build, `build_ends_at = now + 150s`, scheduled build-end and hint-cue rows.
 
 Dev path: `log_research`/`commit_round` callable via `spacetime call` with the owner identity, or a Node `POST /dev/commit-fixture?room=&body=moon`.
 
@@ -200,7 +200,7 @@ Round rules (solar per array, night band, thermal load, CO₂, ice, berms) are s
 
 - **Home:** create / join (this click also unlocks audio).
 - **Lobby:** members, live `research_log`, host **Start** enabled when a round is `ready`.
-- **Briefing:** planet card, Mission Requirements Card (threshold + because-line + source tag, no pass/fail), host **Begin build**.
+- **Briefing:** automatic ~10 s transition — planet, 1–2 numbers, 3 one-line requirements, countdown; host **Skip** (see design.md).
 - Route on `room.phase`. One subscription set scoped to the room: room, members, round, parameters, requirements, tiles, pieces, cursors, hints, result.
 
 ### Checkpoint 4
@@ -208,7 +208,7 @@ Round rules (solar per array, night band, thermal load, CO₂, ice, berms) are s
 - [ ] Create → join → fixture commit → briefing on both clients → host begins build; countdown renders from `build_ends_at` (manual — UI checklist in README).
 - [x] `pnpm check:phase4`: every `useRoom()` query is accepted by the server and scopes to the player's room/round.
 
-Built per [design.md](./design.md): shell (top bar with copy-code, planet, phase, timer, mute; crew sidebar with colors and open seats), lobby research terminal + destination card, briefing planet card (sourced facts, estimated tags, "what we don't know yet") + reusable `MissionCard`, planet-tinted backgrounds, stacked layout under 1024px.
+Built per [design.md](./design.md) (redesign after first review): base-scene SVG backdrop on every non-build screen; Home menu card; **split card** lobby/debrief (team | planet); **automatic ~10 s briefing** (scheduled `build_start`, host Skip = `begin_build`, shared `startBuild` guard so a cancelled auto-start can't fire); build layout skeleton — timer top center, requirements right (one-line `summary` column + facts toggle), Mission Control bar bottom with typewriter text and tap-to-mute. Dev: the Node service survives SDK decode errors during schema republishes.
 
 ---
 

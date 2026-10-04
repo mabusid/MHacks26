@@ -79,11 +79,15 @@ await step('a joining player appears in the scoped member list', async () => {
   await until('B visible', () => [...a.conn.db.member.iter()].filter(m => m.roomId === roomId()).length === 2);
 });
 
-await step('round-scoped queries (requirements, params, tiles) are accepted after Start', async () => {
+await step("lobby sees the next round's params; round-scoped queries are accepted after Start", async () => {
   const code = [...a.conn.db.room.iter()][0].code;
   const res = await fetch(`${SERVER}/dev/commit-fixture?room=${code}&planet=mars`, { method: 'POST' });
   if (!res.ok) throw new Error(`commit-fixture: ${res.status}`);
   await until('next round', () => [...a.conn.db.room.iter()][0].nextRoundId !== undefined);
+  // Lobby: useRoom focuses the prepared (next) round so the destination card can show key numbers.
+  const nextId = [...a.conn.db.room.iter()][0].nextRoundId!;
+  await sub(a, 'next-round params', tables.planetParameter.where(p => p.roundId.eq(nextId)));
+  if ([...a.conn.db.planetParameter.iter()].filter(p => p.roundId === nextId).length !== 10) throw new Error('next-round params missing');
   await a.conn.reducers.startRound({});
   await until('briefing', () => [...a.conn.db.room.iter()][0].currentRoundId !== undefined);
   const rid = [...a.conn.db.room.iter()][0].currentRoundId!;

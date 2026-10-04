@@ -1,4 +1,4 @@
-import Shell from './components/Shell';
+import Stage from './components/Stage';
 import Briefing from './screens/Briefing';
 import Build from './screens/Build';
 import Debrief from './screens/Debrief';
@@ -8,20 +8,42 @@ import { useRoom } from './useRoom';
 
 export default function App() {
   const data = useRoom();
-  if (!data.connected) return <main className="screen">Connecting…</main>;
-  if (!data.me || !data.room) return <Home />;
+  if (!data.connected) {
+    return (
+      <Stage>
+        <p className="muted">Connecting…</p>
+      </Stage>
+    );
+  }
+  if (!data.me || !data.room) {
+    return (
+      <Stage>
+        <Home />
+      </Stage>
+    );
+  }
 
-  const screen = (() => {
-    switch (data.room.phase.tag) {
-      case 'Lobby':
-        return <Lobby data={data} />;
-      case 'Briefing':
-        return <Briefing data={data} />;
-      case 'Build':
-        return <Build data={data} />;
-      case 'Debrief':
-        return <Debrief data={data} />;
-    }
-  })();
-  return <Shell data={data}>{screen}</Shell>;
+  const round = data.current ?? data.next;
+  switch (data.room.phase.tag) {
+    case 'Build':
+      return <Build data={data} />;
+    case 'Lobby':
+      return (
+        <Stage round={round}>
+          <Lobby data={data} />
+        </Stage>
+      );
+    case 'Briefing':
+      return (
+        <Stage round={round}>
+          <Briefing data={data} />
+        </Stage>
+      );
+    case 'Debrief':
+      return (
+        <Stage round={round}>
+          <Debrief data={data} />
+        </Stage>
+      );
+  }
 }

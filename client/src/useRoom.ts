@@ -4,7 +4,7 @@ import { tables } from './module_bindings';
 const NONE = 0n; // ids start at 1; used while a scope is unknown (subscription disabled)
 
 /**
- * Room-scoped subscriptions: my member row → my room's rows → the current round's rows.
+ * Room-scoped subscriptions: my member row → my room's rows → the focused round's rows.
  * Each query re-subscribes when the id it depends on changes.
  */
 export function useRoom() {
@@ -24,8 +24,10 @@ export function useRoom() {
   const [log] = useTable(tables.researchLog.where(l => l.roomId.eq(roomId)), { enabled: inRoom });
 
   const room = rooms[0];
-  const roundId = room?.currentRoundId ?? NONE;
-  const hasRound = room?.currentRoundId !== undefined;
+  // The round on screen: the one being played, or (in the lobby) the one being prepared.
+  const focusId = room?.currentRoundId ?? room?.nextRoundId;
+  const roundId = focusId ?? NONE;
+  const hasRound = focusId !== undefined;
   const [requirements] = useTable(tables.requirement.where(r => r.roundId.eq(roundId)), { enabled: hasRound });
   const [params] = useTable(tables.planetParameter.where(p => p.roundId.eq(roundId)), { enabled: hasRound });
   const [tiles] = useTable(tables.tile.where(t => t.roundId.eq(roundId)), { enabled: hasRound });

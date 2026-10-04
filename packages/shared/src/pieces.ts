@@ -62,3 +62,5 @@ export function bermHoldMs(gravity: number): number {
 
 /** Build phase length (Plan.md → Round structure). */
 export const BUILD_SECONDS = 150;
+/** Automatic briefing transition before the build (host can skip). */
+export const BRIEFING_SECONDS = 10;

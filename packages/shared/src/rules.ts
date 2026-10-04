@@ -78,3 +78,24 @@ export function deriveRules(p: PlanetProfile, twist: Twist): RoundRules {
     bermsRequired: twist === 'radiation' ? bermsRequiredFor(p.radiationDoseMSvPerDay) : 0,
   };
 }
+
+/** Rebuilds RoundRules from the columns stored on a round row (module, client, and server all use this). */
+export function rulesFromRound(r: {
+  twist: string;
+  solarPerArray: number;
+  nightBand: number;
+  thermalLoad: number;
+  co2Atmosphere: boolean;
+  iceAvailable: boolean;
+  bermsRequired: number;
+}): RoundRules {
+  return {
+    twist: (TWISTS as readonly string[]).includes(r.twist) ? (r.twist as Twist) : 'radiation',
+    solarPerArray: r.solarPerArray,
+    nightBand: Math.min(3, Math.max(1, r.nightBand)) as NightBand,
+    thermalLoad: Math.min(2, Math.max(0, r.thermalLoad)) as 0 | 1 | 2,
+    co2Atmosphere: r.co2Atmosphere,
+    iceAvailable: r.iceAvailable,
+    bermsRequired: r.bermsRequired,
+  };
+}

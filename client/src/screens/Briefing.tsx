@@ -1,36 +1,33 @@
-import { BUILD_SECONDS } from '@overburden/shared';
 import { useReducer } from 'spacetimedb/react';
-import MissionCard from '../components/MissionCard';
-import PlanetCard from '../components/PlanetCard';
+import RequirementList from '../components/RequirementList';
+import { keyFacts } from '../format';
 import { reducers } from '../module_bindings';
 import type { RoomData } from '../useRoom';
 import { useReducerCall } from '../useReducerCall';
-import { clock } from '../useSecondsLeft';
+import { useSecondsLeft } from '../useSecondsLeft';
 
+/** Short automatic transition into the build; the server starts the build when the countdown ends. */
 export default function Briefing({ data }: { data: RoomData }) {
   const { current, requirements, params, isHost } = data;
-  const begin = useReducerCall(useReducer(reducers.beginBuild));
+  const skip = useReducerCall(useReducer(reducers.beginBuild));
+  const left = useSecondsLeft(current?.briefingEndsAt?.microsSinceUnixEpoch);
   if (!current) return null;
 
   return (
-    <div className="briefing">
-      <PlanetCard round={current} params={params} />
-      <section className="panel">
-        <p className="label">Mission requirements</p>
-        <MissionCard requirements={requirements} params={params} />
-        <p className="muted small">
-          Mass budget <strong>{current.massBudget} CU</strong> · Build time <strong>{clock(BUILD_SECONDS)}</strong> · Mission Control
-          will chime in with facts, then hints.
-        </p>
-        {isHost ? (
-          <button className="primary" disabled={begin.pending} onClick={() => begin.run()}>
-            Begin build
-          </button>
-        ) : (
-          <p className="muted">Waiting for the host to begin the build…</p>
-        )}
-        {begin.error && <p className="error">{begin.error}</p>}
-      </section>
+    <div className="card briefing">
+      <p className="label">Mission briefing</p>
+      <h1 className="planet-name">{current.planetName}</h1>
+      <p className="muted">{keyFacts(params).slice(0, 2).join(' · ')}</p>
+      <RequirementList requirements={requirements} />
+      <p className="countdown">
+        Build starts in <strong>{left ?? '…'}</strong>
+      </p>
+      {isHost && (
+        <button className="secondary" disabled={skip.pending} onClick={() => skip.run()}>
+          Skip
+        </button>
+      )}
+      {skip.error && <p className="error">{skip.error}</p>}
     </div>
   );
 }

@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useReducer } from 'spacetimedb/react';
+import TeamPanel from '../components/TeamPanel';
+import { keyFacts } from '../format';
 import { reducers } from '../module_bindings';
 import type { RoomData } from '../useRoom';
 import { useReducerCall } from '../useReducerCall';
@@ -9,11 +11,11 @@ const TEST_PLANETS = [
   ['moon', 'Moon'],
   ['mars', 'Mars'],
   ['titan', 'Titan'],
-  ['brightExoplanet', 'Exoplanet (test)'],
+  ['brightExoplanet', 'Exoplanet'],
 ] as const;
 
 export default function Lobby({ data }: { data: RoomData }) {
-  const { room, next, log, isHost, members } = data;
+  const { room, next, log, isHost, params } = data;
   const start = useReducerCall(useReducer(reducers.startRound));
   const [devError, setDevError] = useState<string>();
   if (!room) return null;
@@ -30,61 +32,57 @@ export default function Lobby({ data }: { data: RoomData }) {
   }
 
   return (
-    <div className="stack">
-      <section className="panel">
-        <p className="label">Share this code</p>
-        <p className="room-code">{room.code}</p>
-        <p className="muted">
-          {members.length < 4 ? `Waiting for crew — ${4 - members.length} seat${4 - members.length === 1 ? '' : 's'} open.` : 'Full crew aboard.'}
-        </p>
-      </section>
-
-      <section className="panel terminal">
-        <p className="label">Mission research</p>
-        {log.length === 0 ? (
-          <p className="muted blink">Awaiting research…</p>
+    <div className="card split">
+      <TeamPanel data={data} />
+      <div className="half planet">
+        {ready ? (
+          <>
+            <p className="label">Destination</p>
+            <h2 className="planet-name">{next.planetName}</h2>
+            <p className="headline">{next.headline}</p>
+            <ul className="key-facts">
+              {keyFacts(params).map(f => (
+                <li key={f}>{f}</li>
+              ))}
+            </ul>
+          </>
         ) : (
-          <ul className="log">
-            {log.slice(-8).map(l => (
-              <li key={String(l.id)}>
-                <span className="prompt">›</span> {l.text}
-              </li>
-            ))}
-          </ul>
+          <>
+            <p className="label">Researching destination</p>
+            <ul className="log">
+              {log.length === 0 && <li className="blink">› awaiting research…</li>}
+              {log.slice(-5).map(l => (
+                <li key={String(l.id)}>› {l.text}</li>
+              ))}
+            </ul>
+          </>
         )}
-      </section>
 
-      {ready && (
-        <section className="panel ready-card">
-          <p className="label">Destination locked</p>
-          <h2>{next.planetName}</h2>
-          <p>{next.headline}</p>
-          <p className="muted small">{next.scaleText}</p>
-        </section>
-      )}
+        <div className="planet-foot">
+          {isHost ? (
+            <button className="primary big" disabled={!ready || start.pending} onClick={() => start.run()}>
+              {ready ? 'Start mission' : 'Waiting for a planet…'}
+            </button>
+          ) : (
+            <p className="muted">{ready ? 'Waiting for the host…' : 'Waiting for research…'}</p>
+          )}
+          {start.error && <p className="error">{start.error}</p>}
 
-      {isHost ? (
-        <button className="primary" disabled={!ready || start.pending} onClick={() => start.run()}>
-          {ready ? 'Start briefing' : 'Waiting for a planet…'}
-        </button>
-      ) : (
-        <p className="muted">{ready ? 'Waiting for the host to start the briefing…' : 'Waiting for research…'}</p>
-      )}
-      {start.error && <p className="error">{start.error}</p>}
-
-      {import.meta.env.DEV && (
-        <details className="dev">
-          <summary>Dev: load a test planet</summary>
-          <div className="row wrap">
-            {TEST_PLANETS.map(([key, label]) => (
-              <button key={key} className="secondary" onClick={() => loadTestPlanet(key)}>
-                {label}
-              </button>
-            ))}
-          </div>
-          {devError && <p className="error">{devError}</p>}
-        </details>
-      )}
+          {import.meta.env.DEV && (
+            <details className="dev">
+              <summary>dev: test planet</summary>
+              <div className="row wrap">
+                {TEST_PLANETS.map(([key, label]) => (
+                  <button key={key} className="secondary small-btn" onClick={() => loadTestPlanet(key)}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {devError && <p className="error">{devError}</p>}
+            </details>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
