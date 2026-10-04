@@ -99,6 +99,8 @@ Crew size (**4**, one per player) and mission length (**30 sols**) are fixed so 
 
 If several trigger, the agent picks one, preferring a twist **different from last round**, and writes a one-line justification citing the fact. If none trigger, default to **Radiation**.
 
+A twist's effect applies **only when it is the chosen twist** (e.g. Mars with Dust chosen gets the solar ×0.5 and night +1, but no thermal load), so every round has exactly 3 requirements.
+
 ### Research supplies the facts, server computes the thresholds
 
 - The research produces **sourced parameters** (each tied to a tool fetch — see **Research pipeline**). The criteria follow from those parameters by the rules above, so **different research → different criteria**.
@@ -338,7 +340,7 @@ Each stored requirement row: `{ round_id, kind: power | life_support | twist, th
 | **Mission sources** (LCROSS, MESSENGER, Dawn, MOXIE, Chang'e 4 LND, Curiosity RAD, Galileo) | 2 | Ice presence, CO₂ ISRU, surface radiation dose | Curated fields in `data/solar_system.json` |
 | **NASA BVAD** (Baseline Values and Assumptions Document) | 2 | Crew O₂ and water rates | Constants in game config, cited in debrief |
 | **Allowlisted web sources** (NASA, ESA, arXiv, journals) | 3 | Exoplanet atmosphere / notable findings | Offline only, reviewed, cached pack |
-| **Game constants** | — | Piece stats, mission length, crew size | `data/game_constants.json` (not presented as research) |
+| **Game constants** | — | Piece stats, mission length, crew size | `packages/shared/src/pieces.ts` (TypeScript, bundled into the module; not presented as research) |
 
 ---
 

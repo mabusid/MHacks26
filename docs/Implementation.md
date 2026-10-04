@@ -40,7 +40,7 @@ flowchart LR
 | `spacetimedb/` | SpacetimeDB 2.x TypeScript module: tables, reducers, views, scheduled rows |
 | `client/` | Vite + React + Spacetime TS SDK (generated bindings) |
 | `server/` | Node TS: research agent, voice relay WS, Spacetime client with server identity |
-| `data/` | `game_constants.json`, `solar_system.json`, `cached_pack/` |
+| `data/` | `solar_system.json`, `cached_pack/` (Phase 8). Game constants live in `packages/shared/src/pieces.ts` so the module bundles them |
 | `scripts/` | Fact-sheet scrape (one-time), cached-pack builder (offline tier 3), dev orchestration |
 
 Shared eval logic lives in `packages/shared` and is **imported by the Spacetime module**, the client (hover stats), and the server (template hints). Verify in Phase 0 that the module bundler resolves the workspace package; if not, copy the built file into `spacetimedb/src/shared/` via a prebuild script — still one source of truth.
@@ -149,12 +149,15 @@ In `packages/shared`:
 - **Winnability:** brute-force counts (~90k combos) + tile feasibility (ice tiles, lit tiles, ≤ 8 habitat-adjacent tiles) → cheapest CU → `budget = clamp(ceil(min × 1.25), 14, 24)` or `reject`.
 - Seeded PRNG + tile generator (12 shaded, 4 ice; polar bodies put ice inside shade).
 
-In `data/`: `game_constants.json` (piece stats, 12/12, crew 4, 30 sols, BVAD rates); `solar_system.json` with Moon + Mars to start.
+Constants (piece stats, 12/12, crew 4, 30 sols, BVAD kg) in `pieces.ts`; test fixtures for Moon / Mars / Titan / bright exoplanet in `fixtures.ts` (approximate values — sourced profiles come in Phase 8).
+
+Implementation notes: suggestions fill the habitat-adjacent ring last so berms always have room; batteries count only if at least one solar array exists; measured cost — solve ~35 ms, board read < 1 ms.
 
 ### Checkpoint 2
 
-- [ ] Vitest: Moon, Mars, Titan, bright-exoplanet fixtures reproduce the Plan.md balance table (cheapest build + CU).
-- [ ] Winnability returns a budget in 14–24 or `reject` for an impossible profile.
+- [x] Vitest: Moon, Mars, Titan, bright-exoplanet fixtures reproduce the Plan.md balance table (cheapest build + CU + budget 20 / 19 / 23 / 22).
+- [x] Winnability returns a budget in 14–24 or `reject` (grid can't fit / over 24 CU).
+- [x] Following the board-read suggestion from an empty board wins on all four fixtures; over-budget boards get a remove suggestion.
 
 ---
 
