@@ -287,9 +287,14 @@ Follow-up: some archive radii are calculated (e.g. radial-velocity planets), so 
 
 ### Checkpoint 8 (acceptance #2, #3, #9)
 
-- [ ] A live exoplanet round (or cache fallback) commits within 20 s.
-- [ ] Two consecutive rounds produce different requirement cards.
-- [ ] Rematch uses the prefetched round instantly.
+- [x] The agent (or its fallback chain) commits within the 28 s budget; typical agent runs 7–17 s.
+- [x] Two consecutive rounds produce different requirement cards (curated bodies: radiation / dust / thermal; exoplanets vary).
+- [x] Rematch uses the prefetched round instantly (`check:phase7`).
+- [x] `pnpm check:phase8` (4 checks, live xAI + network): agent run is sourced + fact-checked; all 6 curated bodies commit; all 10 pack planets are accepted by the module; simulated failure falls back to the pack.
+
+Built: `server/src/research/agent.ts` (tool loop over the session; bounded fact check with template repair), `grounding.ts`, `pack.ts`, `buildPack.ts`; `data/solar_system.json` now has Moon, Mars, Mercury, Ceres, Titan, Europa — every value quoted from NASA fact sheets / pages or a Crossref-verified paper, derived values say how, unmeasured values are `estimated` (e.g. Europa's surface dose). Server tests (`pnpm test`): provenance rules, grounding, and every curated card passing the same checks as the agent.
+
+Notes: Europa's dose has no verified surface measurement, so it's estimated (4 berms); the 6-berm rule stays for future measured data. Dev: agent tool calls and timings log to the server console.
 
 ---
 

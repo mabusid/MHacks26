@@ -1,36 +1,636 @@
 {
-  "_about": "Curated solar-system bodies for research tier 2. Every value carries its source; derived values say how. Phase 8 adds Mercury, Ceres, Titan, Europa.",
+  "_about": "Curated solar-system bodies for research tier 2. Every value carries its source; derived values say how (status 'sourced'); values nobody has measured are 'estimated' with a note.",
   "bodies": {
     "moon": {
       "name": "Moon (south pole)",
-      "scale": { "distanceKm": 384400, "radiusKm": 1738.1 },
+      "scale": {
+        "distanceKm": 384400,
+        "radiusKm": 1738.1,
+        "distanceLabel": "384,400 km from Earth"
+      },
       "fields": {
-        "insolation": { "value": 1.0, "unit": "× Earth", "sourceLabel": "NASA Moon Fact Sheet", "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html", "note": "Solar irradiance 1361 W/m², same as Earth" },
-        "nightHours": { "value": 354.4, "unit": "h", "sourceLabel": "NASA Moon Fact Sheet", "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html", "note": "Half the 29.53-day synodic period" },
-        "meanTempK": { "value": 242.5, "unit": "K", "sourceLabel": "NASA Moon Fact Sheet", "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html", "note": "Midpoint of the equatorial day–night range, 95–390 K" },
-        "surfacePressureBar": { "value": 3e-15, "unit": "bar", "sourceLabel": "NASA Moon Fact Sheet", "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html", "note": "Night-time surface pressure" },
-        "co2Atmosphere": { "value": false, "unit": "", "sourceLabel": "NASA Moon Fact Sheet", "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html", "note": "Essentially no atmosphere" },
-        "waterIce": { "value": true, "unit": "", "sourceLabel": "Colaprete et al. 2010 (LCROSS)", "sourceUrl": "https://doi.org/10.1126/science.1186986", "note": "Water detected in the Cabeus crater impact plume" },
-        "polarIce": { "value": true, "unit": "", "sourceLabel": "Colaprete et al. 2010 (LCROSS)", "sourceUrl": "https://doi.org/10.1126/science.1186986", "note": "Ice in a permanently shadowed south-polar crater" },
-        "radiationDoseMSvPerDay": { "value": 1.369, "unit": "mSv/day", "sourceLabel": "Zhang et al. 2020 (Chang’e 4)", "sourceUrl": "https://doi.org/10.1126/sciadv.aaz1334", "note": "First dose measurement on the lunar surface: 1369 µSv/day" },
-        "dustStorms": { "value": false, "unit": "", "sourceLabel": "NASA Moon Fact Sheet", "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html", "note": "No atmosphere to carry dust storms" },
-        "gravity": { "value": 1.62, "unit": "m/s²", "sourceLabel": "NASA Moon Fact Sheet", "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html", "note": "" }
+        "insolation": {
+          "value": 1.0,
+          "unit": "× Earth",
+          "sourceLabel": "NASA Moon Fact Sheet",
+          "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html",
+          "note": "Solar irradiance 1361 W/m², same as Earth"
+        },
+        "nightHours": {
+          "value": 354.4,
+          "unit": "h",
+          "sourceLabel": "NASA Moon Fact Sheet",
+          "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html",
+          "note": "Half the 29.53-day synodic period"
+        },
+        "meanTempK": {
+          "value": 242.5,
+          "unit": "K",
+          "sourceLabel": "NASA Moon Fact Sheet",
+          "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html",
+          "note": "Midpoint of the equatorial day–night range, 95–390 K"
+        },
+        "surfacePressureBar": {
+          "value": 3e-15,
+          "unit": "bar",
+          "sourceLabel": "NASA Moon Fact Sheet",
+          "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html",
+          "note": "Night-time surface pressure"
+        },
+        "co2Atmosphere": {
+          "value": false,
+          "unit": "",
+          "sourceLabel": "NASA Moon Fact Sheet",
+          "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html",
+          "note": "Essentially no atmosphere"
+        },
+        "waterIce": {
+          "value": true,
+          "unit": "",
+          "sourceLabel": "Colaprete et al. 2010 (LCROSS)",
+          "sourceUrl": "https://doi.org/10.1126/science.1186986",
+          "note": "Water detected in the Cabeus crater impact plume"
+        },
+        "polarIce": {
+          "value": true,
+          "unit": "",
+          "sourceLabel": "Colaprete et al. 2010 (LCROSS)",
+          "sourceUrl": "https://doi.org/10.1126/science.1186986",
+          "note": "Ice in a permanently shadowed south-polar crater"
+        },
+        "radiationDoseMSvPerDay": {
+          "value": 1.369,
+          "unit": "mSv/day",
+          "sourceLabel": "Zhang et al. 2020 (Chang’e 4)",
+          "sourceUrl": "https://doi.org/10.1126/sciadv.aaz1334",
+          "note": "First dose measurement on the lunar surface: 1369 µSv/day"
+        },
+        "dustStorms": {
+          "value": false,
+          "unit": "",
+          "sourceLabel": "NASA Moon Fact Sheet",
+          "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html",
+          "note": "No atmosphere to carry dust storms"
+        },
+        "gravity": {
+          "value": 1.62,
+          "unit": "m/s²",
+          "sourceLabel": "NASA Moon Fact Sheet",
+          "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html",
+          "note": ""
+        }
+      },
+      "card": {
+        "twist": "radiation",
+        "headline": "A single lunar night lasts about 15 Earth days.",
+        "scaleText": "384,400 km from Earth · ¼ of Earth’s width · same sunlight as Earth",
+        "because": {
+          "power": {
+            "text": "A lunar night lasts ~15 Earth days, so solar alone can’t carry you.",
+            "field": "nightHours"
+          },
+          "life_support": {
+            "text": "Water ice sits in permanently shadowed craters (LCROSS).",
+            "field": "waterIce"
+          },
+          "twist": {
+            "text": "No atmosphere: surface dose is ~1.4 mSv/day (Chang’e 4).",
+            "field": "radiationDoseMSvPerDay"
+          }
+        },
+        "funFacts": [
+          "Welcome to the Moon’s south pole, where one night lasts about two Earth weeks.",
+          "LCROSS crashed into a shadowed crater here and found water in the plume.",
+          "With no air to stop it, radiation reaches the surface at about 1.4 millisieverts a day."
+        ]
       }
     },
     "mars": {
       "name": "Mars",
-      "scale": { "distanceKm": 225000000, "radiusKm": 3396.2 },
+      "scale": {
+        "distanceKm": 225000000,
+        "radiusKm": 3396.2,
+        "distanceLabel": "~225 million km from Earth"
+      },
       "fields": {
-        "insolation": { "value": 0.4307, "unit": "× Earth", "sourceLabel": "NASA Mars Fact Sheet", "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html", "note": "Solar irradiance 586.2 W/m² ÷ Earth’s 1361 W/m²" },
-        "nightHours": { "value": 12.33, "unit": "h", "sourceLabel": "NASA Mars Fact Sheet", "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html", "note": "Half the 24.66-hour day" },
-        "meanTempK": { "value": 214, "unit": "K", "sourceLabel": "NASA Mars Fact Sheet", "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html", "note": "Average temperature ~214 K (−59 °C)" },
-        "surfacePressureBar": { "value": 0.00636, "unit": "bar", "sourceLabel": "NASA Mars Fact Sheet", "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html", "note": "6.36 mb at mean radius (4.0–8.7 mb by season)" },
-        "co2Atmosphere": { "value": true, "unit": "", "sourceLabel": "NASA Mars Fact Sheet", "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html", "note": "Atmosphere is 95.1% CO₂" },
-        "waterIce": { "value": true, "unit": "", "sourceLabel": "Smith et al. 2009 (Phoenix)", "sourceUrl": "https://doi.org/10.1126/science.1172339", "note": "Water ice found just below the surface at the Phoenix landing site" },
-        "polarIce": { "value": false, "unit": "", "sourceLabel": "Smith et al. 2009 (Phoenix)", "sourceUrl": "https://doi.org/10.1126/science.1172339", "note": "Ice is shallow subsurface ice, not in shadowed craters" },
-        "radiationDoseMSvPerDay": { "value": 0.64, "unit": "mSv/day", "sourceLabel": "Hassler et al. 2014 (Curiosity RAD)", "sourceUrl": "https://doi.org/10.1126/science.1244797", "note": "Surface dose equivalent rate measured by Curiosity" },
-        "dustStorms": { "value": true, "unit": "", "sourceLabel": "Guzewich et al. 2019", "sourceUrl": "https://doi.org/10.1029/2018GL080839", "note": "The 2018 global dust storm observed by Curiosity" },
-        "gravity": { "value": 3.73, "unit": "m/s²", "sourceLabel": "NASA Mars Fact Sheet", "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html", "note": "" }
+        "insolation": {
+          "value": 0.4307,
+          "unit": "× Earth",
+          "sourceLabel": "NASA Mars Fact Sheet",
+          "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html",
+          "note": "Solar irradiance 586.2 W/m² ÷ Earth’s 1361 W/m²"
+        },
+        "nightHours": {
+          "value": 12.33,
+          "unit": "h",
+          "sourceLabel": "NASA Mars Fact Sheet",
+          "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html",
+          "note": "Half the 24.66-hour day"
+        },
+        "meanTempK": {
+          "value": 214,
+          "unit": "K",
+          "sourceLabel": "NASA Mars Fact Sheet",
+          "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html",
+          "note": "Average temperature ~214 K (−59 °C)"
+        },
+        "surfacePressureBar": {
+          "value": 0.00636,
+          "unit": "bar",
+          "sourceLabel": "NASA Mars Fact Sheet",
+          "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html",
+          "note": "6.36 mb at mean radius (4.0–8.7 mb by season)"
+        },
+        "co2Atmosphere": {
+          "value": true,
+          "unit": "",
+          "sourceLabel": "NASA Mars Fact Sheet",
+          "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html",
+          "note": "Atmosphere is 95.1% CO₂"
+        },
+        "waterIce": {
+          "value": true,
+          "unit": "",
+          "sourceLabel": "Smith et al. 2009 (Phoenix)",
+          "sourceUrl": "https://doi.org/10.1126/science.1172339",
+          "note": "Water ice found just below the surface at the Phoenix landing site"
+        },
+        "polarIce": {
+          "value": false,
+          "unit": "",
+          "sourceLabel": "Smith et al. 2009 (Phoenix)",
+          "sourceUrl": "https://doi.org/10.1126/science.1172339",
+          "note": "Ice is shallow subsurface ice, not in shadowed craters"
+        },
+        "radiationDoseMSvPerDay": {
+          "value": 0.64,
+          "unit": "mSv/day",
+          "sourceLabel": "Hassler et al. 2014 (Curiosity RAD)",
+          "sourceUrl": "https://doi.org/10.1126/science.1244797",
+          "note": "Surface dose equivalent rate measured by Curiosity"
+        },
+        "dustStorms": {
+          "value": true,
+          "unit": "",
+          "sourceLabel": "Guzewich et al. 2019",
+          "sourceUrl": "https://doi.org/10.1029/2018GL080839",
+          "note": "The 2018 global dust storm observed by Curiosity"
+        },
+        "gravity": {
+          "value": 3.73,
+          "unit": "m/s²",
+          "sourceLabel": "NASA Mars Fact Sheet",
+          "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html",
+          "note": ""
+        }
+      },
+      "card": {
+        "twist": "dust",
+        "headline": "Global dust storms can wrap the whole planet — Curiosity watched one in 2018.",
+        "scaleText": "~225 million km from Earth · about half Earth’s width · 43% of Earth’s sunlight",
+        "because": {
+          "power": {
+            "text": "Mars gets about 43% of Earth’s sunlight.",
+            "field": "insolation"
+          },
+          "life_support": {
+            "text": "The air is 95% CO₂, and water ice sits just under the surface (Phoenix).",
+            "field": "co2Atmosphere"
+          },
+          "twist": {
+            "text": "A global dust storm in 2018 was tracked by Curiosity.",
+            "field": "dustStorms"
+          }
+        },
+        "funFacts": [
+          "Welcome to Mars. A day here is only about 40 minutes longer than on Earth.",
+          "The air is mostly carbon dioxide — NASA’s MOXIE experiment turned it into oxygen on Mars.",
+          "Curiosity measured about 0.64 millisieverts of radiation a day on the surface."
+        ]
+      }
+    },
+    "mercury": {
+      "name": "Mercury",
+      "scale": {
+        "distanceKm": 57909000,
+        "distanceLabel": "57.9 million km from the Sun",
+        "radiusKm": 2440.5
+      },
+      "fields": {
+        "insolation": {
+          "value": 6.674,
+          "unit": "× Earth",
+          "sourceLabel": "NASA Mercury Fact Sheet",
+          "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/mercuryfact.html",
+          "note": "Solar irradiance 9082.7 W/m² ÷ Earth’s 1361 W/m²"
+        },
+        "nightHours": {
+          "value": 2111.3,
+          "unit": "h",
+          "sourceLabel": "NASA Mercury Fact Sheet",
+          "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/mercuryfact.html",
+          "note": "Half the 4222.6-hour (176 Earth-day) solar day"
+        },
+        "meanTempK": {
+          "value": 440,
+          "unit": "K",
+          "sourceLabel": "NASA Mercury Fact Sheet",
+          "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/mercuryfact.html",
+          "note": "Average temperature 440 K (167 °C)"
+        },
+        "surfacePressureBar": {
+          "value": 5e-15,
+          "unit": "bar",
+          "sourceLabel": "NASA Mercury Fact Sheet",
+          "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/mercuryfact.html",
+          "note": "Surface pressure below ~5 × 10⁻¹⁵ bar"
+        },
+        "co2Atmosphere": {
+          "value": false,
+          "unit": "",
+          "sourceLabel": "NASA Mercury Fact Sheet",
+          "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/mercuryfact.html",
+          "note": "Essentially no atmosphere"
+        },
+        "waterIce": {
+          "value": true,
+          "unit": "",
+          "sourceLabel": "Lawrence et al. 2013 (MESSENGER)",
+          "sourceUrl": "https://doi.org/10.1126/science.1229953",
+          "note": "Evidence for water ice near the north pole"
+        },
+        "polarIce": {
+          "value": true,
+          "unit": "",
+          "sourceLabel": "Lawrence et al. 2013 (MESSENGER)",
+          "sourceUrl": "https://doi.org/10.1126/science.1229953",
+          "note": "Ice in permanently shadowed polar craters"
+        },
+        "radiationDoseMSvPerDay": {
+          "value": null,
+          "unit": "",
+          "sourceLabel": "",
+          "sourceUrl": "",
+          "note": "No surface radiation measurement exists",
+          "status": "estimated"
+        },
+        "dustStorms": {
+          "value": false,
+          "unit": "",
+          "sourceLabel": "NASA Mercury Fact Sheet",
+          "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/mercuryfact.html",
+          "note": "No atmosphere to carry dust storms"
+        },
+        "gravity": {
+          "value": 3.7,
+          "unit": "m/s²",
+          "sourceLabel": "NASA Mercury Fact Sheet",
+          "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/mercuryfact.html",
+          "note": ""
+        }
+      },
+      "card": {
+        "twist": "thermal",
+        "headline": "One full day on Mercury lasts 176 Earth days.",
+        "scaleText": "57.9 million km from the Sun · 0.38× Earth’s width · 6.7× Earth’s sunlight",
+        "because": {
+          "power": {
+            "text": "Nights last about 88 Earth days, despite 6.7× Earth’s sunlight.",
+            "field": "nightHours"
+          },
+          "life_support": {
+            "text": "MESSENGER found evidence of water ice near the north pole.",
+            "field": "waterIce"
+          },
+          "twist": {
+            "text": "It averages 440 K (167 °C), so the base needs cooling power.",
+            "field": "meanTempK"
+          }
+        },
+        "funFacts": [
+          "Welcome to Mercury, the planet closest to the Sun.",
+          "Sunlight here is almost 7 times stronger than on Earth.",
+          "Even here, MESSENGER found signs of ice hiding in shadowed polar craters."
+        ]
+      }
+    },
+    "ceres": {
+      "name": "Ceres",
+      "scale": {
+        "distanceKm": 413000000,
+        "distanceLabel": "413 million km from the Sun",
+        "radiusKm": 469.5
+      },
+      "fields": {
+        "insolation": {
+          "value": 0.1305,
+          "unit": "× Earth",
+          "sourceLabel": "NASA Asteroid Fact Sheet",
+          "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/asteroidfact.html",
+          "note": "Derived: 1 ÷ 2.768² from its 2.768 AU orbit"
+        },
+        "nightHours": {
+          "value": 4.54,
+          "unit": "h",
+          "sourceLabel": "NASA Asteroid Fact Sheet",
+          "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/asteroidfact.html",
+          "note": "Half the 9.074-hour rotation"
+        },
+        "meanTempK": {
+          "value": 167,
+          "unit": "K",
+          "sourceLabel": "NASA Asteroid Fact Sheet",
+          "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/asteroidfact.html",
+          "note": "Derived: blackbody equilibrium temperature at 2.768 AU (278.6 K ÷ √2.768); Dawn measured up to 235 K with the Sun overhead",
+          "status": "estimated"
+        },
+        "surfacePressureBar": {
+          "value": null,
+          "unit": "",
+          "sourceLabel": "",
+          "sourceUrl": "",
+          "note": "Only a very thin, possibly water-vapour atmosphere — no surface pressure measured",
+          "status": "estimated"
+        },
+        "co2Atmosphere": {
+          "value": false,
+          "unit": "",
+          "sourceLabel": "NASA Ceres facts",
+          "sourceUrl": "https://science.nasa.gov/dwarf-planets/ceres/facts/",
+          "note": "Very thin atmosphere, possibly water vapour"
+        },
+        "waterIce": {
+          "value": true,
+          "unit": "",
+          "sourceLabel": "Platz et al. 2016 (Dawn)",
+          "sourceUrl": "https://doi.org/10.1038/s41550-016-0007",
+          "note": "Water-ice deposits in northern shadowed regions"
+        },
+        "polarIce": {
+          "value": true,
+          "unit": "",
+          "sourceLabel": "Platz et al. 2016 (Dawn)",
+          "sourceUrl": "https://doi.org/10.1038/s41550-016-0007",
+          "note": "Ice in permanently shadowed craters"
+        },
+        "radiationDoseMSvPerDay": {
+          "value": null,
+          "unit": "",
+          "sourceLabel": "",
+          "sourceUrl": "",
+          "note": "No surface radiation measurement exists",
+          "status": "estimated"
+        },
+        "dustStorms": {
+          "value": false,
+          "unit": "",
+          "sourceLabel": "NASA Ceres facts",
+          "sourceUrl": "https://science.nasa.gov/dwarf-planets/ceres/facts/",
+          "note": "Atmosphere far too thin for dust storms"
+        },
+        "gravity": {
+          "value": 0.28,
+          "unit": "m/s²",
+          "sourceLabel": "NASA Asteroid Fact Sheet",
+          "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/asteroidfact.html",
+          "note": "Derived from mass 9.393 × 10²⁰ kg and mean radius ~470 km"
+        }
+      },
+      "card": {
+        "twist": "thermal",
+        "headline": "A full day on Ceres lasts just 9 hours.",
+        "scaleText": "413 million km from the Sun · 1/13 of Earth’s width · 13% of Earth’s sunlight",
+        "because": {
+          "power": {
+            "text": "Ceres gets only about 13% of Earth’s sunlight.",
+            "field": "insolation"
+          },
+          "life_support": {
+            "text": "Dawn found water ice in permanently shadowed craters.",
+            "field": "waterIce"
+          },
+          "twist": {
+            "text": "It’s only about 167 K (−106 °C), so heating eats your power.",
+            "field": "meanTempK"
+          }
+        },
+        "funFacts": [
+          "Welcome to Ceres, a dwarf planet in the asteroid belt.",
+          "The Dawn spacecraft spotted water ice hiding in its shadowed craters.",
+          "Dawn measured surface temperatures up to 235 K with the Sun straight overhead."
+        ]
+      }
+    },
+    "titan": {
+      "name": "Titan",
+      "scale": {
+        "distanceKm": 1433500000,
+        "distanceLabel": "1.4 billion km from the Sun",
+        "radiusKm": 2575
+      },
+      "fields": {
+        "insolation": {
+          "value": 0.0109,
+          "unit": "× Earth",
+          "sourceLabel": "NASA Titan facts",
+          "sourceUrl": "https://science.nasa.gov/saturn/moons/titan/facts/",
+          "note": "Sunlight is about 100 times fainter than at Earth (Saturn: 14.8 W/m²)"
+        },
+        "nightHours": {
+          "value": 191.3,
+          "unit": "h",
+          "sourceLabel": "NASA Saturnian Satellite Fact Sheet",
+          "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/saturniansatfact.html",
+          "note": "Tidally locked: half the 15.95-day orbit"
+        },
+        "meanTempK": {
+          "value": 94,
+          "unit": "K",
+          "sourceLabel": "NASA Titan facts",
+          "sourceUrl": "https://science.nasa.gov/saturn/moons/titan/facts/",
+          "note": "About −179 °C, so cold that water ice plays the role of rock"
+        },
+        "surfacePressureBar": {
+          "value": 1.62,
+          "unit": "bar",
+          "sourceLabel": "NASA Titan facts",
+          "sourceUrl": "https://science.nasa.gov/saturn/moons/titan/facts/",
+          "note": "About 60% greater than Earth’s — like swimming 15 m underwater"
+        },
+        "co2Atmosphere": {
+          "value": false,
+          "unit": "",
+          "sourceLabel": "NASA Titan facts",
+          "sourceUrl": "https://science.nasa.gov/saturn/moons/titan/facts/",
+          "note": "Atmosphere is about 95% nitrogen and 5% methane"
+        },
+        "waterIce": {
+          "value": true,
+          "unit": "",
+          "sourceLabel": "NASA Titan facts",
+          "sourceUrl": "https://science.nasa.gov/saturn/moons/titan/facts/",
+          "note": "Water ice plays the role of rock at the surface"
+        },
+        "polarIce": {
+          "value": false,
+          "unit": "",
+          "sourceLabel": "NASA Titan facts",
+          "sourceUrl": "https://science.nasa.gov/saturn/moons/titan/facts/",
+          "note": "Ice is everywhere as bedrock, not hidden in shadowed craters"
+        },
+        "radiationDoseMSvPerDay": {
+          "value": null,
+          "unit": "",
+          "sourceLabel": "",
+          "sourceUrl": "",
+          "note": "The thick atmosphere shields the surface; no surface dose has been measured",
+          "status": "estimated"
+        },
+        "dustStorms": {
+          "value": false,
+          "unit": "",
+          "sourceLabel": "",
+          "sourceUrl": "",
+          "note": "Surface weather is not characterized well enough for a base",
+          "status": "estimated"
+        },
+        "gravity": {
+          "value": 1.35,
+          "unit": "m/s²",
+          "sourceLabel": "NASA Saturnian Satellite Fact Sheet",
+          "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/saturniansatfact.html",
+          "note": "Derived from mass 1.3455 × 10²³ kg and radius 2575 km"
+        }
+      },
+      "card": {
+        "twist": "thermal",
+        "headline": "On Titan it’s so cold that water ice plays the role of rock.",
+        "scaleText": "1.4 billion km from the Sun · 0.4× Earth’s width · ~1% of Earth’s sunlight",
+        "because": {
+          "power": {
+            "text": "Sunlight here is about 100 times fainter than on Earth.",
+            "field": "insolation"
+          },
+          "life_support": {
+            "text": "No CO₂ to make oxygen from: the air is nitrogen and methane.",
+            "field": "co2Atmosphere"
+          },
+          "twist": {
+            "text": "The surface sits around −179 °C (94 K).",
+            "field": "meanTempK"
+          }
+        },
+        "funFacts": [
+          "Welcome to Titan, Saturn’s largest moon, with air thicker than Earth’s.",
+          "Standing here feels like being 15 metres underwater on Earth.",
+          "Its air is about 95% nitrogen and 5% methane."
+        ]
+      }
+    },
+    "europa": {
+      "name": "Europa",
+      "scale": {
+        "distanceKm": 778500000,
+        "distanceLabel": "778 million km from the Sun",
+        "radiusKm": 1560.8
+      },
+      "fields": {
+        "insolation": {
+          "value": 0.037,
+          "unit": "× Earth",
+          "sourceLabel": "NASA Jupiter Fact Sheet",
+          "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/jupiterfact.html",
+          "note": "Solar irradiance at Jupiter 50.26 W/m² ÷ Earth’s 1361 W/m²"
+        },
+        "nightHours": {
+          "value": 42.6,
+          "unit": "h",
+          "sourceLabel": "NASA Jovian Satellite Fact Sheet",
+          "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/joviansatfact.html",
+          "note": "Tidally locked: half the 3.55-day orbit"
+        },
+        "meanTempK": {
+          "value": 109,
+          "unit": "K",
+          "sourceLabel": "Spencer et al. 1999 (Galileo)",
+          "sourceUrl": "https://doi.org/10.1126/science.284.5419.1514",
+          "note": "Midpoint of low-latitude temperatures, 86–132 K"
+        },
+        "surfacePressureBar": {
+          "value": null,
+          "unit": "",
+          "sourceLabel": "",
+          "sourceUrl": "",
+          "note": "Only an extremely thin oxygen layer; no surface pressure measured",
+          "status": "estimated"
+        },
+        "co2Atmosphere": {
+          "value": false,
+          "unit": "",
+          "sourceLabel": "NASA Europa overview",
+          "sourceUrl": "https://science.nasa.gov/jupiter/moons/europa/",
+          "note": "No meaningful atmosphere"
+        },
+        "waterIce": {
+          "value": true,
+          "unit": "",
+          "sourceLabel": "NASA Europa overview",
+          "sourceUrl": "https://science.nasa.gov/jupiter/moons/europa/",
+          "note": "An icy shell over a saltwater ocean with twice Earth’s ocean water"
+        },
+        "polarIce": {
+          "value": false,
+          "unit": "",
+          "sourceLabel": "NASA Europa overview",
+          "sourceUrl": "https://science.nasa.gov/jupiter/moons/europa/",
+          "note": "The whole surface is ice, not just shadowed craters"
+        },
+        "radiationDoseMSvPerDay": {
+          "value": null,
+          "unit": "",
+          "sourceLabel": "",
+          "sourceUrl": "",
+          "note": "Not measured at the surface, but Jupiter’s radiation is so intense molecules need 10–20 cm of ice to survive (Nordheim et al. 2018, doi:10.1038/s41550-018-0499-8)",
+          "status": "estimated"
+        },
+        "dustStorms": {
+          "value": false,
+          "unit": "",
+          "sourceLabel": "NASA Europa overview",
+          "sourceUrl": "https://science.nasa.gov/jupiter/moons/europa/",
+          "note": "No atmosphere to carry dust storms"
+        },
+        "gravity": {
+          "value": 1.31,
+          "unit": "m/s²",
+          "sourceLabel": "NASA Jovian Satellite Fact Sheet",
+          "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/joviansatfact.html",
+          "note": "Derived from mass 4.80 × 10²² kg and radius 1560.8 km"
+        }
+      },
+      "card": {
+        "twist": "radiation",
+        "headline": "Europa’s icy shell hides an ocean with twice Earth’s ocean water.",
+        "scaleText": "778 million km from the Sun · 0.25× Earth’s width · 3.7% of Earth’s sunlight",
+        "because": {
+          "power": {
+            "text": "Sunlight here is only about 3.7% of Earth’s.",
+            "field": "insolation"
+          },
+          "life_support": {
+            "text": "The whole surface is water ice.",
+            "field": "waterIce"
+          },
+          "twist": {
+            "text": "Jupiter’s radiation is so fierce molecules need 10–20 cm of ice to survive.",
+            "field": "radiationDoseMSvPerDay"
+          }
+        },
+        "funFacts": [
+          "Welcome to Europa, one of Jupiter’s icy moons.",
+          "One day here lasts 3.55 Earth days, always facing Jupiter.",
+          "Galileo measured surface temperatures between 86 and 132 K."
+        ]
       }
     }
   }

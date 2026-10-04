@@ -8,6 +8,7 @@ import {
 import {
   exoplanet, exoplanetPool, exoplanetValues, solarSystemBody, solarSystemKeys, type ScaleInfo, type SourcedValue,
 } from './sources';
+import { expand } from './grounding';
 
 /** The only values `markEstimated` may apply: "unknown" for nullable fields, "not present" for yes/no fields. */
 const ESTIMATE_DEFAULTS: Partial<Record<ParamField, null | false>> = {
@@ -166,6 +167,32 @@ export class ResearchSession {
     }
     if (card.funFacts.length !== 3 || card.funFacts.some(f => !f.trim())) throw new ResearchError('Exactly 3 fun facts required');
     this.card = card;
+  }
+
+  /** Every number the chosen planet's fetches support, for checking agent-written text. */
+  groundingNumbers(extra: number[] = []): number[] {
+    const out = [...extra];
+    for (const f of this.fetches.values()) {
+      if (this.planetName && f.name !== this.planetName) continue;
+      const d = f.scale.distance.value;
+      out.push(d, d / 1e9, d / 1e6, d / 1e3, f.scale.radiusEarths, 1 / f.scale.radiusEarths); // "1.4 billion km", "225 million km", "1/13 of Earth's width"
+      for (const v of f.values.values()) {
+        if (typeof v.value === 'number') out.push(...expand(v.field, v.value));
+        for (const m of `${v.note} ${v.sourceLabel}`.match(/\d[\d,]*(?:\.\d+)?/g) ?? []) out.push(Number(m.replace(/,/g, '')));
+      }
+    }
+    return out;
+  }
+
+  /** The card's thresholds once a twist is chosen — tells the agent which field each because-line must cite. */
+  requirementsPreview() {
+    if (!this.twist) throw new ResearchError('Choose a twist first');
+    return describeRequirements(deriveRules(this.profile(), this.twist)).map(r => ({
+      kind: r.kind,
+      title: r.title,
+      threshold: r.threshold,
+      cite_one_of: r.derivedFrom,
+    }));
   }
 
   scaleOf(fetchId: string): ScaleInfo | undefined {

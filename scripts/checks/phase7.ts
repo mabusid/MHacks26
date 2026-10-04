@@ -67,10 +67,10 @@ async function forceResearch(target: string) {
   return next()!;
 }
 
-await step('a new room is researched automatically: log lines stream, then a planet is ready (≤ 20 s)', async () => {
+await step('a new room is researched automatically: log lines stream, then a planet is ready (≤ 30 s)', async () => {
   await host.conn.reducers.createRoom({ name: 'Host' });
   await until('room', () => !!room());
-  await until('research done', () => next()?.status.tag === 'Ready', 20_000);
+  await until('research done', () => next()?.status.tag === 'Ready', 30_000);
   const err = provenanceOk(next()!.id);
   if (err) throw new Error(err);
   return `${next()!.planetName} · ${logLines().length} log lines`;
@@ -112,7 +112,7 @@ await step('the debrief prepares the next planet automatically; Next planet goes
   await until('build', () => room().phase.tag === 'Build');
   await host.conn.reducers.lockBuild({});
   await until('debrief', () => room().phase.tag === 'Debrief');
-  await until('next planet prepared', () => next()?.status.tag === 'Ready', 20_000);
+  await until('next planet prepared', () => next()?.status.tag === 'Ready', 30_000);
   const name = next()!.planetName;
   await host.conn.reducers.rematch({});
   await until('briefing again', () => room().phase.tag === 'Briefing');

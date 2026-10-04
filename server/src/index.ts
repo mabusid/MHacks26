@@ -2,8 +2,8 @@ import { createServer, type ServerResponse } from 'node:http';
 import { SHARED_VERSION } from '@overburden/shared';
 import { config } from './config';
 import { FIXTURE_KEYS, commitFixture, type FixtureKey } from './fixtures';
-import { SCRIPTED_TARGETS, type ScriptedTarget } from './research/scripted';
-import { isResearching, research, setAutoResearch, startResearchWatcher } from './research/trigger';
+import { SCRIPTED_TARGETS } from './research/scripted';
+import { isResearching, research, setAutoResearch, startResearchWatcher, type ResearchMode } from './research/trigger';
 import { db, isConnected, roomByCode, startSpacetime } from './spacetime';
 
 function send(res: ServerResponse, status: number, body: unknown) {
@@ -42,9 +42,10 @@ const server = createServer(async (req, res) => {
   }
   if (config.dev && req.method === 'POST' && url.pathname === '/dev/research') {
     const room = roomByCode(url.searchParams.get('room') ?? '');
-    const target = (url.searchParams.get('target') ?? 'exoplanet') as ScriptedTarget;
+    const target = (url.searchParams.get('target') ?? 'agent') as ResearchMode;
+    const modes: ResearchMode[] = ['agent', 'fail', ...SCRIPTED_TARGETS];
     if (!room) return send(res, 404, { error: 'No room with that code' });
-    if (!SCRIPTED_TARGETS.includes(target)) return send(res, 400, { error: `target must be one of ${SCRIPTED_TARGETS.join(', ')}` });
+    if (!modes.includes(target)) return send(res, 400, { error: `target must be one of ${modes.join(', ')}` });
     // Let any automatic run for this room finish first, then run the requested target.
     while (isResearching(room.id)) await new Promise(r => setTimeout(r, 200));
     await research(db(), room.id, target);

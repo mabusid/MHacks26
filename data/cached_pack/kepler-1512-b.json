@@ -1,0 +1,130 @@
+{
+  "planetName": "Kepler-1512 b",
+  "params": [
+    {
+      "field": "insolation",
+      "num": 1.6,
+      "flag": null,
+      "unit": "× Earth",
+      "status": "sourced",
+      "sourceLabel": "Torres et al. 2017 via NASA Exoplanet Archive",
+      "sourceUrl": "https://ui.adsabs.harvard.edu/abs/2017AJ....154..264T/abstract",
+      "note": ""
+    },
+    {
+      "field": "meanTempK",
+      "num": 322,
+      "flag": null,
+      "unit": "K",
+      "status": "sourced",
+      "sourceLabel": "Torres et al. 2017 via NASA Exoplanet Archive",
+      "sourceUrl": "https://ui.adsabs.harvard.edu/abs/2017AJ....154..264T/abstract",
+      "note": "Equilibrium temperature"
+    },
+    {
+      "field": "gravity",
+      "num": 11.58,
+      "flag": null,
+      "unit": "m/s²",
+      "status": "estimated",
+      "sourceLabel": "Morton et al. 2016 via NASA Exoplanet Archive",
+      "sourceUrl": "https://ui.adsabs.harvard.edu/abs/2016ApJ...822...86M/abstract",
+      "note": "Mass not directly measured; assumes Earth-like density from its radius"
+    },
+    {
+      "field": "nightHours",
+      "num": null,
+      "flag": null,
+      "unit": "",
+      "status": "estimated",
+      "sourceLabel": "",
+      "sourceUrl": "",
+      "note": "Rotation not measured — planets this close to their star are often tidally locked"
+    },
+    {
+      "field": "surfacePressureBar",
+      "num": null,
+      "flag": null,
+      "unit": "",
+      "status": "estimated",
+      "sourceLabel": "",
+      "sourceUrl": "",
+      "note": "Atmosphere not yet measured — very few rocky exoplanets have been checked"
+    },
+    {
+      "field": "radiationDoseMSvPerDay",
+      "num": null,
+      "flag": null,
+      "unit": "",
+      "status": "estimated",
+      "sourceLabel": "",
+      "sourceUrl": "",
+      "note": "No surface measurements exist"
+    },
+    {
+      "field": "co2Atmosphere",
+      "num": null,
+      "flag": false,
+      "unit": "",
+      "status": "estimated",
+      "sourceLabel": "",
+      "sourceUrl": "",
+      "note": "Atmosphere not yet measured"
+    },
+    {
+      "field": "waterIce",
+      "num": null,
+      "flag": false,
+      "unit": "",
+      "status": "estimated",
+      "sourceLabel": "",
+      "sourceUrl": "",
+      "note": "No water detected"
+    },
+    {
+      "field": "polarIce",
+      "num": null,
+      "flag": false,
+      "unit": "",
+      "status": "estimated",
+      "sourceLabel": "",
+      "sourceUrl": "",
+      "note": "No water detected"
+    },
+    {
+      "field": "dustStorms",
+      "num": null,
+      "flag": false,
+      "unit": "",
+      "status": "estimated",
+      "sourceLabel": "",
+      "sourceUrl": "",
+      "note": "Weather unknown"
+    }
+  ],
+  "twist": "radiation",
+  "headline": "Kepler-1512 b gets 160% of Earth’s sunlight, 528.4 light-years away.",
+  "scaleText": "528.4 light-years away · 1.18× Earth’s width · 1.60× Earth’s sunlight",
+  "because": [
+    {
+      "kind": "power",
+      "text": "It gets 1.60× Earth’s sunlight; its nights have never been measured.",
+      "field": "insolation"
+    },
+    {
+      "kind": "life_support",
+      "text": "No water or CO₂ has been detected, so supplies must be shipped.",
+      "field": "waterIce"
+    },
+    {
+      "kind": "twist",
+      "text": "Its atmosphere has never been measured, so plan for radiation.",
+      "field": "surfacePressureBar"
+    }
+  ],
+  "funFacts": [
+    "Welcome to Kepler-1512 b, 528.4 light-years from Earth.",
+    "A year here lasts 20 Earth days as it circles its star.",
+    "Nobody knows yet whether it has air — only a handful of rocky exoplanets have been checked."
+  ]
+}

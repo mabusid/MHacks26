@@ -1,24 +1,20 @@
 // Scripted research (Phase 7): a fixed tool sequence per target, no LLM. Phase 8's agent calls the same
 // session methods; this stays as its fallback. Log lines are paced so the lobby can watch the research.
 
-import { FIXTURES, PARAM_FIELDS, type ParamField, type Twist } from '@overburden/shared';
-import { ResearchSession, type Card } from './session';
+import { PARAM_FIELDS, type ParamField, type Twist } from '@overburden/shared';
+import { ResearchSession } from './session';
+import { curatedCard, solarSystemKeys } from './sources';
 
-export type ScriptedTarget = 'moon' | 'mars' | 'exoplanet';
-export const SCRIPTED_TARGETS: ScriptedTarget[] = ['moon', 'mars', 'exoplanet'];
+/** A curated solar-system key (see data/solar_system.json) or a live exoplanet. */
+export type ScriptedTarget = string;
+export const SCRIPTED_TARGETS: ScriptedTarget[] = [...solarSystemKeys(), 'exoplanet'];
 
-const PACE_MS = 350;
+const PACE_MS = process.env.RESEARCH_PACE_MS !== undefined ? Number(process.env.RESEARCH_PACE_MS) : 350;
 const pause = (ms = PACE_MS) => new Promise(r => setTimeout(r, ms));
 
 const fmtPct = (x: number) => (x < 0.1 ? `${(x * 100).toFixed(1)}%` : `${Math.round(x * 100)}%`);
 
-/** Written cards for curated bodies (the fixture copy is real-fact text). */
-const CURATED: Record<'moon' | 'mars', { twist: Twist; card: Card }> = {
-  moon: { twist: 'radiation', card: FIXTURES.moon.card },
-  mars: { twist: 'dust', card: FIXTURES.mars.card },
-};
-
-async function curated(s: ResearchSession, key: 'moon' | 'mars') {
+async function curated(s: ResearchSession, key: string) {
   await s.log('Choosing a destination…');
   await pause();
   const f = s.fetchSolarSystemBody(key);
@@ -29,14 +25,14 @@ async function curated(s: ResearchSession, key: 'moon' | 'mars') {
   const sun = get('insolation');
   await s.log(`Sunlight ${fmtPct(sun.value as number)} of Earth’s (${sun.sourceLabel})`);
   await pause();
-  const night = get('nightHours').value as number;
-  await s.log(`Nights last ${night > 48 ? `${(night / 24).toFixed(1)} Earth days` : `${night.toFixed(1)} hours`}`);
+  const night = get('nightHours').value as number | null;
+  if (night !== null) await s.log(`Nights last ${night > 48 ? `${(night / 24).toFixed(1)} Earth days` : `${night.toFixed(1)} hours`}`);
   await pause();
   const ice = get('waterIce');
   await s.log(ice.value ? `Water ice confirmed (${ice.sourceLabel})` : 'No water ice found');
   await pause();
-  const { twist, card } = CURATED[key];
-  s.chooseTwist(twist);
+  const { twist, ...card } = curatedCard(key);
+  s.chooseTwist(twist as Twist);
   await s.log(`Mission twist: ${twist}`);
   s.writeCard(card);
   await s.commit();

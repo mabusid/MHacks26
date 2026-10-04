@@ -15,17 +15,29 @@ export interface SourcedValue {
 }
 
 export interface ScaleInfo {
-  /** Light-years for exoplanets; kilometres for solar-system bodies. */
-  distance: { value: number; unit: 'ly' | 'km' };
+  /** Light-years for exoplanets; kilometres for solar-system bodies (label says from where). */
+  distance: { value: number; unit: 'ly' | 'km'; label?: string };
   radiusEarths: number;
 }
 
 // ── Tier 2: curated solar system ────────────────────────────────────────────────────────────────
 
+export interface CuratedCard {
+  twist: 'radiation' | 'thermal' | 'dust';
+  headline: string;
+  scaleText: string;
+  because: Record<'power' | 'life_support' | 'twist', { text: string; field: ParamField }>;
+  funFacts: [string, string, string];
+}
+
 interface CuratedBody {
   name: string;
-  scale: { distanceKm: number; radiusKm: number };
-  fields: Record<ParamField, { value: number | boolean; unit: string; sourceLabel: string; sourceUrl: string; note: string }>;
+  scale: { distanceKm: number; distanceLabel: string; radiusKm: number };
+  fields: Record<
+    ParamField,
+    { value: number | boolean | null; unit: string; sourceLabel: string; sourceUrl: string; note: string; status?: 'sourced' | 'estimated' }
+  >;
+  card: CuratedCard;
 }
 
 const EARTH_RADIUS_KM = 6371;
@@ -40,6 +52,12 @@ export function solarSystemKeys(): string[] {
   return Object.keys(bodies());
 }
 
+export function curatedCard(key: string): CuratedCard {
+  const b = bodies()[key];
+  if (!b) throw new Error(`No curated data for "${key}"`);
+  return b.card;
+}
+
 export function solarSystemBody(key: string): { name: string; values: SourcedValue[]; scale: ScaleInfo } {
   const b = bodies()[key];
   if (!b) throw new Error(`No curated data for "${key}" (have: ${solarSystemKeys().join(', ')})`);
@@ -47,12 +65,16 @@ export function solarSystemBody(key: string): { name: string; values: SourcedVal
     field,
     value: f.value,
     unit: f.unit,
-    status: 'sourced' as const,
+    status: f.status ?? ('sourced' as const),
     sourceLabel: f.sourceLabel,
     sourceUrl: f.sourceUrl,
     note: f.note,
   }));
-  return { name: b.name, values, scale: { distance: { value: b.scale.distanceKm, unit: 'km' }, radiusEarths: b.scale.radiusKm / EARTH_RADIUS_KM } };
+  return {
+    name: b.name,
+    values,
+    scale: { distance: { value: b.scale.distanceKm, unit: 'km', label: b.scale.distanceLabel }, radiusEarths: b.scale.radiusKm / EARTH_RADIUS_KM },
+  };
 }
 
 // ── Tier 1: NASA Exoplanet Archive ──────────────────────────────────────────────────────────────

@@ -1,0 +1,130 @@
+{
+  "planetName": "L 98-59 f",
+  "params": [
+    {
+      "field": "insolation",
+      "num": 1.1,
+      "flag": null,
+      "unit": "× Earth",
+      "status": "sourced",
+      "sourceLabel": "Cadieux et al. 2025 via NASA Exoplanet Archive",
+      "sourceUrl": "https://ui.adsabs.harvard.edu/abs/2025AJ....170..154C/abstract",
+      "note": ""
+    },
+    {
+      "field": "meanTempK",
+      "num": 285,
+      "flag": null,
+      "unit": "K",
+      "status": "sourced",
+      "sourceLabel": "Cadieux et al. 2025 via NASA Exoplanet Archive",
+      "sourceUrl": "https://ui.adsabs.harvard.edu/abs/2025AJ....170..154C/abstract",
+      "note": "Equilibrium temperature"
+    },
+    {
+      "field": "gravity",
+      "num": 14.52,
+      "flag": null,
+      "unit": "m/s²",
+      "status": "estimated",
+      "sourceLabel": "Calculated Value via NASA Exoplanet Archive",
+      "sourceUrl": "/docs/pscp_calc.html",
+      "note": "Mass not directly measured; assumes Earth-like density from its radius"
+    },
+    {
+      "field": "nightHours",
+      "num": null,
+      "flag": null,
+      "unit": "",
+      "status": "estimated",
+      "sourceLabel": "",
+      "sourceUrl": "",
+      "note": "Rotation not measured — planets this close to their star are often tidally locked"
+    },
+    {
+      "field": "surfacePressureBar",
+      "num": null,
+      "flag": null,
+      "unit": "",
+      "status": "estimated",
+      "sourceLabel": "",
+      "sourceUrl": "",
+      "note": "Atmosphere not yet measured — very few rocky exoplanets have been checked"
+    },
+    {
+      "field": "radiationDoseMSvPerDay",
+      "num": null,
+      "flag": null,
+      "unit": "",
+      "status": "estimated",
+      "sourceLabel": "",
+      "sourceUrl": "",
+      "note": "No surface measurements exist"
+    },
+    {
+      "field": "co2Atmosphere",
+      "num": null,
+      "flag": false,
+      "unit": "",
+      "status": "estimated",
+      "sourceLabel": "",
+      "sourceUrl": "",
+      "note": "Atmosphere not yet measured"
+    },
+    {
+      "field": "waterIce",
+      "num": null,
+      "flag": false,
+      "unit": "",
+      "status": "estimated",
+      "sourceLabel": "",
+      "sourceUrl": "",
+      "note": "No water detected"
+    },
+    {
+      "field": "polarIce",
+      "num": null,
+      "flag": false,
+      "unit": "",
+      "status": "estimated",
+      "sourceLabel": "",
+      "sourceUrl": "",
+      "note": "No water detected"
+    },
+    {
+      "field": "dustStorms",
+      "num": null,
+      "flag": false,
+      "unit": "",
+      "status": "estimated",
+      "sourceLabel": "",
+      "sourceUrl": "",
+      "note": "Weather unknown"
+    }
+  ],
+  "twist": "radiation",
+  "headline": "L 98-59 f gets 110% of Earth’s sunlight, 34.6 light-years away.",
+  "scaleText": "34.6 light-years away · 1.48× Earth’s width · 1.10× Earth’s sunlight",
+  "because": [
+    {
+      "kind": "power",
+      "text": "It gets 1.10× Earth’s sunlight; its nights have never been measured.",
+      "field": "insolation"
+    },
+    {
+      "kind": "life_support",
+      "text": "No water or CO₂ has been detected, so supplies must be shipped.",
+      "field": "waterIce"
+    },
+    {
+      "kind": "twist",
+      "text": "Its atmosphere has never been measured, so plan for radiation.",
+      "field": "surfacePressureBar"
+    }
+  ],
+  "funFacts": [
+    "Welcome to L 98-59 f, 34.6 light-years from Earth.",
+    "A year here lasts 23 Earth days as it circles a M3 V star.",
+    "Nobody knows yet whether it has air — only a handful of rocky exoplanets have been checked."
+  ]
+}

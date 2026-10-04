@@ -1,0 +1,130 @@
+{
+  "planetName": "Ceres",
+  "params": [
+    {
+      "field": "insolation",
+      "num": 0.1305,
+      "flag": null,
+      "unit": "× Earth",
+      "status": "sourced",
+      "sourceLabel": "NASA Asteroid Fact Sheet",
+      "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/asteroidfact.html",
+      "note": "Derived: 1 ÷ 2.768² from its 2.768 AU orbit"
+    },
+    {
+      "field": "nightHours",
+      "num": 4.54,
+      "flag": null,
+      "unit": "h",
+      "status": "sourced",
+      "sourceLabel": "NASA Asteroid Fact Sheet",
+      "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/asteroidfact.html",
+      "note": "Half the 9.074-hour rotation"
+    },
+    {
+      "field": "meanTempK",
+      "num": 167,
+      "flag": null,
+      "unit": "K",
+      "status": "estimated",
+      "sourceLabel": "NASA Asteroid Fact Sheet",
+      "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/asteroidfact.html",
+      "note": "Derived: blackbody equilibrium temperature at 2.768 AU (278.6 K ÷ √2.768); Dawn measured up to 235 K with the Sun overhead"
+    },
+    {
+      "field": "surfacePressureBar",
+      "num": null,
+      "flag": null,
+      "unit": "",
+      "status": "estimated",
+      "sourceLabel": "",
+      "sourceUrl": "",
+      "note": "Only a very thin, possibly water-vapour atmosphere — no surface pressure measured"
+    },
+    {
+      "field": "co2Atmosphere",
+      "num": null,
+      "flag": false,
+      "unit": "",
+      "status": "sourced",
+      "sourceLabel": "NASA Ceres facts",
+      "sourceUrl": "https://science.nasa.gov/dwarf-planets/ceres/facts/",
+      "note": "Very thin atmosphere, possibly water vapour"
+    },
+    {
+      "field": "waterIce",
+      "num": null,
+      "flag": true,
+      "unit": "",
+      "status": "sourced",
+      "sourceLabel": "Platz et al. 2016 (Dawn)",
+      "sourceUrl": "https://doi.org/10.1038/s41550-016-0007",
+      "note": "Water-ice deposits in northern shadowed regions"
+    },
+    {
+      "field": "polarIce",
+      "num": null,
+      "flag": true,
+      "unit": "",
+      "status": "sourced",
+      "sourceLabel": "Platz et al. 2016 (Dawn)",
+      "sourceUrl": "https://doi.org/10.1038/s41550-016-0007",
+      "note": "Ice in permanently shadowed craters"
+    },
+    {
+      "field": "radiationDoseMSvPerDay",
+      "num": null,
+      "flag": null,
+      "unit": "",
+      "status": "estimated",
+      "sourceLabel": "",
+      "sourceUrl": "",
+      "note": "No surface radiation measurement exists"
+    },
+    {
+      "field": "dustStorms",
+      "num": null,
+      "flag": false,
+      "unit": "",
+      "status": "sourced",
+      "sourceLabel": "NASA Ceres facts",
+      "sourceUrl": "https://science.nasa.gov/dwarf-planets/ceres/facts/",
+      "note": "Atmosphere far too thin for dust storms"
+    },
+    {
+      "field": "gravity",
+      "num": 0.28,
+      "flag": null,
+      "unit": "m/s²",
+      "status": "sourced",
+      "sourceLabel": "NASA Asteroid Fact Sheet",
+      "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/asteroidfact.html",
+      "note": "Derived from mass 9.393 × 10²⁰ kg and mean radius ~470 km"
+    }
+  ],
+  "twist": "thermal",
+  "headline": "A full day on Ceres lasts just 9 hours.",
+  "scaleText": "413 million km from the Sun · 1/13 of Earth’s width · 13% of Earth’s sunlight",
+  "because": [
+    {
+      "kind": "power",
+      "text": "Ceres gets only about 13% of Earth’s sunlight.",
+      "field": "insolation"
+    },
+    {
+      "kind": "life_support",
+      "text": "Dawn found water ice in permanently shadowed craters.",
+      "field": "waterIce"
+    },
+    {
+      "kind": "twist",
+      "text": "It’s only about 167 K (−106 °C), so heating eats your power.",
+      "field": "meanTempK"
+    }
+  ],
+  "funFacts": [
+    "Welcome to Ceres, a dwarf planet in the asteroid belt.",
+    "The Dawn spacecraft spotted water ice hiding in its shadowed craters.",
+    "Dawn measured surface temperatures up to 235 K with the Sun straight overhead."
+  ]
+}

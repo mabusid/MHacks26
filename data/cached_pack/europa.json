@@ -1,0 +1,130 @@
+{
+  "planetName": "Europa",
+  "params": [
+    {
+      "field": "insolation",
+      "num": 0.037,
+      "flag": null,
+      "unit": "× Earth",
+      "status": "sourced",
+      "sourceLabel": "NASA Jupiter Fact Sheet",
+      "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/jupiterfact.html",
+      "note": "Solar irradiance at Jupiter 50.26 W/m² ÷ Earth’s 1361 W/m²"
+    },
+    {
+      "field": "nightHours",
+      "num": 42.6,
+      "flag": null,
+      "unit": "h",
+      "status": "sourced",
+      "sourceLabel": "NASA Jovian Satellite Fact Sheet",
+      "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/joviansatfact.html",
+      "note": "Tidally locked: half the 3.55-day orbit"
+    },
+    {
+      "field": "meanTempK",
+      "num": 109,
+      "flag": null,
+      "unit": "K",
+      "status": "sourced",
+      "sourceLabel": "Spencer et al. 1999 (Galileo)",
+      "sourceUrl": "https://doi.org/10.1126/science.284.5419.1514",
+      "note": "Midpoint of low-latitude temperatures, 86–132 K"
+    },
+    {
+      "field": "surfacePressureBar",
+      "num": null,
+      "flag": null,
+      "unit": "",
+      "status": "estimated",
+      "sourceLabel": "",
+      "sourceUrl": "",
+      "note": "Only an extremely thin oxygen layer; no surface pressure measured"
+    },
+    {
+      "field": "co2Atmosphere",
+      "num": null,
+      "flag": false,
+      "unit": "",
+      "status": "sourced",
+      "sourceLabel": "NASA Europa overview",
+      "sourceUrl": "https://science.nasa.gov/jupiter/moons/europa/",
+      "note": "No meaningful atmosphere"
+    },
+    {
+      "field": "waterIce",
+      "num": null,
+      "flag": true,
+      "unit": "",
+      "status": "sourced",
+      "sourceLabel": "NASA Europa overview",
+      "sourceUrl": "https://science.nasa.gov/jupiter/moons/europa/",
+      "note": "An icy shell over a saltwater ocean with twice Earth’s ocean water"
+    },
+    {
+      "field": "polarIce",
+      "num": null,
+      "flag": false,
+      "unit": "",
+      "status": "sourced",
+      "sourceLabel": "NASA Europa overview",
+      "sourceUrl": "https://science.nasa.gov/jupiter/moons/europa/",
+      "note": "The whole surface is ice, not just shadowed craters"
+    },
+    {
+      "field": "radiationDoseMSvPerDay",
+      "num": null,
+      "flag": null,
+      "unit": "",
+      "status": "estimated",
+      "sourceLabel": "",
+      "sourceUrl": "",
+      "note": "Not measured at the surface, but Jupiter’s radiation is so intense molecules need 10–20 cm of ice to survive (Nordheim et al. 2018, doi:10.1038/s41550-018-0499-8)"
+    },
+    {
+      "field": "dustStorms",
+      "num": null,
+      "flag": false,
+      "unit": "",
+      "status": "sourced",
+      "sourceLabel": "NASA Europa overview",
+      "sourceUrl": "https://science.nasa.gov/jupiter/moons/europa/",
+      "note": "No atmosphere to carry dust storms"
+    },
+    {
+      "field": "gravity",
+      "num": 1.31,
+      "flag": null,
+      "unit": "m/s²",
+      "status": "sourced",
+      "sourceLabel": "NASA Jovian Satellite Fact Sheet",
+      "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/joviansatfact.html",
+      "note": "Derived from mass 4.80 × 10²² kg and radius 1560.8 km"
+    }
+  ],
+  "twist": "radiation",
+  "headline": "Europa’s icy shell hides an ocean with twice Earth’s ocean water.",
+  "scaleText": "778 million km from the Sun · 0.25× Earth’s width · 3.7% of Earth’s sunlight",
+  "because": [
+    {
+      "kind": "power",
+      "text": "Sunlight here is only about 3.7% of Earth’s.",
+      "field": "insolation"
+    },
+    {
+      "kind": "life_support",
+      "text": "The whole surface is water ice.",
+      "field": "waterIce"
+    },
+    {
+      "kind": "twist",
+      "text": "Jupiter’s radiation is so fierce molecules need 10–20 cm of ice to survive.",
+      "field": "radiationDoseMSvPerDay"
+    }
+  ],
+  "funFacts": [
+    "Welcome to Europa, one of Jupiter’s icy moons.",
+    "One day here lasts 3.55 Earth days, always facing Jupiter.",
+    "Galileo measured surface temperatures between 86 and 132 K."
+  ]
+}

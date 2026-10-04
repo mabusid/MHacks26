@@ -294,8 +294,16 @@ Runs in the **lobby** (and during debrief for the next round) so players never w
 ### Rules
 
 - No numbers from model memory; no search during a live round; no agent calls during build.
-- **Latency budget: 20s.** On timeout, error, or a failed winnability check (after 2 redraws), draw from the **cached pack**.
-- **Cached pack** = the "deep research" edition: ~10 planets (all 6 solar-system bodies + 4 exoplanets) researched offline with tiers 1–3, reviewed by us, and checked into the repo. Same schema as a live round.
+- **Fallback chain:** agent (22 s) → scripted research (curated body or live exoplanet, ~3 s) → **cached pack**. Overall budget 28 s — research runs while the crew gathers and during the debrief, so nobody waits on it.
+- **Cached pack** (`data/cached_pack/`, `pnpm build:pack`): 10 planets — all 6 solar-system bodies + 4 live exoplanets — built through the same provenance-checked session and verified accepted (winnable) by the module. Tier-3 web enrichment is not done yet.
+
+### Agent safeguards (implemented)
+
+- **Provenance:** values only via `set_parameters(fetch_id)` (copies everything the fetch measured) or `mark_estimated` (fixed default + reason, only for unknowable fields).
+- **Numeric grounding:** every number in agent text must match fetched data within 3% (plus simple conversions: K→°C, hours→days, ×Earth→%); small counts and years pass.
+- **Fact check:** a second strict model pass flags claims the data doesn't support (false physics, wrong size words, wrong game cause-and-effect). One rewrite; then flagged lines are replaced with data-only templates. No raw field names in text.
+- **Server-written scale line:** distance · width · sunlight, formatted from fetched numbers.
+- Model: `grok-4.20-0309-non-reasoning` for both the agent and the fact check (~1 s per call; `grok-4.7` took ~10 s per check).
 
 ---
 

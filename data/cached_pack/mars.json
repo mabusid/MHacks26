@@ -1,0 +1,130 @@
+{
+  "planetName": "Mars",
+  "params": [
+    {
+      "field": "insolation",
+      "num": 0.4307,
+      "flag": null,
+      "unit": "× Earth",
+      "status": "sourced",
+      "sourceLabel": "NASA Mars Fact Sheet",
+      "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html",
+      "note": "Solar irradiance 586.2 W/m² ÷ Earth’s 1361 W/m²"
+    },
+    {
+      "field": "nightHours",
+      "num": 12.33,
+      "flag": null,
+      "unit": "h",
+      "status": "sourced",
+      "sourceLabel": "NASA Mars Fact Sheet",
+      "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html",
+      "note": "Half the 24.66-hour day"
+    },
+    {
+      "field": "meanTempK",
+      "num": 214,
+      "flag": null,
+      "unit": "K",
+      "status": "sourced",
+      "sourceLabel": "NASA Mars Fact Sheet",
+      "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html",
+      "note": "Average temperature ~214 K (−59 °C)"
+    },
+    {
+      "field": "surfacePressureBar",
+      "num": 0.00636,
+      "flag": null,
+      "unit": "bar",
+      "status": "sourced",
+      "sourceLabel": "NASA Mars Fact Sheet",
+      "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html",
+      "note": "6.36 mb at mean radius (4.0–8.7 mb by season)"
+    },
+    {
+      "field": "co2Atmosphere",
+      "num": null,
+      "flag": true,
+      "unit": "",
+      "status": "sourced",
+      "sourceLabel": "NASA Mars Fact Sheet",
+      "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html",
+      "note": "Atmosphere is 95.1% CO₂"
+    },
+    {
+      "field": "waterIce",
+      "num": null,
+      "flag": true,
+      "unit": "",
+      "status": "sourced",
+      "sourceLabel": "Smith et al. 2009 (Phoenix)",
+      "sourceUrl": "https://doi.org/10.1126/science.1172339",
+      "note": "Water ice found just below the surface at the Phoenix landing site"
+    },
+    {
+      "field": "polarIce",
+      "num": null,
+      "flag": false,
+      "unit": "",
+      "status": "sourced",
+      "sourceLabel": "Smith et al. 2009 (Phoenix)",
+      "sourceUrl": "https://doi.org/10.1126/science.1172339",
+      "note": "Ice is shallow subsurface ice, not in shadowed craters"
+    },
+    {
+      "field": "radiationDoseMSvPerDay",
+      "num": 0.64,
+      "flag": null,
+      "unit": "mSv/day",
+      "status": "sourced",
+      "sourceLabel": "Hassler et al. 2014 (Curiosity RAD)",
+      "sourceUrl": "https://doi.org/10.1126/science.1244797",
+      "note": "Surface dose equivalent rate measured by Curiosity"
+    },
+    {
+      "field": "dustStorms",
+      "num": null,
+      "flag": true,
+      "unit": "",
+      "status": "sourced",
+      "sourceLabel": "Guzewich et al. 2019",
+      "sourceUrl": "https://doi.org/10.1029/2018GL080839",
+      "note": "The 2018 global dust storm observed by Curiosity"
+    },
+    {
+      "field": "gravity",
+      "num": 3.73,
+      "flag": null,
+      "unit": "m/s²",
+      "status": "sourced",
+      "sourceLabel": "NASA Mars Fact Sheet",
+      "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html",
+      "note": ""
+    }
+  ],
+  "twist": "dust",
+  "headline": "Global dust storms can wrap the whole planet — Curiosity watched one in 2018.",
+  "scaleText": "~225 million km from Earth · about half Earth’s width · 43% of Earth’s sunlight",
+  "because": [
+    {
+      "kind": "power",
+      "text": "Mars gets about 43% of Earth’s sunlight.",
+      "field": "insolation"
+    },
+    {
+      "kind": "life_support",
+      "text": "The air is 95% CO₂, and water ice sits just under the surface (Phoenix).",
+      "field": "co2Atmosphere"
+    },
+    {
+      "kind": "twist",
+      "text": "A global dust storm in 2018 was tracked by Curiosity.",
+      "field": "dustStorms"
+    }
+  ],
+  "funFacts": [
+    "Welcome to Mars. A day here is only about 40 minutes longer than on Earth.",
+    "The air is mostly carbon dioxide — NASA’s MOXIE experiment turned it into oxygen on Mars.",
+    "Curiosity measured about 0.64 millisieverts of radiation a day on the surface."
+  ]
+}

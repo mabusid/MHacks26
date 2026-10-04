@@ -1,0 +1,130 @@
+{
+  "planetName": "Titan",
+  "params": [
+    {
+      "field": "insolation",
+      "num": 0.0109,
+      "flag": null,
+      "unit": "× Earth",
+      "status": "sourced",
+      "sourceLabel": "NASA Titan facts",
+      "sourceUrl": "https://science.nasa.gov/saturn/moons/titan/facts/",
+      "note": "Sunlight is about 100 times fainter than at Earth (Saturn: 14.8 W/m²)"
+    },
+    {
+      "field": "nightHours",
+      "num": 191.3,
+      "flag": null,
+      "unit": "h",
+      "status": "sourced",
+      "sourceLabel": "NASA Saturnian Satellite Fact Sheet",
+      "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/saturniansatfact.html",
+      "note": "Tidally locked: half the 15.95-day orbit"
+    },
+    {
+      "field": "meanTempK",
+      "num": 94,
+      "flag": null,
+      "unit": "K",
+      "status": "sourced",
+      "sourceLabel": "NASA Titan facts",
+      "sourceUrl": "https://science.nasa.gov/saturn/moons/titan/facts/",
+      "note": "About −179 °C, so cold that water ice plays the role of rock"
+    },
+    {
+      "field": "surfacePressureBar",
+      "num": 1.62,
+      "flag": null,
+      "unit": "bar",
+      "status": "sourced",
+      "sourceLabel": "NASA Titan facts",
+      "sourceUrl": "https://science.nasa.gov/saturn/moons/titan/facts/",
+      "note": "About 60% greater than Earth’s — like swimming 15 m underwater"
+    },
+    {
+      "field": "co2Atmosphere",
+      "num": null,
+      "flag": false,
+      "unit": "",
+      "status": "sourced",
+      "sourceLabel": "NASA Titan facts",
+      "sourceUrl": "https://science.nasa.gov/saturn/moons/titan/facts/",
+      "note": "Atmosphere is about 95% nitrogen and 5% methane"
+    },
+    {
+      "field": "waterIce",
+      "num": null,
+      "flag": true,
+      "unit": "",
+      "status": "sourced",
+      "sourceLabel": "NASA Titan facts",
+      "sourceUrl": "https://science.nasa.gov/saturn/moons/titan/facts/",
+      "note": "Water ice plays the role of rock at the surface"
+    },
+    {
+      "field": "polarIce",
+      "num": null,
+      "flag": false,
+      "unit": "",
+      "status": "sourced",
+      "sourceLabel": "NASA Titan facts",
+      "sourceUrl": "https://science.nasa.gov/saturn/moons/titan/facts/",
+      "note": "Ice is everywhere as bedrock, not hidden in shadowed craters"
+    },
+    {
+      "field": "radiationDoseMSvPerDay",
+      "num": null,
+      "flag": null,
+      "unit": "",
+      "status": "estimated",
+      "sourceLabel": "",
+      "sourceUrl": "",
+      "note": "The thick atmosphere shields the surface; no surface dose has been measured"
+    },
+    {
+      "field": "dustStorms",
+      "num": null,
+      "flag": false,
+      "unit": "",
+      "status": "estimated",
+      "sourceLabel": "",
+      "sourceUrl": "",
+      "note": "Surface weather is not characterized well enough for a base"
+    },
+    {
+      "field": "gravity",
+      "num": 1.35,
+      "flag": null,
+      "unit": "m/s²",
+      "status": "sourced",
+      "sourceLabel": "NASA Saturnian Satellite Fact Sheet",
+      "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/saturniansatfact.html",
+      "note": "Derived from mass 1.3455 × 10²³ kg and radius 2575 km"
+    }
+  ],
+  "twist": "thermal",
+  "headline": "On Titan it’s so cold that water ice plays the role of rock.",
+  "scaleText": "1.4 billion km from the Sun · 0.4× Earth’s width · ~1% of Earth’s sunlight",
+  "because": [
+    {
+      "kind": "power",
+      "text": "Sunlight here is about 100 times fainter than on Earth.",
+      "field": "insolation"
+    },
+    {
+      "kind": "life_support",
+      "text": "No CO₂ to make oxygen from: the air is nitrogen and methane.",
+      "field": "co2Atmosphere"
+    },
+    {
+      "kind": "twist",
+      "text": "The surface sits around −179 °C (94 K).",
+      "field": "meanTempK"
+    }
+  ],
+  "funFacts": [
+    "Welcome to Titan, Saturn’s largest moon, with air thicker than Earth’s.",
+    "Standing here feels like being 15 metres underwater on Earth.",
+    "Its air is about 95% nitrogen and 5% methane."
+  ]
+}

@@ -62,8 +62,15 @@ const roundId = () => room().currentRoundId!;
 const tiles = () => [...db.tile.iter()].filter(t => t.roundId === roundId()).sort((a, b) => a.index - b.index);
 const pieces = (c: Client = host) => [...c.conn.db.piece.iter()].filter(p => p.roundId === roundId());
 /** A free tile (any kind except habitat), away from the habitat ring so berm tests keep their tiles. */
-const freeTile = (skip: number[] = []) =>
-  tiles().find(t => t.kind !== 'habitat' && !HABITAT_ADJACENT.includes(t.index) && !skip.includes(t.index) && !pieces().some(p => p.index === t.index))!.index;
+// Remember tiles handed out: the local cache may not have the last placement yet.
+const handedOut = new Set<number>();
+const freeTile = (skip: number[] = []) => {
+  const i = tiles().find(
+    t => t.kind !== 'habitat' && !HABITAT_ADJACENT.includes(t.index) && !skip.includes(t.index) && !handedOut.has(t.index) && !pieces().some(p => p.index === t.index)
+  )!.index;
+  handedOut.add(i);
+  return i;
+};
 const tileOf = (kind: string, skip: number[] = []) => tiles().find(t => t.kind === kind && !skip.includes(t.index) && !HABITAT_ADJACENT.includes(t.index))!.index;
 
 await host.conn.reducers.createRoom({ name: 'Host' });
@@ -97,7 +104,9 @@ await step('tile rules are enforced server-side', async () => {
 });
 
 await step('ice drill goes on ice; the budget caps total mass (Moon: 20 CU)', async () => {
-  await guest.conn.reducers.placePiece({ kind: 'ice_drill', index: tileOf('ice') });
+  const ice = tileOf('ice');
+  handedOut.add(ice);
+  await guest.conn.reducers.placePiece({ kind: 'ice_drill', index: ice });
   await host.conn.reducers.placePiece({ kind: 'reactor', index: freeTile() }); // 1 + 2 + 10 = 13
   return rejects('over budget', host.conn.reducers.placePiece({ kind: 'reactor', index: freeTile() }), /Over budget: 23\/20/);
 });

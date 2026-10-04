@@ -1,0 +1,130 @@
+{
+  "planetName": "Moon (south pole)",
+  "params": [
+    {
+      "field": "insolation",
+      "num": 1,
+      "flag": null,
+      "unit": "× Earth",
+      "status": "sourced",
+      "sourceLabel": "NASA Moon Fact Sheet",
+      "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html",
+      "note": "Solar irradiance 1361 W/m², same as Earth"
+    },
+    {
+      "field": "nightHours",
+      "num": 354.4,
+      "flag": null,
+      "unit": "h",
+      "status": "sourced",
+      "sourceLabel": "NASA Moon Fact Sheet",
+      "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html",
+      "note": "Half the 29.53-day synodic period"
+    },
+    {
+      "field": "meanTempK",
+      "num": 242.5,
+      "flag": null,
+      "unit": "K",
+      "status": "sourced",
+      "sourceLabel": "NASA Moon Fact Sheet",
+      "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html",
+      "note": "Midpoint of the equatorial day–night range, 95–390 K"
+    },
+    {
+      "field": "surfacePressureBar",
+      "num": 3e-15,
+      "flag": null,
+      "unit": "bar",
+      "status": "sourced",
+      "sourceLabel": "NASA Moon Fact Sheet",
+      "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html",
+      "note": "Night-time surface pressure"
+    },
+    {
+      "field": "co2Atmosphere",
+      "num": null,
+      "flag": false,
+      "unit": "",
+      "status": "sourced",
+      "sourceLabel": "NASA Moon Fact Sheet",
+      "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html",
+      "note": "Essentially no atmosphere"
+    },
+    {
+      "field": "waterIce",
+      "num": null,
+      "flag": true,
+      "unit": "",
+      "status": "sourced",
+      "sourceLabel": "Colaprete et al. 2010 (LCROSS)",
+      "sourceUrl": "https://doi.org/10.1126/science.1186986",
+      "note": "Water detected in the Cabeus crater impact plume"
+    },
+    {
+      "field": "polarIce",
+      "num": null,
+      "flag": true,
+      "unit": "",
+      "status": "sourced",
+      "sourceLabel": "Colaprete et al. 2010 (LCROSS)",
+      "sourceUrl": "https://doi.org/10.1126/science.1186986",
+      "note": "Ice in a permanently shadowed south-polar crater"
+    },
+    {
+      "field": "radiationDoseMSvPerDay",
+      "num": 1.369,
+      "flag": null,
+      "unit": "mSv/day",
+      "status": "sourced",
+      "sourceLabel": "Zhang et al. 2020 (Chang’e 4)",
+      "sourceUrl": "https://doi.org/10.1126/sciadv.aaz1334",
+      "note": "First dose measurement on the lunar surface: 1369 µSv/day"
+    },
+    {
+      "field": "dustStorms",
+      "num": null,
+      "flag": false,
+      "unit": "",
+      "status": "sourced",
+      "sourceLabel": "NASA Moon Fact Sheet",
+      "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html",
+      "note": "No atmosphere to carry dust storms"
+    },
+    {
+      "field": "gravity",
+      "num": 1.62,
+      "flag": null,
+      "unit": "m/s²",
+      "status": "sourced",
+      "sourceLabel": "NASA Moon Fact Sheet",
+      "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html",
+      "note": ""
+    }
+  ],
+  "twist": "radiation",
+  "headline": "A single lunar night lasts about 15 Earth days.",
+  "scaleText": "384,400 km from Earth · ¼ of Earth’s width · same sunlight as Earth",
+  "because": [
+    {
+      "kind": "power",
+      "text": "A lunar night lasts ~15 Earth days, so solar alone can’t carry you.",
+      "field": "nightHours"
+    },
+    {
+      "kind": "life_support",
+      "text": "Water ice sits in permanently shadowed craters (LCROSS).",
+      "field": "waterIce"
+    },
+    {
+      "kind": "twist",
+      "text": "No atmosphere: surface dose is ~1.4 mSv/day (Chang’e 4).",
+      "field": "radiationDoseMSvPerDay"
+    }
+  ],
+  "funFacts": [
+    "Welcome to the Moon’s south pole, where one night lasts about two Earth weeks.",
+    "LCROSS crashed into a shadowed crater here and found water in the plume.",
+    "With no air to stop it, radiation reaches the surface at about 1.4 millisieverts a day."
+  ]
+}

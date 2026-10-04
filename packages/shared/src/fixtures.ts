@@ -60,7 +60,7 @@ export const FIXTURES = {
         twist: { text: 'A global dust storm in 2018 ended the Opportunity rover’s mission.', field: 'dustStorms' },
       },
       funFacts: [
-        'Welcome to Mars. A day here is just 37 minutes longer than on Earth.',
+        'Welcome to Mars. A day here is only about 40 minutes longer than on Earth.',
         'The air is mostly carbon dioxide — and in 2021 a toaster-sized experiment called MOXIE turned it into oxygen.',
         'In 2018 a planet-wide dust storm darkened the sky so much that the Opportunity rover never woke up.',
       ],

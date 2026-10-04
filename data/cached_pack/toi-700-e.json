@@ -1,0 +1,130 @@
+{
+  "planetName": "TOI-700 e",
+  "params": [
+    {
+      "field": "insolation",
+      "num": 1.27,
+      "flag": null,
+      "unit": "× Earth",
+      "status": "sourced",
+      "sourceLabel": "Gilbert et al. 2023 via NASA Exoplanet Archive",
+      "sourceUrl": "https://ui.adsabs.harvard.edu/abs/2023ApJ...944L..35G/abstract",
+      "note": ""
+    },
+    {
+      "field": "meanTempK",
+      "num": 272.9,
+      "flag": null,
+      "unit": "K",
+      "status": "sourced",
+      "sourceLabel": "ExoFOP via NASA Exoplanet Archive",
+      "sourceUrl": "https://exofop.ipac.caltech.edu/tess/view_toi.php",
+      "note": "Equilibrium temperature"
+    },
+    {
+      "field": "gravity",
+      "num": 9.02,
+      "flag": null,
+      "unit": "m/s²",
+      "status": "estimated",
+      "sourceLabel": "Pass et al. 2026 via NASA Exoplanet Archive",
+      "sourceUrl": "https://ui.adsabs.harvard.edu/abs/2026AJ....172..175P/abstract",
+      "note": "Mass not directly measured; assumes Earth-like density from its radius"
+    },
+    {
+      "field": "nightHours",
+      "num": null,
+      "flag": null,
+      "unit": "",
+      "status": "estimated",
+      "sourceLabel": "",
+      "sourceUrl": "",
+      "note": "Rotation not measured — planets this close to their star are often tidally locked"
+    },
+    {
+      "field": "surfacePressureBar",
+      "num": null,
+      "flag": null,
+      "unit": "",
+      "status": "estimated",
+      "sourceLabel": "",
+      "sourceUrl": "",
+      "note": "Atmosphere not yet measured — very few rocky exoplanets have been checked"
+    },
+    {
+      "field": "radiationDoseMSvPerDay",
+      "num": null,
+      "flag": null,
+      "unit": "",
+      "status": "estimated",
+      "sourceLabel": "",
+      "sourceUrl": "",
+      "note": "No surface measurements exist"
+    },
+    {
+      "field": "co2Atmosphere",
+      "num": null,
+      "flag": false,
+      "unit": "",
+      "status": "estimated",
+      "sourceLabel": "",
+      "sourceUrl": "",
+      "note": "Atmosphere not yet measured"
+    },
+    {
+      "field": "waterIce",
+      "num": null,
+      "flag": false,
+      "unit": "",
+      "status": "estimated",
+      "sourceLabel": "",
+      "sourceUrl": "",
+      "note": "No water detected"
+    },
+    {
+      "field": "polarIce",
+      "num": null,
+      "flag": false,
+      "unit": "",
+      "status": "estimated",
+      "sourceLabel": "",
+      "sourceUrl": "",
+      "note": "No water detected"
+    },
+    {
+      "field": "dustStorms",
+      "num": null,
+      "flag": false,
+      "unit": "",
+      "status": "estimated",
+      "sourceLabel": "",
+      "sourceUrl": "",
+      "note": "Weather unknown"
+    }
+  ],
+  "twist": "radiation",
+  "headline": "TOI-700 e gets 127% of Earth’s sunlight, 101.5 light-years away.",
+  "scaleText": "101.5 light-years away · 0.92× Earth’s width · 1.27× Earth’s sunlight",
+  "because": [
+    {
+      "kind": "power",
+      "text": "It gets 1.27× Earth’s sunlight; its nights have never been measured.",
+      "field": "insolation"
+    },
+    {
+      "kind": "life_support",
+      "text": "No water or CO₂ has been detected, so supplies must be shipped.",
+      "field": "waterIce"
+    },
+    {
+      "kind": "twist",
+      "text": "Its atmosphere has never been measured, so plan for radiation.",
+      "field": "surfacePressureBar"
+    }
+  ],
+  "funFacts": [
+    "Welcome to TOI-700 e, 101.5 light-years from Earth.",
+    "A year here lasts 28 Earth days as it circles a M2.5 V star.",
+    "Nobody knows yet whether it has air — only a handful of rocky exoplanets have been checked."
+  ]
+}

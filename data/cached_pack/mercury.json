@@ -1,0 +1,130 @@
+{
+  "planetName": "Mercury",
+  "params": [
+    {
+      "field": "insolation",
+      "num": 6.674,
+      "flag": null,
+      "unit": "× Earth",
+      "status": "sourced",
+      "sourceLabel": "NASA Mercury Fact Sheet",
+      "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/mercuryfact.html",
+      "note": "Solar irradiance 9082.7 W/m² ÷ Earth’s 1361 W/m²"
+    },
+    {
+      "field": "nightHours",
+      "num": 2111.3,
+      "flag": null,
+      "unit": "h",
+      "status": "sourced",
+      "sourceLabel": "NASA Mercury Fact Sheet",
+      "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/mercuryfact.html",
+      "note": "Half the 4222.6-hour (176 Earth-day) solar day"
+    },
+    {
+      "field": "meanTempK",
+      "num": 440,
+      "flag": null,
+      "unit": "K",
+      "status": "sourced",
+      "sourceLabel": "NASA Mercury Fact Sheet",
+      "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/mercuryfact.html",
+      "note": "Average temperature 440 K (167 °C)"
+    },
+    {
+      "field": "surfacePressureBar",
+      "num": 5e-15,
+      "flag": null,
+      "unit": "bar",
+      "status": "sourced",
+      "sourceLabel": "NASA Mercury Fact Sheet",
+      "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/mercuryfact.html",
+      "note": "Surface pressure below ~5 × 10⁻¹⁵ bar"
+    },
+    {
+      "field": "co2Atmosphere",
+      "num": null,
+      "flag": false,
+      "unit": "",
+      "status": "sourced",
+      "sourceLabel": "NASA Mercury Fact Sheet",
+      "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/mercuryfact.html",
+      "note": "Essentially no atmosphere"
+    },
+    {
+      "field": "waterIce",
+      "num": null,
+      "flag": true,
+      "unit": "",
+      "status": "sourced",
+      "sourceLabel": "Lawrence et al. 2013 (MESSENGER)",
+      "sourceUrl": "https://doi.org/10.1126/science.1229953",
+      "note": "Evidence for water ice near the north pole"
+    },
+    {
+      "field": "polarIce",
+      "num": null,
+      "flag": true,
+      "unit": "",
+      "status": "sourced",
+      "sourceLabel": "Lawrence et al. 2013 (MESSENGER)",
+      "sourceUrl": "https://doi.org/10.1126/science.1229953",
+      "note": "Ice in permanently shadowed polar craters"
+    },
+    {
+      "field": "radiationDoseMSvPerDay",
+      "num": null,
+      "flag": null,
+      "unit": "",
+      "status": "estimated",
+      "sourceLabel": "",
+      "sourceUrl": "",
+      "note": "No surface radiation measurement exists"
+    },
+    {
+      "field": "dustStorms",
+      "num": null,
+      "flag": false,
+      "unit": "",
+      "status": "sourced",
+      "sourceLabel": "NASA Mercury Fact Sheet",
+      "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/mercuryfact.html",
+      "note": "No atmosphere to carry dust storms"
+    },
+    {
+      "field": "gravity",
+      "num": 3.7,
+      "flag": null,
+      "unit": "m/s²",
+      "status": "sourced",
+      "sourceLabel": "NASA Mercury Fact Sheet",
+      "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/mercuryfact.html",
+      "note": ""
+    }
+  ],
+  "twist": "thermal",
+  "headline": "One full day on Mercury lasts 176 Earth days.",
+  "scaleText": "57.9 million km from the Sun · 0.38× Earth’s width · 6.7× Earth’s sunlight",
+  "because": [
+    {
+      "kind": "power",
+      "text": "Nights last about 88 Earth days, despite 6.7× Earth’s sunlight.",
+      "field": "nightHours"
+    },
+    {
+      "kind": "life_support",
+      "text": "MESSENGER found evidence of water ice near the north pole.",
+      "field": "waterIce"
+    },
+    {
+      "kind": "twist",
+      "text": "It averages 440 K (167 °C), so the base needs cooling power.",
+      "field": "meanTempK"
+    }
+  ],
+  "funFacts": [
+    "Welcome to Mercury, the planet closest to the Sun.",
+    "Sunlight here is almost 7 times stronger than on Earth.",
+    "Even here, MESSENGER found signs of ice hiding in shadowed polar craters."
+  ]
+}

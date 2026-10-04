@@ -80,3 +80,37 @@ describe('Exoplanet Archive mapping', () => {
     expect(exoplanetValues(row).scale.distance).toEqual({ value: 40.5, unit: 'ly' });
   });
 });
+
+describe('numeric grounding', async () => {
+  const { ungroundedNumbers } = await import('./grounding');
+  it('accepts fetched numbers and their conversions, rejects invented ones', () => {
+    const { s } = session();
+    const f = s.fetchSolarSystemBody('mars');
+    for (const v of f.values) s.setParameter(f.fetchId, v.field);
+    const allowed = s.groundingNumbers();
+    expect(ungroundedNumbers('Mars gets 43% of Earth’s sunlight and averages −59 °C (214 K).', allowed)).toEqual([]);
+    expect(ungroundedNumbers('In 2018 a dust storm covered the planet; air is 95.1% CO₂.', allowed)).toEqual([]);
+    expect(ungroundedNumbers('Olympus Mons is 21.9 km tall and nights last 37 hours.', allowed)).toEqual(['21.9', '37']);
+    // 99 is within 6% of the 95.1% CO₂ figure but not within 3%: invented values close to real ones still fail.
+    expect(ungroundedNumbers('Dust storms block 99% of sunlight.', allowed)).toEqual(['99']);
+  });
+});
+
+describe('curated bodies', async () => {
+  const { solarSystemKeys, curatedCard } = await import('./sources');
+  const { ungroundedNumbers } = await import('./grounding');
+  for (const key of solarSystemKeys()) {
+    it(`${key}: passes provenance, twist, citation, and numeric-grounding checks`, async () => {
+      const { s, commits } = session();
+      const f = s.fetchSolarSystemBody(key);
+      for (const v of f.values) s.setParameter(f.fetchId, v.field);
+      const { twist, ...card } = curatedCard(key);
+      s.chooseTwist(twist);
+      s.writeCard(card);
+      const text = [card.headline, card.scaleText, ...card.funFacts, ...Object.values(card.because).map(b => b.text)].join(' ');
+      expect(ungroundedNumbers(text, s.groundingNumbers())).toEqual([]);
+      await s.commit();
+      expect(commits[0].params.every(p => (p.status === 'sourced' ? p.sourceUrl.startsWith('https://') : p.note.length > 0))).toBe(true);
+    });
+  }
+});

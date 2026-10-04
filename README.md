@@ -17,7 +17,7 @@ Co-op learning game: four players build a base on a real planet researched from 
    ```
    Open http://localhost:5173.
 
-Optional: copy `server/.env.example` → `server/.env` and set `XAI_API_KEY` (a regular API key from console.x.ai → API Keys, not a management key). Without it, hints fall back to templates.
+Optional: copy `server/.env.example` → `server/.env` and set `XAI_API_KEY` (a regular API key from console.x.ai → API Keys, not a management key). With it, a Grok research agent picks and writes up each planet; without it, research is scripted (curated bodies or live exoplanets) and hints fall back to templates.
 
 ## What `pnpm dev` runs
 
@@ -49,6 +49,8 @@ pnpm check:phase4   # room-scoped subscriptions
 pnpm check:phase5   # placement, budget, berm digging, cursors
 pnpm check:phase6   # scoring, debrief results, rematch, room cleanup
 pnpm check:phase7   # automatic research, provenance (live NASA archive)
+pnpm check:phase8   # research agent (live xAI), curated bodies, cached pack
+pnpm build:pack     # rebuild data/cached_pack/ (offline fallback planets)
 cd /tmp && spacetime sql --server local overburden "SELECT * FROM server_info"   # query the local DB
 ```
 

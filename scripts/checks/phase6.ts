@@ -73,8 +73,14 @@ function roomHelpers(host: Client) {
   const tiles = () => [...db.tile.iter()].filter(t => t.roundId === rid());
   const pieces = () => [...db.piece.iter()].filter(p => p.roundId === rid());
   const results = (roundId = rid()) => [...db.result.iter()].filter(r => r.roundId === roundId);
-  const free = () => tiles().find(t => t.kind !== 'habitat' && !RING.includes(t.index) && !pieces().some(p => p.index === t.index))!.index;
-  return { db, room, rid, tiles, pieces, results, free };
+  // Remember tiles handed out: the local cache may not have the last placement yet.
+  const used = new Set<number>();
+  const free = () => {
+    const i = tiles().find(t => t.kind !== 'habitat' && !RING.includes(t.index) && !used.has(t.index) && !pieces().some(p => p.index === t.index))!.index;
+    used.add(i);
+    return i;
+  };
+  return { db, room, rid, tiles, pieces, results, free, used };
 }
 
 async function toBuild(host: Client, planet: string) {
@@ -105,6 +111,7 @@ let moonRound = 0n;
 await step("winning Moon base, locked in early → MISSION SUCCESS, every requirement ✓; an unfinished berm doesn't count", async () => {
   moonRound = A.rid();
   const ice = A.tiles().find(t => t.kind === 'ice' && !RING.includes(t.index))!.index;
+  A.used.add(ice);
   await host.conn.reducers.placePiece({ kind: 'ice_drill', index: ice });
   await host.conn.reducers.placePiece({ kind: 'reactor', index: A.free() });
   await guest.conn.reducers.placePiece({ kind: 'o2_tank', index: A.free() });
