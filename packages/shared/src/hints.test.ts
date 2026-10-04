@@ -55,6 +55,22 @@ describe('templateHint', () => {
   });
 });
 
+describe('no budget hints', () => {
+  it('an over-committed board hears about the weak system, never the cargo budget or a removal', () => {
+    // Reactor + shipped water: nothing can be added to win within the Moon budget.
+    const board = [
+      { kind: 'reactor' as const, x: 0, y: 0 },
+      { kind: 'water_tank' as const, x: 1, y: 0 },
+      { kind: 'water_tank' as const, x: 2, y: 0 },
+    ];
+    const read = boardRead(board, tiles, rules, solved.budget, winners);
+    expect(read.overCommitted).toBe(true);
+    for (const mode of ['nudge', 'direction', 'exact'] as const) {
+      expect(templateHint(input(mode, read))).not.toMatch(/budget|cargo|heavy|remove|mass/i);
+    }
+  });
+});
+
 describe('effectiveMode', () => {
   it('escalates when the board has not changed, but never into an exact move early', () => {
     expect(effectiveMode('nudge', false, 'nudge')).toBe('direction');

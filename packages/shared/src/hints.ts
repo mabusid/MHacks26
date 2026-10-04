@@ -59,14 +59,13 @@ function remember(fact: string | undefined): string {
 const lower = (kind: PieceKind) => PIECES[kind].label.replace(/^[A-Z][a-z]/, m => m.toLowerCase());
 const article = (kind: PieceKind) => (/^[aeiou]/i.test(PIECES[kind].label) ? 'an' : 'a');
 
-/** "Try a reactor on B2." / "Remove the solar array on F1." — one move only. */
+/**
+ * "Try putting an ice drill on C6." — one placement only. Removals are never spoken: they're budget advice,
+ * the mass bar already shows the budget, and the board can change between the read and the voice.
+ */
 function describe(actions: Action[]): string {
-  const parts = actions
-    .slice(0, 1)
-    .map(a => (a.op === 'add' ? `${article(a.kind)} ${lower(a.kind)} on ${a.tile}` : `remove the ${lower(a.kind)} on ${a.tile}`));
-  if (!parts.length) return '';
-  const joined = parts.join(' and ');
-  return parts[0].startsWith('remove') ? `I’d ${joined}.` : `Try putting ${joined}.`;
+  const add = actions.find(a => a.op === 'add');
+  return add ? `Try putting ${article(add.kind)} ${lower(add.kind)} on ${add.tile}.` : '';
 }
 
 export interface HintInput {
@@ -85,26 +84,6 @@ export function templateHint(input: HintInput): string {
   return noParens(draftHint(input));
 }
 
-/** A question that points at the lighter alternative without giving it away. */
-const HEAVY: Partial<Record<PieceKind, string>> = {
-  reactor: 'A reactor is heavy to fly in. Could sunlight and batteries do that job for less?',
-  water_tank: 'Shipping water is heavy. Is there any way to get it here instead?',
-  o2_tank: 'Shipping oxygen is heavy. Could you make it here instead?',
-  battery: 'That’s a lot of batteries. Is there a lighter way through the night?',
-  solar: 'That’s a lot of solar arrays for this little sunlight.',
-};
-
-/**
- * Out of cargo mass with no way to add a win: say so, and question the heavy choice. The exact cue adds
- * the swap itself. Replaces the per-requirement hint, so the advice and the problem always match.
- */
-function budgetHint(mode: CueMode, read: BoardRead): string | null {
-  const swap = read.suggestion.find(a => a.op === 'remove');
-  if (!read.overCommitted || !swap) return null;
-  const lead = `This plan won’t fit in the cargo budget. ${HEAVY[swap.kind] ?? `The ${lower(swap.kind)} is weighing it down.`}`;
-  return mode === 'exact' ? `${lead} ${describe([swap])}` : lead;
-}
-
 function draftHint({ mode, factIndex, funFacts, read, because, twist }: HintInput): string {
   if (mode === 'fact') return funFacts[factIndex] ?? funFacts[0] ?? '';
   const ack = read.changes.newlyPassing.length ? `Nice work, ${joinAnd(read.changes.newlyPassing.map(k => ACK[k]))}. ` : '';
@@ -112,8 +91,6 @@ function draftHint({ mode, factIndex, funFacts, read, because, twist }: HintInpu
   const kind = read.worst.kind;
   // The nudge names the weak system and teaches the planet fact behind it; later cues get more specific.
   if (mode === 'nudge') return `${ack}${weakSpot(kind, twist)} ${remember(because[kind])}`.trim();
-  const budget = budgetHint(mode, read);
-  if (budget) return `${ack}${budget}`;
   if (mode === 'direction') return `${ack}${read.worst.spoken} ${remember(because[kind])}`.trim();
   const how = describe(read.suggestion);
   return `${ack}${read.worst.spoken} ${how || remember(because[kind])}`.trim();

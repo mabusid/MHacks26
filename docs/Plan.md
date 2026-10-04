@@ -261,10 +261,10 @@ Dust       : charged batteries ≥ ceil(night · (band + 1) / 3)   # storm reser
 | **1:12** | Fun fact | "LCROSS crashed into a shadowed crater here and found water in the plume." |
 | **1:00** | Hint — **nudge** (which system is weak + the researched fact why) | "Heads up, crew. Your people are going to run short on water or air. Remember, LCROSS found water ice in permanently shadowed craters." |
 | **0:45** | Hint — **direction** (problem in words + researched fact, **no counts**) | "The crew will run out of water before the mission ends. Remember, LCROSS found water ice in permanently shadowed craters." |
-| **0:30** | Hint — **direction** (or **budget**, when nothing can be added to win) | "This plan won’t fit in the cargo budget. A reactor is heavy to fly in. Could sunlight and batteries do that job for less?" |
+| **0:30** | Hint — **direction** | "When night falls, your batteries won’t last until sunrise. Remember, a lunar night lasts about 15 Earth days, with no sunlight at all." |
 | **0:15** | Hint — **exact** (one piece + tile) | "Try putting an ice drill on C6." |
 
-**Suggestion target:** the cheapest winning build that still contains everything the crew placed (respects their choices, teaches the planet's cheap answer). If none exists, the crew is **over-committed**: the fewest-changes build, removing the heaviest piece first, and the hint questions that piece instead of naming a requirement.
+**Suggestion target:** the cheapest winning build that still contains everything the crew placed (respects their choices, teaches the planet's cheap answer). If none exists, the fewest-changes build. **Mission Control never talks about the cargo budget or removals:** the mass bar already shows the limit, and moves happen faster than a cue can react, so budget advice arrived out of date. The exact cue only ever names a placement.
 
 Fun facts come from the research agent (see `write_card`), so they're sourced and fact-checked like everything else — and Grok speaks them **verbatim**. Hints: the server writes an accurate template from the board read and Grok phrases it (same facts, tiles, and numbers); if Grok is unavailable the template itself is the caption and each browser speaks it. Hint levels are a floor: "no repeats" escalates when the same level would repeat.
 

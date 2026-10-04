@@ -30,7 +30,7 @@ const rooms = new Map<bigint, RoomVoice>();
 const MODE_INSTRUCTIONS: Record<CueMode, string> = {
   fact: 'Read the line exactly.',
   nudge: 'Say which system is weak and the researched fact that explains it, in at most two short sentences. No tile names.',
-  direction: 'Name the problem and the researched fact behind it, or question the heavy choice if the plan is over budget, in at most two short sentences. No tile names.',
+  direction: 'Name the problem and the researched fact behind it, in at most two short sentences. No tile names.',
   exact: 'Say the problem, then the ONE suggested move, which piece on which tile, in at most two short sentences.',
 };
 
@@ -50,11 +50,13 @@ function contextFor(rd: RoundRow, mode: CueMode, read: BoardRead, draft: string,
     `Mode: ${mode.toUpperCase()}. Time left: ${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, '0')}. Planet: ${rd.planetName}.`,
     read.worst ? `Problem: ${read.worst.spoken}` : 'Problem: none, every requirement passes.',
     read.worst && because[read.worst.kind] ? `Researched fact: ${speakable(because[read.worst.kind]!)}` : '',
-    mode === 'exact' && read.suggestion.length ? `Suggested move: ${read.suggestion.slice(0, 1).map(a => `${a.op} ${a.kind.replace('_', ' ')} on ${a.tile}`).join('')}.` : '',
+    // Placements only: removal (budget) advice is never spoken — the mass bar shows the budget, and moves are fast.
+    mode === 'exact' && read.suggestion.some(a => a.op === 'add')
+      ? `Suggested move: add ${read.suggestion.find(a => a.op === 'add')!.kind.replace('_', ' ')} on ${read.suggestion.find(a => a.op === 'add')!.tile}.`
+      : '',
     read.changes.newlyPassing.length ? `Progress since last hint: ${read.changes.newlyPassing.join(', ')} now passing — acknowledge it briefly.` : '',
-    read.overCommitted ? 'The plan cannot fit the cargo budget: the crew must swap a heavy piece for a lighter approach.' : '',
     `Accurate draft to base your line on: ${speakable(draft)}`,
-    'Never say how many pieces they need — the crew works out the counts. Only the planet facts may contain numbers.',
+    'Never say how many pieces they need, and never mention the cargo budget or mass. Only the planet facts may contain numbers.',
   ];
   return lines.filter(Boolean).join('\n');
 }
