@@ -123,6 +123,16 @@ export const ResearchLog = __t.object("ResearchLog", {
 });
 export type ResearchLog = __Infer<typeof ResearchLog>;
 
+export const Result = __t.object("Result", {
+  id: __t.u64(),
+  roundId: __t.u64(),
+  kind: __t.string(),
+  pass: __t.bool(),
+  reason: __t.string(),
+  fact: __t.string(),
+});
+export type Result = __Infer<typeof Result>;
+
 export const Room = __t.object("Room", {
   id: __t.u64(),
   code: __t.string(),
@@ -135,6 +145,13 @@ export const Room = __t.object("Room", {
   createdAt: __t.timestamp(),
 });
 export type Room = __Infer<typeof Room>;
+
+export const RoomCleanup = __t.object("RoomCleanup", {
+  scheduledId: __t.u64(),
+  scheduledAt: __t.scheduleAt(),
+  roomId: __t.u64(),
+});
+export type RoomCleanup = __Infer<typeof RoomCleanup>;
 
 export const Round = __t.object("Round", {
   id: __t.u64(),
@@ -158,6 +175,7 @@ export const Round = __t.object("Round", {
   funFacts: __t.array(__t.string()),
   briefingEndsAt: __t.option(__t.timestamp()),
   buildEndsAt: __t.option(__t.timestamp()),
+  success: __t.option(__t.bool()),
 });
 export type Round = __Infer<typeof Round>;
 

@@ -200,10 +200,11 @@ await step('host Skip starts the build at once, and the cancelled auto-start nev
 });
 
 if (WAIT_END) {
-  await step('scheduled build end fires → Debrief, round done', async () => {
+  await step('scheduled build end fires → Debrief, round done and scored', async () => {
     const rd = db.round.id.find(room()!.currentRoundId!)!;
     const ms = Number(rd.buildEndsAt!.microsSinceUnixEpoch / 1000n) - Date.now() + 3000;
     await until('debrief', () => room()!.phase.tag === 'Debrief' && db.round.id.find(rd.id)!.status.tag === 'Done', ms);
+    if (db.round.id.find(rd.id)!.success === undefined) throw new Error('timer end did not score the round');
   });
 }
 

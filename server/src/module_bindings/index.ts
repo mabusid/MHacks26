@@ -40,9 +40,11 @@ import CommitRoundReducer from "./commit_round_reducer";
 import CreateRoomReducer from "./create_room_reducer";
 import JoinRoomReducer from "./join_room_reducer";
 import LeaveRoomReducer from "./leave_room_reducer";
+import LockBuildReducer from "./lock_build_reducer";
 import LogResearchReducer from "./log_research_reducer";
 import MoveCursorReducer from "./move_cursor_reducer";
 import PlacePieceReducer from "./place_piece_reducer";
+import RematchReducer from "./rematch_reducer";
 import RemovePieceReducer from "./remove_piece_reducer";
 import SetServerIdentityReducer from "./set_server_identity_reducer";
 import StartBermReducer from "./start_berm_reducer";
@@ -57,6 +59,7 @@ import PieceRow from "./piece_table";
 import PlanetParameterRow from "./planet_parameter_table";
 import RequirementRow from "./requirement_table";
 import ResearchLogRow from "./research_log_table";
+import ResultRow from "./result_table";
 import RoomRow from "./room_table";
 import RoundRow from "./round_table";
 import TileRow from "./tile_table";
@@ -149,6 +152,20 @@ const tablesSchema = __schema({
       { name: 'research_log_id_key', constraint: 'unique', columns: ['id'] },
     ],
   }, ResearchLogRow),
+  result: __table({
+    name: 'result',
+    indexes: [
+      { accessor: 'id', name: 'result_id_idx_btree', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { accessor: 'roundId', name: 'result_round_id_idx_btree', algorithm: 'btree', columns: [
+        'roundId',
+      ] },
+    ],
+    constraints: [
+      { name: 'result_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, ResultRow),
   room: __table({
     name: 'room',
     indexes: [
@@ -202,9 +219,11 @@ const reducersSchema = __reducers(
   __reducerSchema("create_room", CreateRoomReducer),
   __reducerSchema("join_room", JoinRoomReducer),
   __reducerSchema("leave_room", LeaveRoomReducer),
+  __reducerSchema("lock_build", LockBuildReducer),
   __reducerSchema("log_research", LogResearchReducer),
   __reducerSchema("move_cursor", MoveCursorReducer),
   __reducerSchema("place_piece", PlacePieceReducer),
+  __reducerSchema("rematch", RematchReducer),
   __reducerSchema("remove_piece", RemovePieceReducer),
   __reducerSchema("set_server_identity", SetServerIdentityReducer),
   __reducerSchema("start_berm", StartBermReducer),

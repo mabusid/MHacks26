@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useReducer } from 'spacetimedb/react';
 import { PIECES, rulesFromRound, type PieceKind, type TileKind } from '@overburden/shared';
+import BoardReadPanel from '../components/BoardReadPanel';
 import Grid, { type Tool } from '../components/Grid';
 import MissionControlBar from '../components/MissionControlBar';
 import Palette from '../components/Palette';
@@ -15,7 +16,7 @@ import { clock, useSecondsLeft } from '../useSecondsLeft';
 
 /** Build screen (docs/design.md): timer top center, grid + palette left, requirements right, Mission Control bottom. */
 export default function Build({ data }: { data: RoomData }) {
-  const { current, requirements, params, tiles, pieces, cursors, members, me } = data;
+  const { current, requirements, params, tiles, pieces, cursors, members, me, isHost } = data;
   const left = useSecondsLeft(current?.buildEndsAt?.microsSinceUnixEpoch);
   const [showFacts, setShowFacts] = useState(false);
   const [tool, setTool] = useState<Tool>('solar');
@@ -27,6 +28,7 @@ export default function Build({ data }: { data: RoomData }) {
   const startBerm = useReducer(reducers.startBerm);
   const cancelBerm = useReducer(reducers.cancelBerm);
   const moveCursor = useReducer(reducers.moveCursor);
+  const lock = useReducer(reducers.lockBuild);
 
   const showError = useCallback((e: unknown) => {
     setToast(e instanceof Error ? e.message : String(e));
@@ -99,6 +101,19 @@ export default function Build({ data }: { data: RoomData }) {
           {showFacts ? 'Hide planet facts' : 'Planet facts & sources'}
         </button>
         {showFacts && <PlanetCard round={current} params={params} />}
+        {import.meta.env.DEV && tileKinds.length === 64 && (
+          <BoardReadPanel rules={rules} tiles={tileKinds} pieces={pieces} budget={current.massBudget} />
+        )}
+        {isHost && (
+          <button
+            className="secondary lock-btn"
+            onClick={() => {
+              if (window.confirm('Lock in now? The base is scored immediately.')) lock().catch(showError);
+            }}
+          >
+            Lock in early
+          </button>
+        )}
       </aside>
 
       <footer className="game-bottom">

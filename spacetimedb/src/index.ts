@@ -1,9 +1,9 @@
 import { schema, table, t, SenderError, type InferSchema, type ReducerCtx } from 'spacetimedb/server';
 import { ScheduleAt, Timestamp, type Identity } from 'spacetimedb';
 import {
-  BRIEFING_SECONDS, BUILD_SECONDS, GRID_SIZE, MAX_MEMBERS, PIECES, PIECE_KINDS, PARAM_FIELDS, ROOM_CODE_ALPHABET, ROOM_CODE_LENGTH, TWISTS,
-  bermHoldMs, deriveRules, describeRequirements, generateTiles, normalizeRoomCode, placementError, profileFromParams, solveRound,
-  validateName, xy, type ParamRow, type PieceKind, type RequirementKind, type TileKind, type Twist,
+  BRIEFING_SECONDS, BUILD_SECONDS, GRID_SIZE, MAX_MEMBERS, PIECES, PIECE_KINDS, ROOM_TTL_SECONDS, PARAM_FIELDS, ROOM_CODE_ALPHABET, ROOM_CODE_LENGTH, TWISTS,
+  bermHoldMs, countBoard, deriveRules, describeRequirements, evaluate, generateTiles, normalizeRoomCode, placementError, profileFromParams,
+  rulesFromRound, solveRound, validateName, xy, type ParamRow, type PieceKind, type RequirementKind, type TileKind, type Twist,
 } from '@overburden/shared';
 
 const Phase = t.enum('Phase', ['Lobby', 'Briefing', 'Build', 'Debrief']);
@@ -77,6 +77,8 @@ const round = table(
     funFacts: t.array(t.string()),
     briefingEndsAt: t.option(t.timestamp()),
     buildEndsAt: t.option(t.timestamp()),
+    /** Set when the build ends: did every requirement pass? */
+    success: t.option(t.bool()),
   }
 );
 
@@ -147,6 +149,30 @@ const piece = table(
   }
 );
 
+// Per-requirement outcome, written once when the build ends (debrief).
+const result = table(
+  { name: 'result', public: true },
+  {
+    id: t.u64().primaryKey().autoInc(),
+    roundId: t.u64().index('btree'),
+    kind: t.string(),
+    pass: t.bool(),
+    reason: t.string(),
+    /** Researched field most responsible for a failure ('' when passed). */
+    fact: t.string(),
+  }
+);
+
+// Deletes a room ROOM_TTL_SECONDS after its last member goes offline (cancelled if someone returns).
+const roomCleanup = table(
+  { name: 'room_cleanup' },
+  {
+    scheduledId: t.u64().primaryKey().autoInc(),
+    scheduledAt: t.scheduleAt(),
+    roomId: t.u64(),
+  }
+);
+
 // Live cursors in grid units (0–8 on each axis); one row per member.
 const cursor = table(
   { name: 'cursor', public: true },
@@ -203,7 +229,7 @@ const ParamInput = t.object('ParamInput', {
 const BecauseInput = t.object('BecauseInput', { kind: t.string(), text: t.string(), field: t.string() });
 
 const spacetimedb = schema({
-  serverConfig, session, room, member, round, planetParameter, requirement, tile, researchLog, piece, cursor, bermDone, buildStart, buildEnd,
+  serverConfig, session, room, member, round, planetParameter, requirement, tile, researchLog, piece, result, cursor, bermDone, buildStart, buildEnd, roomCleanup,
 });
 export default spacetimedb;
 
@@ -244,6 +270,7 @@ function ensureOnlineHost(ctx: Ctx, r: RoomRow) {
 
 function deleteRound(ctx: Ctx, roundId: bigint) {
   for (const pc of [...ctx.db.piece.roundId.filter(roundId)]) ctx.db.piece.id.delete(pc.id);
+  for (const res of [...ctx.db.result.roundId.filter(roundId)]) ctx.db.result.id.delete(res.id);
   for (const p of [...ctx.db.planetParameter.roundId.filter(roundId)]) ctx.db.planetParameter.id.delete(p.id);
   for (const r of [...ctx.db.requirement.roundId.filter(roundId)]) ctx.db.requirement.id.delete(r.id);
   for (const tl of [...ctx.db.tile.roundId.filter(roundId)]) ctx.db.tile.id.delete(tl.id);
@@ -280,7 +307,10 @@ function leaveCurrentRoom(ctx: Ctx, identity: Identity) {
   const r = ctx.db.room.id.find(me.roomId);
   if (!r) return;
   if (membersOf(ctx, r.id).length === 0) deleteRoom(ctx, r.id);
-  else ensureOnlineHost(ctx, r);
+  else {
+    ensureOnlineHost(ctx, r);
+    scheduleCleanupIfEmpty(ctx, r.id);
+  }
 }
 
 function isOnline(ctx: Ctx, identity: Identity): boolean {
@@ -294,7 +324,22 @@ function setOnline(ctx: Ctx, identity: Identity) {
   const online = isOnline(ctx, identity);
   if (me.online !== online) ctx.db.member.identity.update({ ...me, online });
   const r = ctx.db.room.id.find(me.roomId);
-  if (r) ensureOnlineHost(ctx, r);
+  if (r) {
+    ensureOnlineHost(ctx, r);
+    scheduleCleanupIfEmpty(ctx, r.id);
+  }
+}
+
+/** Schedule deletion when nobody in the room is online; cancel it as soon as someone is. */
+function scheduleCleanupIfEmpty(ctx: Ctx, roomId: bigint) {
+  const anyoneOnline = [...ctx.db.member.roomId.filter(roomId)].some(m => m.online);
+  const pending = [...ctx.db.roomCleanup.iter()].filter(j => j.roomId === roomId);
+  if (anyoneOnline) {
+    for (const j of pending) ctx.db.roomCleanup.scheduledId.delete(j.scheduledId);
+  } else if (pending.length === 0) {
+    const at = ctx.timestamp.microsSinceUnixEpoch + BigInt(ROOM_TTL_SECONDS) * 1_000_000n;
+    ctx.db.roomCleanup.insert({ scheduledId: 0n, scheduledAt: ScheduleAt.time(at), roomId });
+  }
 }
 
 export const init = spacetimedb.init(ctx => {
@@ -446,6 +491,7 @@ export const commitRound = spacetimedb.reducer(
       funFacts: args.funFacts,
       briefingEndsAt: undefined,
       buildEndsAt: undefined,
+      success: undefined,
     });
     for (const p of rows) ctx.db.planetParameter.insert({ id: 0n, roundId: rd.id, ...p, num: p.num ?? undefined, flag: p.flag ?? undefined });
     for (const spec of specs) {
@@ -486,16 +532,27 @@ function startBuild(ctx: Ctx, roundId: bigint, runningJobId?: bigint) {
   ctx.db.room.id.update({ ...r, phase: { tag: 'Build' } });
 }
 
-/** Host: lobby → briefing. The build starts automatically when the briefing countdown ends. */
-export const startRound = spacetimedb.reducer(ctx => {
-  const r = requireHost(ctx);
-  if (r.phase.tag !== 'Lobby') throw new SenderError('The game has already started');
+/** The room's prepared round, if it's ready to play. */
+function readyNext(ctx: Ctx, r: RoomRow) {
   const next = r.nextRoundId !== undefined ? ctx.db.round.id.find(r.nextRoundId) : undefined;
-  if (!next || next.status.tag !== 'Ready') throw new SenderError('No planet is ready yet');
+  return next && next.status.tag === 'Ready' ? next : undefined;
+}
+
+/** → briefing with a countdown; the build starts automatically when it ends. */
+function enterBriefing(ctx: Ctx, r: RoomRow, next: NonNullable<ReturnType<typeof readyNext>>) {
   const at = ctx.timestamp.microsSinceUnixEpoch + BigInt(BRIEFING_SECONDS) * MICROS;
   ctx.db.round.id.update({ ...next, briefingEndsAt: new Timestamp(at) });
   ctx.db.buildStart.insert({ scheduledId: 0n, scheduledAt: ScheduleAt.time(at), roundId: next.id });
   ctx.db.room.id.update({ ...r, phase: { tag: 'Briefing' }, currentRoundId: next.id, nextRoundId: undefined });
+}
+
+/** Host: lobby → briefing. */
+export const startRound = spacetimedb.reducer(ctx => {
+  const r = requireHost(ctx);
+  if (r.phase.tag !== 'Lobby') throw new SenderError('The game has already started');
+  const next = readyNext(ctx, r);
+  if (!next) throw new SenderError('No planet is ready yet');
+  enterBriefing(ctx, r, next);
 });
 
 /** Host: skip the rest of the briefing countdown. */
@@ -510,14 +567,60 @@ export const autoStartBuild = spacetimedb.reducer({ onSchedule: buildStart }, { 
   startBuild(ctx, job.roundId, job.scheduledId);
 });
 
-/** Scheduled at build start. Evaluation is added in Phase 6. */
-export const endBuild = spacetimedb.reducer({ onSchedule: buildEnd }, { job: buildEnd.rowType }, (ctx, { job }) => {
-  if (!ctx.sender.equals(ctx.databaseIdentity)) throw new SenderError('Scheduled only');
-  const rd = ctx.db.round.id.find(job.roundId);
+/**
+ * Build → debrief. Shared by the timer and the host's Lock in: cancels pending schedules, scores the board
+ * (pending berms don't count), and writes one result row per requirement. No-op if already finished.
+ */
+function finishBuild(ctx: Ctx, roundId: bigint, runningJobId?: bigint) {
+  const rd = ctx.db.round.id.find(roundId);
   if (!rd || rd.status.tag !== 'Active') return;
-  ctx.db.round.id.update({ ...rd, status: { tag: 'Done' } });
+  for (const job of [...ctx.db.buildEnd.iter()]) {
+    if (job.roundId === rd.id && job.scheduledId !== runningJobId) ctx.db.buildEnd.scheduledId.delete(job.scheduledId);
+  }
+  const board = [...ctx.db.piece.roundId.filter(rd.id)];
+  const pendingIds = new Set(board.filter(p => p.pending).map(p => p.id));
+  for (const job of [...ctx.db.bermDone.iter()]) if (pendingIds.has(job.pieceId)) ctx.db.bermDone.scheduledId.delete(job.scheduledId);
+
+  const counts = countBoard(board.map(p => ({ kind: p.kind as PieceKind, ...xy(p.index), pending: p.pending })));
+  const evaluation = evaluate(counts, rulesFromRound(rd));
+  for (const req of Object.values(evaluation.requirements)) {
+    ctx.db.result.insert({ id: 0n, roundId: rd.id, kind: req.kind, pass: req.pass, reason: req.reason, fact: req.fact ?? '' });
+  }
+  ctx.db.round.id.update({ ...rd, status: { tag: 'Done' }, success: evaluation.allPass });
   const r = ctx.db.room.id.find(rd.roomId);
   if (r && r.currentRoundId === rd.id && r.phase.tag === 'Build') ctx.db.room.id.update({ ...r, phase: { tag: 'Debrief' } });
+}
+
+export const endBuild = spacetimedb.reducer({ onSchedule: buildEnd }, { job: buildEnd.rowType }, (ctx, { job }) => {
+  if (!ctx.sender.equals(ctx.databaseIdentity)) throw new SenderError('Scheduled only');
+  finishBuild(ctx, job.roundId, job.scheduledId);
+});
+
+/** Host: end the build early and score it now. */
+export const lockBuild = spacetimedb.reducer(ctx => {
+  const r = requireHost(ctx);
+  if (r.phase.tag !== 'Build' || r.currentRoundId === undefined) throw new SenderError('Not in the build phase');
+  finishBuild(ctx, r.currentRoundId);
+});
+
+/** Host, from the debrief: clear the finished round, then the next planet's briefing if one is ready, else the lobby. */
+export const rematch = spacetimedb.reducer(ctx => {
+  const r = requireHost(ctx);
+  if (r.phase.tag !== 'Debrief') throw new SenderError('Finish this round first');
+  if (r.currentRoundId !== undefined) deleteRound(ctx, r.currentRoundId);
+  for (const c of [...ctx.db.cursor.roomId.filter(r.id)]) ctx.db.cursor.identity.update({ ...c, visible: false });
+  const cleared = { ...r, currentRoundId: undefined };
+  const next = readyNext(ctx, cleared);
+  if (next) enterBriefing(ctx, cleared, next);
+  else ctx.db.room.id.update({ ...cleared, phase: { tag: 'Lobby' } });
+});
+
+export const cleanupRoom = spacetimedb.reducer({ onSchedule: roomCleanup }, { job: roomCleanup.rowType }, (ctx, { job }) => {
+  if (!ctx.sender.equals(ctx.databaseIdentity)) throw new SenderError('Scheduled only');
+  if (!ctx.db.room.id.find(job.roomId)) return;
+  if ([...ctx.db.member.roomId.filter(job.roomId)].some(m => m.online)) return;
+  for (const m of [...ctx.db.member.roomId.filter(job.roomId)]) ctx.db.member.identity.delete(m.identity);
+  deleteRoom(ctx, job.roomId);
 });
 
 // ── Build: placement, berms, cursors ────────────────────────────────────────────────────────────

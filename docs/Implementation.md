@@ -242,8 +242,11 @@ Notes: cursors are continuous grid coordinates (0–8), throttled to ~15/s clien
 
 ### Checkpoint 6 (acceptance #8, #9)
 
-- [ ] Dev panel (dev builds only) shows `boardRead` for the current grid; suggestion actually completes the base when followed.
-- [ ] Timer hits 0; debrief matches the hand-calculated formula for a known layout.
+- [x] Dev panel (dev builds only, "dev: board read" on the build screen) shows `boardRead` for the current grid; following the suggestion completes the base (unit-tested on all four fixtures).
+- [x] Timer hits 0 → round scored (`check:phase3 --wait-end`); lock-in scoring matches the formula for a known layout (Moon cheapest build → all ✓; empty Titan → all ✗ with reasons).
+- [x] `pnpm check:phase6` (7 checks): host-only lock, success/failure scoring, unfinished berms don't count, rematch → lobby or straight to the prepared planet's briefing, empty-room cleanup scheduled and cancelled.
+
+Notes: build end (timer or Lock in) goes through one `finishBuild` step; `result` rows hold pass/reason/fact per requirement, `round.success` the verdict; `rematch` deletes the finished round's rows; a `room_cleanup` row deletes a room 5 min after its last member goes offline. Dev: `pnpm dev` now touches the module when `packages/shared` changes (spacetime dev only watches `spacetimedb/`).
 
 ---
 

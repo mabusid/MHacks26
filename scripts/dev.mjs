@@ -1,6 +1,6 @@
 // `pnpm dev`: local SpacetimeDB + module auto-publish/bindings + client + server, one terminal.
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, utimesSync, watch } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
@@ -77,5 +77,18 @@ if (!existsSync('node_modules')) console.warn('node_modules missing — run `pnp
 // --server-only: otherwise `spacetime dev` runs the root `dev` script again as its "client".
 // --delete-data=on-conflict: local data is disposable; wipe it when a schema change can't migrate.
 run('module', 'spacetime', ['dev', '--server-only', '--server', 'local', '--yes', '--delete-data=on-conflict']);
+// `spacetime dev` only watches spacetimedb/, but the module bundles packages/shared — touch the module entry
+// when shared code changes so it rebuilds and republishes too.
+let bumpTimer;
+watch('packages/shared/src', { recursive: true }, (_event, file) => {
+  if (!file || file.endsWith('.test.ts')) return;
+  clearTimeout(bumpTimer);
+  bumpTimer = setTimeout(() => {
+    const now = new Date();
+    utimesSync('spacetimedb/src/index.ts', now, now);
+    console.log(`\x1b[${colors.module}m[module]\x1b[0m shared/${file} changed → rebuilding module`);
+  }, 300);
+});
+
 run('client', 'pnpm', ['--filter', '@overburden/client', 'dev']);
 run('server', 'pnpm', ['--filter', '@overburden/server', 'dev']);

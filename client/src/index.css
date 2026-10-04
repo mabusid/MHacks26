@@ -917,3 +917,93 @@ button:disabled {
     --cell: min(52px, calc((100vw - 60px) / 8.4));
   }
 }
+
+/* ── Debrief ───────────────────────────────────────────────────────────── */
+
+.verdict {
+  font-size: 2.2rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+}
+
+.verdict.ok {
+  color: var(--ok);
+}
+
+.verdict.bad {
+  color: var(--bad);
+}
+
+.results {
+  list-style: none;
+  margin: 0.25rem 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.results li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  font-size: 0.95rem;
+}
+
+.results li.fail {
+  border-color: rgba(248, 113, 113, 0.35);
+}
+
+.result-mark {
+  font-weight: 900;
+  width: 1.1rem;
+  text-align: center;
+}
+
+.results li.pass .result-mark {
+  color: var(--ok);
+}
+
+.results li.fail .result-mark {
+  color: var(--bad);
+}
+
+.key-fact {
+  font-size: 1rem;
+  border-left: 3px solid var(--accent);
+  padding-left: 0.7rem;
+}
+
+.link-btn {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-decoration: underline;
+}
+
+.lock-btn {
+  margin-top: auto;
+  border-color: rgba(251, 191, 36, 0.4);
+  color: var(--warn);
+}
+
+.board-read {
+  font-size: 0.8rem;
+  border: 1px dashed var(--rule);
+  border-radius: 8px;
+  padding: 0.4rem 0.6rem;
+}
+
+.board-read ol {
+  margin: 0.3rem 0;
+  padding-left: 1.2rem;
+  font-family: var(--mono);
+}

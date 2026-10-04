@@ -47,6 +47,7 @@ pnpm check:phase1   # multiplayer checks against the running dev stack (needs `p
 pnpm check:phase3   # research commit + start/briefing/build (add --wait-end to wait out the timer)
 pnpm check:phase4   # room-scoped subscriptions
 pnpm check:phase5   # placement, budget, berm digging, cursors
+pnpm check:phase6   # scoring, debrief results, rematch, room cleanup
 cd /tmp && spacetime sql --server local overburden "SELECT * FROM server_info"   # query the local DB
 ```
 
@@ -64,5 +65,6 @@ Run ad-hoc `spacetime` commands from outside the repo, or rely on `spacetime.jso
    - Pick a piece in the palette (or keys **1–8**), click a tile to place; hovered tiles outline teal/red. **Remove** (or **R**) then click a piece.
    - **Berm**: press and hold a tile touching the habitat — the ring fills (~2.3 s on the Moon); let go early to cancel.
    - The other tab's cursor moves live with their name; a wrong tile shows a red toast with the reason.
-6. At 0:00 → debrief split card (results arrive in Phase 6).
+6. At 0:00 (or host **Lock in early**) → debrief split card: **MISSION SUCCESS / FAILED**, ✓/✗ with one reason per requirement, the key fact, **Sources** link. Host **Next planet** → lobby, or straight into the briefing if a planet is already prepared.
+   - Dev: the **dev: board read** panel on the build screen shows what Mission Control will see (worst requirement + suggested moves).
 7. Narrow the window below 1024px → halves stack; the Mission Control bar stays pinned at the bottom.

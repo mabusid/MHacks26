@@ -39,14 +39,26 @@ const server = createServer(async (req, res) => {
 // Dev: when `spacetime dev` republishes a schema change, this process can reload with new bindings a moment
 // before the module updates and fail to decode an old row inside the SDK. That connection is about to be
 // dropped and reconnected anyway, so log and keep running instead of dying (tsx watch won't restart a crash).
-process.on('uncaughtException', err => {
-  if (config.dev && /node_modules[\\/].*spacetimedb/.test(err.stack ?? '')) {
-    console.warn(`[server] SDK error (likely schema republish in progress): ${err.message}`);
+// The SDK sometimes throws plain strings (no stack), so match decode failures by message too.
+const SCHEMA_RACE = /deserializ|DataView|Offset is outside|couldn't find \d+ tag/i;
+
+function survivable(err: unknown): boolean {
+  if (!config.dev) return false;
+  if (typeof err === 'string') return SCHEMA_RACE.test(err);
+  if (err instanceof Error) return SCHEMA_RACE.test(err.message) || /node_modules[\\/].*spacetimedb/.test(err.stack ?? '');
+  return false;
+}
+
+function onFatal(err: unknown) {
+  if (survivable(err)) {
+    console.warn(`[server] SDK error (likely schema republish in progress): ${err instanceof Error ? err.message : String(err)}`);
     return;
   }
   console.error(err);
   process.exit(1);
-});
+}
+process.on('uncaughtException', onFatal);
+process.on('unhandledRejection', onFatal);
 
 startSpacetime();
 server.listen(config.port, () => {

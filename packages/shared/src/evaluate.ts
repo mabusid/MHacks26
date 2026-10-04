@@ -85,13 +85,15 @@ export function evaluate(c: Counts, r: RoundRules): Evaluation {
       fact: short ? 'radiationDoseMSvPerDay' : null,
     };
   } else {
-    // Thermal and dust raise the power bar; the twist is met when power is.
-    const label = r.twist === 'thermal' ? 'Heating' : 'Dust-storm power';
+    // Thermal and dust raise the power bar; the twist is met when power is. The power line already gives the
+    // numbers, so this one just names the cause.
+    const label = r.twist === 'thermal' ? 'Heating' : 'Dust storms';
+    const failure = r.twist === 'thermal' ? `+${r.thermalLoad} power for heat not covered` : 'power falls short with solar halved';
     twist = {
       kind: 'twist',
       pass: power.pass,
       severity: power.severity,
-      reason: power.pass ? `${label} covered` : `${label}: ${power.reason.charAt(0).toLowerCase()}${power.reason.slice(1)}`,
+      reason: power.pass ? `${label} covered` : `${label}: ${failure}`,
       fact: power.pass ? null : r.twist === 'thermal' ? 'meanTempK' : 'dustStorms',
     };
   }

@@ -36,4 +36,5 @@ export default __t.row({
   funFacts: __t.array(__t.string()).name("fun_facts"),
   briefingEndsAt: __t.option(__t.timestamp()).name("briefing_ends_at"),
   buildEndsAt: __t.option(__t.timestamp()).name("build_ends_at"),
+  success: __t.option(__t.bool()),
 });

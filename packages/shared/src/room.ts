@@ -17,3 +17,6 @@ export function validateName(input: string): { ok: true; name: string } | { ok: 
   if (name.length > NAME_MAX_LENGTH) return { ok: false, error: `Name must be ${NAME_MAX_LENGTH} characters or fewer` };
   return { ok: true, name };
 }
+
+/** An empty room (everyone offline) is deleted after this long. */
+export const ROOM_TTL_SECONDS = 300;

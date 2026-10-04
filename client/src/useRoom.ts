@@ -33,6 +33,7 @@ export function useRoom() {
   const [params] = useTable(tables.planetParameter.where(p => p.roundId.eq(roundId)), { enabled: hasRound });
   const [tiles] = useTable(tables.tile.where(t => t.roundId.eq(roundId)), { enabled: hasRound });
   const [pieces] = useTable(tables.piece.where(p => p.roundId.eq(roundId)), { enabled: hasRound });
+  const [results] = useTable(tables.result.where(r => r.roundId.eq(roundId)), { enabled: hasRound });
 
   const sortedMembers = [...members].sort((a, b) =>
     a.joinedAt.microsSinceUnixEpoch < b.joinedAt.microsSinceUnixEpoch ? -1 : 1
@@ -52,6 +53,7 @@ export function useRoom() {
     tiles: [...tiles].sort((a, b) => a.index - b.index),
     pieces,
     cursors,
+    results: [...results].sort((a, b) => KIND_ORDER.indexOf(a.kind) - KIND_ORDER.indexOf(b.kind)),
   };
 }
 

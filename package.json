@@ -10,6 +10,7 @@
     "check:phase1": "pnpm --filter @overburden/server exec tsx ../scripts/checks/phase1.ts",
     "check:phase3": "pnpm --filter @overburden/server exec tsx ../scripts/checks/phase3.ts",
     "check:phase4": "pnpm --filter @overburden/server exec tsx ../scripts/checks/phase4.ts",
-    "check:phase5": "pnpm --filter @overburden/server exec tsx ../scripts/checks/phase5.ts"
+    "check:phase5": "pnpm --filter @overburden/server exec tsx ../scripts/checks/phase5.ts",
+    "check:phase6": "pnpm --filter @overburden/server exec tsx ../scripts/checks/phase6.ts"
   }
 }

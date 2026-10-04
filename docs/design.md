@@ -120,6 +120,5 @@ Home / split card: halves stack (team above planet). Build: top bar → grid →
 - **Offline crew**: their cursors are hidden.
 - **Dev planet loader**: lobby right half, dev builds only.
 
-## Still to decide
-
-- **Host-only controls** during the build (lock in early) — Phase 6.
+- **Host lock-in**: "Lock in early" at the bottom of the requirements column (host only, confirms first).
+- **Dev board read** (dev builds only): collapsed panel in the requirements column showing what Mission Control will see.
