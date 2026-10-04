@@ -205,7 +205,10 @@ Round rules (solar per array, night band, thermal load, CO₂, ice, berms) are s
 
 ### Checkpoint 4
 
-- [ ] Create → join → fixture commit → briefing on both clients → host begins build; countdown renders from `build_ends_at`.
+- [ ] Create → join → fixture commit → briefing on both clients → host begins build; countdown renders from `build_ends_at` (manual — UI checklist in README).
+- [x] `pnpm check:phase4`: every `useRoom()` query is accepted by the server and scopes to the player's room/round.
+
+Built per [design.md](./design.md): shell (top bar with copy-code, planet, phase, timer, mute; crew sidebar with colors and open seats), lobby research terminal + destination card, briefing planet card (sourced facts, estimated tags, "what we don't know yet") + reusable `MissionCard`, planet-tinted backgrounds, stacked layout under 1024px.
 
 ---
 

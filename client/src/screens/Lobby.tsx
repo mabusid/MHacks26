@@ -1,9 +1,7 @@
 import { useState } from 'react';
 import { useReducer } from 'spacetimedb/react';
-import { MAX_MEMBERS } from '@overburden/shared';
 import { reducers } from '../module_bindings';
-import type { Member, ResearchLog, Room, Round } from '../module_bindings/types';
-import LeaveButton from '../LeaveButton';
+import type { RoomData } from '../useRoom';
 import { useReducerCall } from '../useReducerCall';
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL ?? 'http://localhost:8787';
@@ -14,24 +12,17 @@ const TEST_PLANETS = [
   ['brightExoplanet', 'Exoplanet (test)'],
 ] as const;
 
-interface Props {
-  room: Room;
-  members: Member[];
-  me: Member;
-  nextRound: Round | undefined;
-  log: ResearchLog[];
-}
-
-export default function Lobby({ room, members, me, nextRound, log }: Props) {
+export default function Lobby({ data }: { data: RoomData }) {
+  const { room, next, log, isHost, members } = data;
   const start = useReducerCall(useReducer(reducers.startRound));
   const [devError, setDevError] = useState<string>();
-  const iAmHost = room.host.isEqual(me.identity);
-  const ready = nextRound?.status.tag === 'Ready';
+  if (!room) return null;
+  const ready = next?.status.tag === 'Ready';
 
   async function loadTestPlanet(planet: string) {
     setDevError(undefined);
     try {
-      const res = await fetch(`${SERVER_URL}/dev/commit-fixture?room=${room.code}&planet=${planet}`, { method: 'POST' });
+      const res = await fetch(`${SERVER_URL}/dev/commit-fixture?room=${room!.code}&planet=${planet}`, { method: 'POST' });
       if (!res.ok) setDevError((await res.json()).error ?? `HTTP ${res.status}`);
     } catch {
       setDevError(`Can't reach the server at ${SERVER_URL}`);
@@ -39,44 +30,45 @@ export default function Lobby({ room, members, me, nextRound, log }: Props) {
   }
 
   return (
-    <main className="screen">
-      <p className="muted">Room code</p>
-      <p className="room-code">{room.code}</p>
-
-      <h2>
-        Crew {members.length}/{MAX_MEMBERS}
-      </h2>
-      <ul className="members">
-        {members.map(m => (
-          <li key={m.identity.toHexString()}>
-            <span className={m.online ? 'dot online' : 'dot'} title={m.online ? 'online' : 'offline'} />
-            {m.name}
-            {m.identity.isEqual(me.identity) && <span className="muted"> (you)</span>}
-            {room.host.isEqual(m.identity) && <span className="badge">host</span>}
-          </li>
-        ))}
-      </ul>
-
+    <div className="stack">
       <section className="panel">
-        <h3>Mission research</h3>
+        <p className="label">Share this code</p>
+        <p className="room-code">{room.code}</p>
+        <p className="muted">
+          {members.length < 4 ? `Waiting for crew — ${4 - members.length} seat${4 - members.length === 1 ? '' : 's'} open.` : 'Full crew aboard.'}
+        </p>
+      </section>
+
+      <section className="panel terminal">
+        <p className="label">Mission research</p>
         {log.length === 0 ? (
-          <p className="muted">Waiting for research…</p>
+          <p className="muted blink">Awaiting research…</p>
         ) : (
           <ul className="log">
-            {log.slice(-6).map(l => (
-              <li key={String(l.id)}>{l.text}</li>
+            {log.slice(-8).map(l => (
+              <li key={String(l.id)}>
+                <span className="prompt">›</span> {l.text}
+              </li>
             ))}
           </ul>
         )}
-        {ready && <p className="ok">Planet ready: {nextRound.planetName}</p>}
       </section>
 
-      {iAmHost ? (
-        <button disabled={!ready || start.pending} onClick={() => start.run()}>
-          {ready ? 'Start' : 'Start (waiting for a planet)'}
+      {ready && (
+        <section className="panel ready-card">
+          <p className="label">Destination locked</p>
+          <h2>{next.planetName}</h2>
+          <p>{next.headline}</p>
+          <p className="muted small">{next.scaleText}</p>
+        </section>
+      )}
+
+      {isHost ? (
+        <button className="primary" disabled={!ready || start.pending} onClick={() => start.run()}>
+          {ready ? 'Start briefing' : 'Waiting for a planet…'}
         </button>
       ) : (
-        <p className="muted">Waiting for the host to start…</p>
+        <p className="muted">{ready ? 'Waiting for the host to start the briefing…' : 'Waiting for research…'}</p>
       )}
       {start.error && <p className="error">{start.error}</p>}
 
@@ -93,8 +85,6 @@ export default function Lobby({ room, members, me, nextRound, log }: Props) {
           {devError && <p className="error">{devError}</p>}
         </details>
       )}
-
-      <LeaveButton />
-    </main>
+    </div>
   );
 }

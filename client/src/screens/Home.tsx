@@ -34,8 +34,9 @@ export default function Home() {
 
   return (
     <main className="screen">
+      <p className="label">Mission control</p>
       <h1>Overburden</h1>
-      <p className="muted">Build a base on a real planet before time runs out.</p>
+      <p className="muted">Four crew. One real planet. Two and a half minutes to build a base that survives.</p>
 
       <label className="field">
         Your name
@@ -43,6 +44,7 @@ export default function Home() {
       </label>
 
       <button
+        className="primary"
         disabled={!nameCheck.ok || pending}
         onClick={() => {
           remember();

@@ -8,6 +8,7 @@
     "test": "pnpm -r --if-present test",
     "typecheck": "pnpm -r --if-present typecheck",
     "check:phase1": "pnpm --filter @overburden/server exec tsx ../scripts/checks/phase1.ts",
-    "check:phase3": "pnpm --filter @overburden/server exec tsx ../scripts/checks/phase3.ts"
+    "check:phase3": "pnpm --filter @overburden/server exec tsx ../scripts/checks/phase3.ts",
+    "check:phase4": "pnpm --filter @overburden/server exec tsx ../scripts/checks/phase4.ts"
   }
 }

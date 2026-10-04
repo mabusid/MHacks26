@@ -1,28 +1,12 @@
-import LeaveButton from '../LeaveButton';
-import { useEffect, useState } from 'react';
-import type { Round } from '../module_bindings/types';
+import type { RoomData } from '../useRoom';
 
-function useSecondsLeft(endsAtMicros: bigint | undefined): number {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 250);
-    return () => clearInterval(id);
-  }, []);
-  if (endsAtMicros === undefined) return 0;
-  return Math.max(0, Math.ceil((Number(endsAtMicros / 1000n) - now) / 1000));
-}
-
-// Phase 3 placeholder: the countdown proves the scheduled build end. The grid arrives in Phase 5.
-export default function Build({ round }: { round: Round }) {
-  const left = useSecondsLeft(round.buildEndsAt?.microsSinceUnixEpoch);
+// Placeholder until Phase 5 (grid, palette, cursors). The timer is in the top bar.
+export default function Build({ data }: { data: RoomData }) {
   return (
-    <main className="screen">
-      <p className="muted">Building on {round.planetName}</p>
-      <p className="room-code">
-        {Math.floor(left / 60)}:{String(left % 60).padStart(2, '0')}
-      </p>
+    <section className="panel">
+      <p className="label">Build phase</p>
+      <h2>Building on {data.current?.planetName}</h2>
       <p className="muted">The grid arrives in Phase 5. When the timer hits 0:00 the server ends the round.</p>
-      <LeaveButton />
-    </main>
+    </section>
   );
 }

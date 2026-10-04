@@ -1,14 +1,12 @@
-import LeaveButton from '../LeaveButton';
-import type { Round } from '../module_bindings/types';
+import type { RoomData } from '../useRoom';
 
-// Phase 3 placeholder: results and rematch arrive in Phase 6.
-export default function Debrief({ round }: { round: Round }) {
+// Placeholder until Phase 6 (results, sources, rematch).
+export default function Debrief({ data }: { data: RoomData }) {
   return (
-    <main className="screen">
-      <p className="muted">Debrief</p>
-      <h1>Time’s up on {round.planetName}</h1>
+    <section className="panel">
+      <p className="label">Debrief</p>
+      <h2>Time’s up on {data.current?.planetName}</h2>
       <p className="muted">Scoring and rematch arrive in Phase 6.</p>
-      <LeaveButton />
-    </main>
+    </section>
   );
 }
