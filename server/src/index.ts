@@ -2,7 +2,9 @@ import { createServer, type ServerResponse } from 'node:http';
 import { SHARED_VERSION } from '@overburden/shared';
 import { config } from './config';
 import { FIXTURE_KEYS, commitFixture, type FixtureKey } from './fixtures';
-import { isConnected, roomByCode, startSpacetime } from './spacetime';
+import { SCRIPTED_TARGETS, type ScriptedTarget } from './research/scripted';
+import { isResearching, research, setAutoResearch, startResearchWatcher } from './research/trigger';
+import { db, isConnected, roomByCode, startSpacetime } from './spacetime';
 
 function send(res: ServerResponse, status: number, body: unknown) {
   res.writeHead(status, {
@@ -33,6 +35,21 @@ const server = createServer(async (req, res) => {
       return send(res, 422, { error: e instanceof Error ? e.message : String(e) });
     }
   }
+  if (config.dev && req.method === 'POST' && url.pathname === '/dev/auto-research') {
+    const on = url.searchParams.get('enabled') !== 'false';
+    setAutoResearch(on);
+    return send(res, 200, { ok: true, autoResearch: on });
+  }
+  if (config.dev && req.method === 'POST' && url.pathname === '/dev/research') {
+    const room = roomByCode(url.searchParams.get('room') ?? '');
+    const target = (url.searchParams.get('target') ?? 'exoplanet') as ScriptedTarget;
+    if (!room) return send(res, 404, { error: 'No room with that code' });
+    if (!SCRIPTED_TARGETS.includes(target)) return send(res, 400, { error: `target must be one of ${SCRIPTED_TARGETS.join(', ')}` });
+    // Let any automatic run for this room finish first, then run the requested target.
+    while (isResearching(room.id)) await new Promise(r => setTimeout(r, 200));
+    await research(db(), room.id, target);
+    return send(res, 200, { ok: true });
+  }
   send(res, 404, { error: 'Not found' });
 });
 
@@ -61,6 +78,7 @@ process.on('uncaughtException', onFatal);
 process.on('unhandledRejection', onFatal);
 
 startSpacetime();
+startResearchWatcher();
 server.listen(config.port, () => {
   console.log(`[server] listening on :${config.port} (shared ${SHARED_VERSION}, xAI key ${config.xaiApiKey ? 'set' : 'missing — template hints only'})`);
 });

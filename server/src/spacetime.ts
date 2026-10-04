@@ -4,6 +4,13 @@ import { config } from './config';
 
 const RETRY_MS = 2000;
 let conn: DbConnection | undefined;
+const connectedHooks: ((c: DbConnection) => void)[] = [];
+
+/** Runs on every (re)connect, after the initial subscription is applied. */
+export function onConnected(hook: (c: DbConnection) => void): void {
+  connectedHooks.push(hook);
+  if (conn) hook(conn);
+}
 
 function attempt(): void {
   DbConnection.builder()
@@ -15,6 +22,7 @@ function attempt(): void {
         .onApplied(() => {
           conn = c;
           console.log(`[server] spacetime connected as ${identity.toHexString().slice(0, 12)}…`);
+          for (const hook of connectedHooks) hook(c);
         })
         .subscribe([tables.room, tables.round]);
     })

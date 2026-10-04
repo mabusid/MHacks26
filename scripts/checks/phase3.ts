@@ -70,6 +70,9 @@ async function commitFixture(code: string, planet: string) {
   if (!res.ok) throw new Error(`commit-fixture ${planet}: ${res.status} ${JSON.stringify(await res.json())}`);
 }
 
+// These checks need rooms without a planet until they load one, so pause automatic research while they run.
+await fetch(`${SERVER}/dev/auto-research?enabled=false`, { method: 'POST' });
+// (The server resumes it automatically after 5 minutes if this script dies early.)
 console.log(`Phase 3 checks against ${URI}/${DB} and ${SERVER}`);
 const [host, guest, owner] = await Promise.all([connect(), connect(), connect(ownerToken())]);
 const db = host.conn.db;
@@ -210,6 +213,7 @@ if (WAIT_END) {
 
 await host.conn.reducers.leaveRoom({});
 await guest.conn.reducers.leaveRoom({});
+await fetch(`${SERVER}/dev/auto-research?enabled=true`, { method: 'POST' });
 console.log(`\nAll ${passed} checks passed.`);
 for (const c of [host, guest, owner]) c.conn.disconnect();
 process.exit(0);

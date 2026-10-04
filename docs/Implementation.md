@@ -263,9 +263,14 @@ Notes: build end (timer or Lock in) goes through one `finishBuild` step; `result
 
 ### Checkpoint 7 (acceptance #3 partial)
 
-- [ ] Creating a room streams research log lines to clients.
-- [ ] Moon and Mars scripted paths commit with different twists/thresholds.
-- [ ] `set_parameter` with an unknown `fetch_id` is rejected.
+- [x] Creating a room streams research log lines to clients (automatic; ≤ 20 s, backup fixture on failure).
+- [x] Moon and Mars scripted paths commit with different twists/thresholds; a third scripted path draws a **live exoplanet** from the archive.
+- [x] `set_parameter` with an unknown `fetch_id` is rejected (server unit tests, `pnpm test`).
+- [x] `pnpm check:phase7` (5 checks, live network): auto research, Moon/Mars/exoplanet provenance, next planet prepared during the debrief.
+
+Built: `server/src/research/` — `sources.ts` (tier 1 TAP + tier 2 `data/solar_system.json`, reflink parsing, gravity derived from mass or estimated from radius), `session.ts` (provenance rules: values only via `setParameter(fetchId, field)`, fixed-default `markEstimated` with a reason, twist must be triggered, because-lines must cite a derivedFrom field), `scripted.ts`, `trigger.ts` (watches rooms; 50% curated / 50% exoplanet; no repeats per room). `data/solar_system.json` has Moon + Mars with fact-sheet and DOI sources (DOIs verified via Crossref). Dev: `POST /dev/research?room=&target=moon|mars|exoplanet`, `POST /dev/auto-research?enabled=false` (auto-resumes after 5 min; checks 3–6 pause it).
+
+Follow-up: some archive radii are calculated (e.g. radial-velocity planets), so "likely rocky" is approximate — consider filtering on measured radius in Phase 8.
 
 ---
 

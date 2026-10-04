@@ -48,6 +48,7 @@ pnpm check:phase3   # research commit + start/briefing/build (add --wait-end to 
 pnpm check:phase4   # room-scoped subscriptions
 pnpm check:phase5   # placement, budget, berm digging, cursors
 pnpm check:phase6   # scoring, debrief results, rematch, room cleanup
+pnpm check:phase7   # automatic research, provenance (live NASA archive)
 cd /tmp && spacetime sql --server local overburden "SELECT * FROM server_info"   # query the local DB
 ```
 
@@ -59,7 +60,7 @@ Run ad-hoc `spacetime` commands from outside the repo, or rely on `spacetime.jso
 
 1. Home: base-scene backdrop with one card — name, **Create room**, code + **Join**.
 2. Tab 1 create, tab 2 join → **split card**: left = code (tap to copy) + crew with colors + open seats; right = research.
-3. Host: **dev: test planet** → right half shows planet name, headline, 2–3 key numbers; backdrop tint matches the planet.
+3. Research starts by itself: log lines stream on the right, then the planet name, headline, 2–3 key numbers (Moon / Mars from curated NASA data, or a real exoplanet from the NASA Exoplanet Archive); backdrop tint matches. **dev: test planet** still overrides it.
 4. **Start mission** → briefing card: planet, 3 one-line requirements, "Build starts in 10…" — the build starts on its own (host can **Skip**).
 5. Build: big timer top center (red under 0:30), mass top right, requirements on the right (**Planet facts & sources** toggle), Mission Control bar at the bottom — **tap the bar to mute/unmute**.
    - Pick a piece in the palette (or keys **1–8**), click a tile to place; hovered tiles outline teal/red. **Remove** (or **R**) then click a piece.

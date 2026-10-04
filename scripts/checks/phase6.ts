@@ -88,6 +88,9 @@ async function toBuild(host: Client, planet: string) {
   await until('build', () => h.room().phase.tag === 'Build' && h.tiles().length === 64);
 }
 
+// These checks need rooms without a planet until they load one, so pause automatic research while they run.
+await fetch(`${SERVER}/dev/auto-research?enabled=false`, { method: 'POST' });
+// (The server resumes it automatically after 5 minutes if this script dies early.)
 console.log(`Phase 6 checks against ${URI}/${DB}`);
 const [host, guest] = await Promise.all([connect(), connect()]);
 const A = roomHelpers(host);
@@ -166,6 +169,7 @@ await step('an empty room schedules its cleanup; it is cancelled when someone co
   back.conn.disconnect();
 });
 
+await fetch(`${SERVER}/dev/auto-research?enabled=true`, { method: 'POST' });
 console.log(`\nAll ${passed} checks passed.`);
 guest.conn.disconnect();
 process.exit(0);

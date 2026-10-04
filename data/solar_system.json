@@ -1,0 +1,37 @@
+{
+  "_about": "Curated solar-system bodies for research tier 2. Every value carries its source; derived values say how. Phase 8 adds Mercury, Ceres, Titan, Europa.",
+  "bodies": {
+    "moon": {
+      "name": "Moon (south pole)",
+      "scale": { "distanceKm": 384400, "radiusKm": 1738.1 },
+      "fields": {
+        "insolation": { "value": 1.0, "unit": "× Earth", "sourceLabel": "NASA Moon Fact Sheet", "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html", "note": "Solar irradiance 1361 W/m², same as Earth" },
+        "nightHours": { "value": 354.4, "unit": "h", "sourceLabel": "NASA Moon Fact Sheet", "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html", "note": "Half the 29.53-day synodic period" },
+        "meanTempK": { "value": 242.5, "unit": "K", "sourceLabel": "NASA Moon Fact Sheet", "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html", "note": "Midpoint of the equatorial day–night range, 95–390 K" },
+        "surfacePressureBar": { "value": 3e-15, "unit": "bar", "sourceLabel": "NASA Moon Fact Sheet", "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html", "note": "Night-time surface pressure" },
+        "co2Atmosphere": { "value": false, "unit": "", "sourceLabel": "NASA Moon Fact Sheet", "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html", "note": "Essentially no atmosphere" },
+        "waterIce": { "value": true, "unit": "", "sourceLabel": "Colaprete et al. 2010 (LCROSS)", "sourceUrl": "https://doi.org/10.1126/science.1186986", "note": "Water detected in the Cabeus crater impact plume" },
+        "polarIce": { "value": true, "unit": "", "sourceLabel": "Colaprete et al. 2010 (LCROSS)", "sourceUrl": "https://doi.org/10.1126/science.1186986", "note": "Ice in a permanently shadowed south-polar crater" },
+        "radiationDoseMSvPerDay": { "value": 1.369, "unit": "mSv/day", "sourceLabel": "Zhang et al. 2020 (Chang’e 4)", "sourceUrl": "https://doi.org/10.1126/sciadv.aaz1334", "note": "First dose measurement on the lunar surface: 1369 µSv/day" },
+        "dustStorms": { "value": false, "unit": "", "sourceLabel": "NASA Moon Fact Sheet", "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html", "note": "No atmosphere to carry dust storms" },
+        "gravity": { "value": 1.62, "unit": "m/s²", "sourceLabel": "NASA Moon Fact Sheet", "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html", "note": "" }
+      }
+    },
+    "mars": {
+      "name": "Mars",
+      "scale": { "distanceKm": 225000000, "radiusKm": 3396.2 },
+      "fields": {
+        "insolation": { "value": 0.4307, "unit": "× Earth", "sourceLabel": "NASA Mars Fact Sheet", "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html", "note": "Solar irradiance 586.2 W/m² ÷ Earth’s 1361 W/m²" },
+        "nightHours": { "value": 12.33, "unit": "h", "sourceLabel": "NASA Mars Fact Sheet", "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html", "note": "Half the 24.66-hour day" },
+        "meanTempK": { "value": 214, "unit": "K", "sourceLabel": "NASA Mars Fact Sheet", "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html", "note": "Average temperature ~214 K (−59 °C)" },
+        "surfacePressureBar": { "value": 0.00636, "unit": "bar", "sourceLabel": "NASA Mars Fact Sheet", "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html", "note": "6.36 mb at mean radius (4.0–8.7 mb by season)" },
+        "co2Atmosphere": { "value": true, "unit": "", "sourceLabel": "NASA Mars Fact Sheet", "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html", "note": "Atmosphere is 95.1% CO₂" },
+        "waterIce": { "value": true, "unit": "", "sourceLabel": "Smith et al. 2009 (Phoenix)", "sourceUrl": "https://doi.org/10.1126/science.1172339", "note": "Water ice found just below the surface at the Phoenix landing site" },
+        "polarIce": { "value": false, "unit": "", "sourceLabel": "Smith et al. 2009 (Phoenix)", "sourceUrl": "https://doi.org/10.1126/science.1172339", "note": "Ice is shallow subsurface ice, not in shadowed craters" },
+        "radiationDoseMSvPerDay": { "value": 0.64, "unit": "mSv/day", "sourceLabel": "Hassler et al. 2014 (Curiosity RAD)", "sourceUrl": "https://doi.org/10.1126/science.1244797", "note": "Surface dose equivalent rate measured by Curiosity" },
+        "dustStorms": { "value": true, "unit": "", "sourceLabel": "Guzewich et al. 2019", "sourceUrl": "https://doi.org/10.1029/2018GL080839", "note": "The 2018 global dust storm observed by Curiosity" },
+        "gravity": { "value": 3.73, "unit": "m/s²", "sourceLabel": "NASA Mars Fact Sheet", "sourceUrl": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html", "note": "" }
+      }
+    }
+  }
+}

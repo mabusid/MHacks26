@@ -51,6 +51,9 @@ async function step(label: string, fn: () => Promise<unknown>) {
   console.log(`  ✓ ${label}${typeof out === 'string' ? ` — ${out}` : ''}`);
 }
 
+// These checks need rooms without a planet until they load one, so pause automatic research while they run.
+await fetch(`${SERVER}/dev/auto-research?enabled=false`, { method: 'POST' });
+// (The server resumes it automatically after 5 minutes if this script dies early.)
 console.log(`Phase 5 checks against ${URI}/${DB}`);
 const [host, guest] = await Promise.all([connect(), connect()]);
 const db = host.conn.db;
@@ -153,6 +156,7 @@ await step('leaving removes your cursor; an emptied room takes its pieces with i
   await until('pieces gone', () => ![...guest.conn.db.piece.iter()].some(p => p.roundId === rid));
 });
 
+await fetch(`${SERVER}/dev/auto-research?enabled=true`, { method: 'POST' });
 console.log(`\nAll ${passed} checks passed.`);
 for (const c of [host, guest]) c.conn.disconnect();
 process.exit(0);
