@@ -6,7 +6,7 @@ import LeaveButton from '../LeaveButton';
 import { useMute } from '../useMute';
 import type { RoomData } from '../useRoom';
 
-/** Left half of the split card: code, crew, open seats, leave. */
+/** The team: code to share, who's in, sound, leave. */
 export default function TeamPanel({ data }: { data: RoomData }) {
   const { room, members, me } = data;
   const [copied, setCopied] = useState(false);
@@ -24,9 +24,9 @@ export default function TeamPanel({ data }: { data: RoomData }) {
   }
 
   return (
-    <div className="half team">
-      <p className="label">Room code</p>
-      <button className="room-code" onClick={copy} title="Copy room code">
+    <div className="team">
+      <p className="label">Team code · share to invite</p>
+      <button className="room-code" onClick={copy} title="Copy team code">
         {room.code}
         <span className="copy-hint">{copied ? 'copied' : 'copy'}</span>
       </button>
@@ -43,11 +43,6 @@ export default function TeamPanel({ data }: { data: RoomData }) {
               {m.identity.isEqual(me.identity) && <span className="muted"> (you)</span>}
             </span>
             {room.host.isEqual(m.identity) && <span className="badge">★ host</span>}
-          </li>
-        ))}
-        {Array.from({ length: MAX_MEMBERS - members.length }, (_, i) => (
-          <li key={`open-${i}`} className="open-seat">
-            open seat
           </li>
         ))}
       </ul>

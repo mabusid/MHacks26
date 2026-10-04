@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useReducer } from 'spacetimedb/react';
 import { PIECES, PIECE_KINDS, rulesFromRound, solveRound, type Counts, type PieceKind, type TileKind } from '@overburden/shared';
 import CrewStrip from '../components/CrewStrip';
+import StepDots from '../components/StepDots';
 import PieceIcon from '../components/PieceIcon';
 import { reducers } from '../module_bindings';
 import type { RoomData } from '../useRoom';
@@ -23,11 +24,15 @@ function buildText(c: Counts): string {
     .join(' · ');
 }
 
-/** Stinger (TIME / LOCKED IN) → verdict. One compact card beside the base (docs/design.md → Debrief). */
+/**
+ * Stinger (TIME / LOCKED IN) → pages, one idea each: the verdict, why it failed (skipped on a success), and the
+ * best build here with the host's Next planet. Each player pages at their own pace.
+ */
 export default function Debrief({ data }: { data: RoomData }) {
-  const { current, results, requirements, pieces, tiles, isHost, next } = data;
+  const { current, results, requirements, pieces, tiles, isHost } = data;
   const nextPlanet = useReducerCall(useReducer(reducers.rematch));
   const [stinger, setStinger] = useState(true);
+  const [page, setPage] = useState(0);
   useEffect(() => {
     const t = setTimeout(() => setStinger(false), STINGER_MS);
     return () => clearTimeout(t);
@@ -60,70 +65,90 @@ export default function Debrief({ data }: { data: RoomData }) {
   const massUsed = pieces.reduce((m, p) => m + PIECES[p.kind as PieceKind].mass, 0);
   const name = (kind: string) => SHORT[kind === 'twist' ? current.twist : kind] ?? 'Twist';
 
-  return (
-    <div className="card debrief">
-      <header className="debrief-head">
+  if (!scored) {
+    return (
+      <div className="card debrief">
         <p className="label">{current.planetName}</p>
-        {!scored ? (
-          <p className="muted blink">Scoring…</p>
-        ) : (
-          <h2 className={success ? 'verdict ok' : 'verdict bad'}>{success ? 'Mission success' : 'Mission failed'}</h2>
-        )}
-      </header>
+        <p className="muted blink">Scoring…</p>
+      </div>
+    );
+  }
 
-      {scored && (
+  const failed = results.filter(r => !r.pass);
+  const pages = ['verdict', ...(failed.length ? ['why'] : []), 'best'] as const;
+  const at = pages[Math.min(page, pages.length - 1)];
+
+  return (
+    <div className="card debrief" key={at}>
+      {at === 'verdict' && (
         <>
-          {/* One row per requirement; the planet fact only where it failed — that's the lesson. */}
-          <ul className="results">
+          <p className="label">{current.planetName}</p>
+          <h2 className={success ? 'verdict ok' : 'verdict bad'}>{success ? 'Mission success' : 'Mission failed'}</h2>
+          <ul className="verdict-rows">
             {results.map(r => (
               <li key={String(r.id)} className={r.pass ? 'pass' : 'fail'}>
                 <span className="result-mark" aria-label={r.pass ? 'passed' : 'failed'}>
                   {r.pass ? '✓' : '✗'}
                 </span>
-                <span className="result-name">
-                  <span aria-hidden>{ICON[r.kind]}</span> {name(r.kind)}
-                </span>
-                <span className="result-text">
-                  {r.reason}
-                  {!r.pass && because(r.kind) && <span className="result-why">{because(r.kind)}</span>}
-                </span>
+                <span aria-hidden>{ICON[r.kind]}</span> {name(r.kind)}
               </li>
             ))}
           </ul>
+        </>
+      )}
 
-          {cheapest && (
-            <section className="answer-key">
-              <div className="answer-head">
-                <p className="label">{success && massUsed <= cheapest.mass ? 'Perfect build' : 'Cheapest base here'}</p>
-                <p className="answer-mass">
-                  <strong>{cheapest.mass} CU</strong> <span className="muted">· yours {massUsed}</span>
+      {at === 'why' && (
+        <>
+          <p className="label">What went wrong</p>
+          {/* Only the failures, each with the planet fact behind it — that's the lesson. */}
+          <ul className="why-list">
+            {failed.map(r => (
+              <li key={String(r.id)}>
+                <p className="why-head">
+                  <span aria-hidden>{ICON[r.kind]}</span> {r.reason}
                 </p>
-              </div>
-              <ul className="answer-pieces" aria-label={buildText(cheapest.counts)}>
+                {because(r.kind) && <p className="why-fact">{because(r.kind)}</p>}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+
+      {at === 'best' && (
+        <>
+          <p className="label">{success && cheapest && massUsed <= cheapest.mass ? 'Perfect build' : 'Cheapest base that works here'}</p>
+          {cheapest ? (
+            <>
+              <ul className="answer-pieces big" aria-label={buildText(cheapest.counts)}>
                 {PIECE_KINDS.filter(k => cheapest.counts[k] > 0).map(k => (
                   <li key={k} title={PIECES[k].label}>
-                    <PieceIcon kind={k} size={26} />
+                    <PieceIcon kind={k} size={34} />
                     <span>×{cheapest.counts[k]}</span>
                   </li>
                 ))}
               </ul>
-            </section>
+              <p className="answer-mass">
+                <strong>{cheapest.mass} CU</strong> <span className="muted">· yours {massUsed} CU</span>
+              </p>
+            </>
+          ) : (
+            <p className="muted">Working it out…</p>
           )}
-
+          <div className="debrief-foot">
+            {isHost ? (
+              <button className="primary big" disabled={nextPlanet.pending} onClick={() => nextPlanet.run()}>
+                Next planet
+              </button>
+            ) : (
+              <p className="muted">Waiting for the host…</p>
+            )}
+            {nextPlanet.error && <p className="error">{nextPlanet.error}</p>}
+            <CrewStrip data={data} />
+          </div>
         </>
       )}
 
-      <footer className="debrief-foot">
-        {isHost ? (
-          <button className="primary big" disabled={!scored || nextPlanet.pending} onClick={() => nextPlanet.run()}>
-            {next?.status.tag === 'Ready' ? `Next planet: ${next.planetName}` : 'Next planet'}
-          </button>
-        ) : (
-          <p className="muted">Waiting for the host to pick the next planet…</p>
-        )}
-        {nextPlanet.error && <p className="error">{nextPlanet.error}</p>}
-        <CrewStrip data={data} />
-      </footer>
+      <StepDots step={pages.indexOf(at)} count={pages.length} onStep={setPage} />
     </div>
   );
 }

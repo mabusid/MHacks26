@@ -104,31 +104,36 @@ export default function Grid(props: Props) {
     if (nx >= 0 && ny >= 0 && nx < GRID_SIZE && ny < GRID_SIZE) focusTile(ny * GRID_SIZE + nx);
   }
 
-  // Measure the live DOM so the 3D board matches the HTML one exactly, at any size. Origin = board center.
+  // Measure the live DOM so the 3D board matches the HTML one exactly, at any size and tilt. Coordinates are
+  // relative to the plane's transform-origin (the pivot of the CSS tilt).
   const measure = useCallback(() => {
     const scene = sceneRef.current, plane = planeRef.current, board = boardRef.current;
     if (!scene || !plane || !board) return;
+    const css = getComputedStyle(scene);
+    const [ox, oy] = getComputedStyle(plane).transformOrigin.split(' ').map(parseFloat);
     const bw = board.offsetWidth, bh = board.offsetHeight;
     const tiles = Array.from({ length: GRID_SIZE * GRID_SIZE }, (_, i) => {
       const el = cellRefs.current[i];
       const w = el?.offsetWidth ?? 0, h = el?.offsetHeight ?? 0;
-      return { cx: (el?.offsetLeft ?? 0) + w / 2 - bw / 2, cy: (el?.offsetTop ?? 0) + h / 2 - bh / 2, w, h };
+      return { cx: board.offsetLeft + (el?.offsetLeft ?? 0) + w / 2 - ox, cy: board.offsetTop + (el?.offsetTop ?? 0) + h / 2 - oy, w, h };
     });
     const hab = tiles.filter((_, i) => isHabitat(xy(i).x, xy(i).y));
     const cell = tiles[0].w;
-    // Canvas centered on the board, with room above it for the heights of the back row's pieces.
-    const halfW = Math.ceil(bw / 2 + cell * 0.5);
-    const halfH = Math.ceil(bh / 2 + cell * 1.2);
+    // Canvas centered on the pivot, with room above the board for the back row's pieces.
+    const halfW = Math.ceil(Math.max(ox - board.offsetLeft, board.offsetLeft + bw - ox) + cell);
+    const halfH = Math.ceil(Math.max(oy - board.offsetTop, board.offsetTop + bh - oy) + cell * 1.5);
     setLayout({
-      left: plane.offsetLeft + board.offsetLeft + bw / 2 - halfW,
-      top: plane.offsetTop + board.offsetTop + bh / 2 - halfH,
-      ink: getComputedStyle(scene).getPropertyValue('--ink').trim() || '#262d3f',
+      left: plane.offsetLeft + ox - halfW,
+      top: plane.offsetTop + oy - halfH,
+      ink: css.getPropertyValue('--ink').trim() || '#262d3f',
       layout: {
         width: halfW * 2,
         height: halfH * 2,
+        perspective: parseFloat(css.getPropertyValue('--persp')) || 1100,
+        tilt: ((parseFloat(css.getPropertyValue('--tilt')) || 0) * Math.PI) / 180,
         cell,
         tiles,
-        board: { cx: 0, cy: 0, w: bw, h: bh },
+        board: { cx: board.offsetLeft + bw / 2 - ox, cy: board.offsetTop + bh / 2 - oy, w: bw, h: bh },
         habitat: { cx: hab.reduce((a, t) => a + t.cx, 0) / hab.length, cy: hab.reduce((a, t) => a + t.cy, 0) / hab.length },
       },
     });

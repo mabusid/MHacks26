@@ -1,5 +1,5 @@
-import { PIECES, pieceEffect, type PieceKind, type RoundRules } from '@overburden/shared';
-import { PALETTE } from '../pieceArt';
+import { PIECES, pieceEffect, type RoundRules } from '@overburden/shared';
+import { usablePieces } from '../pieceArt';
 import type { Tool } from './Grid';
 import PieceIcon from './PieceIcon';
 
@@ -12,24 +12,14 @@ interface Props {
   hoverInfo?: string;
 }
 
-/** Why a piece can't be used right now — shown on the button, not hidden in a tooltip. */
-function unavailable(k: PieceKind, rules: RoundRules, massLeft: number): string | null {
-  if (k === 'ice_drill' && !rules.iceAvailable) return 'no ice here';
-  if (k === 'thermal_unit' && rules.twist !== 'thermal') return 'not needed';
-  if (k === 'berm' && rules.twist !== 'radiation') return 'not needed';
-  if (k === 'battery' && rules.nightBand === 0) return 'no night here';
-  if (PIECES[k].mass > massLeft) return 'over budget';
-  return null;
-}
-
 export default function Palette({ tool, onTool, rules, massLeft, hoverInfo }: Props) {
   const line =
     hoverInfo ?? (tool === 'remove' ? 'Remove: tap a piece to take it back (full refund).' : `${PIECES[tool].label}: ${pieceEffect(tool, rules)}`);
   return (
     <div className="palette-wrap">
       <div className="palette" role="toolbar" aria-label="Pieces">
-        {PALETTE.map((k, i) => {
-          const why = unavailable(k, rules, massLeft);
+        {usablePieces(rules).map((k, i) => {
+          const why = PIECES[k].mass > massLeft ? 'over budget' : null;
           return (
             <button
               key={k}

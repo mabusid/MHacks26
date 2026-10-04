@@ -5,11 +5,10 @@ import BoardReadPanel from '../components/BoardReadPanel';
 import Grid, { type Tool } from '../components/Grid';
 import MissionControlBar from '../components/MissionControlBar';
 import Palette from '../components/Palette';
-import PlanetCard from '../components/PlanetCard';
 import RequirementList from '../components/RequirementList';
 import LeaveButton from '../LeaveButton';
 import { reducers } from '../module_bindings';
-import { PALETTE } from '../pieceArt';
+import { usablePieces } from '../pieceArt';
 import type { RoomData } from '../useRoom';
 import { clock, useSecondsLeft } from '../useSecondsLeft';
 
@@ -17,7 +16,6 @@ import { clock, useSecondsLeft } from '../useSecondsLeft';
 export default function Build({ data }: { data: RoomData }) {
   const { current, requirements, params, tiles, pieces, cursors, members, me, isHost, room } = data;
   const left = useSecondsLeft(current?.buildEndsAt?.microsSinceUnixEpoch);
-  const [showFacts, setShowFacts] = useState(false);
   const [confirmLock, setConfirmLock] = useState(false);
   const [tool, setTool] = useState<Tool>('solar');
   const [hoverInfo, setHoverInfo] = useState<string>();
@@ -35,17 +33,20 @@ export default function Build({ data }: { data: RoomData }) {
     toastTimer.current = setTimeout(() => setToast(undefined), 2500);
   }, []);
 
-  // Keyboard: 1–8 pick a piece, R = remove (arrows/Enter on the board itself).
+  // Keyboard: 1–9 pick a piece in palette order, R = remove (arrows/Enter on the board itself).
+  const usable = current ? usablePieces(rulesFromRound(current)) : [];
+  const usableKey = usable.join();
   useEffect(() => {
+    const keys = usableKey.split(',') as PieceKind[];
     function onKey(e: KeyboardEvent) {
       if (e.target instanceof HTMLInputElement) return;
       const n = Number(e.key);
-      if (n >= 1 && n <= PALETTE.length) setTool(PALETTE[n - 1]);
+      if (n >= 1 && n <= keys.length) setTool(keys[n - 1]);
       else if (e.key.toLowerCase() === 'r') setTool('remove');
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, []);
+  }, [usableKey]);
 
   // Mass flashes when it changes so the budget is noticed without reading.
   const massUsed = pieces.reduce((m, p) => m + PIECES[p.kind as PieceKind].mass, 0);
@@ -112,10 +113,6 @@ export default function Build({ data }: { data: RoomData }) {
       <aside className="game-side">
         <p className="label">Requirements</p>
         <RequirementList requirements={requirements} params={params} />
-        <button className="secondary small-btn" onClick={() => setShowFacts(s => !s)}>
-          {showFacts ? 'Hide planet facts' : 'Planet facts & sources'}
-        </button>
-        {showFacts && <PlanetCard round={current} params={params} />}
         {import.meta.env.DEV && tileKinds.length === 64 && <BoardReadPanel rules={rules} tiles={tileKinds} pieces={pieces} budget={current.massBudget} />}
         {isHost &&
           (confirmLock ? (

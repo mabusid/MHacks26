@@ -4,7 +4,7 @@ Layout, look, and transitions for every phase. Rules, copy, and visibility: [Pla
 
 **Direction:** one **3D world** behind everything (a persistent React Three Fiber scene: planet → landing site → build site), with a **mission-control HUD** in HTML on top. The interactive **build board stays an HTML grid**, flat (no tilt) with 3D models drawn under it — exact taps, crisp A–H / 1–8 labels, keyboard play, and phones all keep working. *(Decided after an independent design review: a 3D raycast board would cost precision, accessibility, and phone usability for little gain.)*
 
-**Content principle:** less to read. Short labels, numbers over sentences, one line per idea. Detail (sources, full facts) is one tap away, never on the main HUD during the build.
+**Content principle:** less to read. One idea per card: start → create *or* join → team → planet → mission → build → verdict → why → best build. Short labels, numbers over sentences, one line per idea. Detail (sources, full facts) is one tap away, never on the main HUD during the build.
 
 ---
 
@@ -13,7 +13,7 @@ Layout, look, and transitions for every phase. Rules, copy, and visibility: [Pla
 | Layer | Choice |
 | --- | --- |
 | 3D world | `@react-three/fiber` 9 + `@react-three/drei` 10 (React 19 compatible) — **one `<Canvas>` mounted for the whole session**, behind the HUD, never remounted between phases. Low-poly procedural terrain and habitat in toon materials, drawn through a low-res "pixel diorama" post pass (look.md). Renders on demand during the build and under reduced motion; DPR capped at 2 (only the final upscale pays for it). |
-| Board | HTML/CSS grid (focusable buttons with aria-labels), **flat on every screen** so all tiles are full-size targets, and transparent once 3D loads. Underneath, `BoardCanvas` draws tile slabs, the habitat, and low-poly piece models in the world's pixel style, with an oblique projection (heights lift up the screen) for depth. SVG icons stay in the palette and as the no-WebGL fallback. |
+| Board | HTML/CSS grid (focusable buttons with aria-labels), with a **slight forward tilt** (25°, 20° on phones; rows stay ≥ ~40 px) and transparent once 3D loads. Underneath, `BoardCanvas` draws tile slabs, the habitat, and low-poly piece models in the world's pixel style, with a camera that reproduces the CSS tilt exactly. SVG icons stay in the palette and as the no-WebGL fallback. |
 | HUD | Screen-space HTML panels with `--hud-*` design tokens (no in-world HTML). |
 | Fallback | If WebGL is unavailable or the context is lost, the scene is replaced by the CSS/SVG backdrop. The game is fully playable without 3D. |
 
@@ -72,25 +72,13 @@ Matte regolith, brushed-metal habitat, emissive teal only for interactive/select
 ## Phase specs
 
 ### Home
-Card over the orbiting planet. Primary = Create (teal fill); Join = code field + button. Clicking either also enables sound (browser autoplay rule). No top bar.
+Two choices on the first card: **Create a team** (primary) and **Join a team**. Each opens its own short form (name; name + team code) with a Back link. Submitting either also enables sound (browser autoplay rule). No top bar.
 
 ### Lobby
-```
-┌────────────────────┬───────────────────────────────┐
-│ CREW               │ MISSION INTEL                  │
-│ MHKT  ⧉ copy       │ › Querying NASA archive…       │
-│ ■ Ana  ★ host      │ › Sunlight 0.65× Earth’s       │
-│ ■ Ben              │ → TRAPPIST-1 e                 │
-│ ○ open seat        │   headline · 2–3 key numbers   │
-│ [🔊 Sound on]      │                    [ START ]   │
-│ Leave              │   (host) or "Waiting for host" │
-└────────────────────┴───────────────────────────────┘
-```
-- **Crew:** code (tap to copy), color swatch, ★ host, open seats, **Sound on/off** for this device, Leave.
-- **Intel:** research log streams (mono) → planet card. Host **Start** bottom-right; while research runs it reads "Researching…" (disabled). Dev test-planet loader lives here (dev only).
+One card, the team only: the team code (tap to copy, "share to invite"), the crew, Sound on/off, Leave. The planet stays a surprise; research runs in the background. The host's **Launch** works at any time: if research isn't done it shows "Locating landing site…" with the latest log line and starts as soon as the planet is ready. Others see "Waiting for the host to launch…". Dev test-planet loader stays here (dev only).
 
 ### Briefing (~12 s, automatic)
-Centered card: planet name, **headline fact** (the planet's learning moment), 1–2 numbers, one **goal line** ("Fill all 3 before time runs out · stay under 33 CU"), the **same 3 requirement lines as the build rail** (icon + one line), "Build starts in N". Host sees **Skip**. The camera push-in happens during this countdown.
+Two beats while the camera lands. **Landing on:** planet name, the headline fact, and three big stat tiles (sunlight, nights, temperature). At 7 s left (or **Mission ›**) it turns to **Your mission:** the 3 requirement lines and "Stay under N CU". "Build in N" counts down throughout; the host sees **Start now** on the mission beat.
 
 ### Build
 ```
@@ -117,8 +105,7 @@ Centered card: planet name, **headline fact** (the planet's learning moment), 1�
 - **Mission Control bar:** typewriter caption; tap = mute this device; "tap to enable sound" (amber) when the browser blocked audio.
 
 ### Debrief
-- Stinger first (~1 s, full width): **TIME** or **LOCKED IN**, then "Scoring…", then the verdict.
-- **Crew** (left, as in the lobby). **Verdict** (right): **MISSION SUCCESS / FAILED**, three ✓/✗ rows with one reason each and the researched fact under it, the **answer key** (cheapest base here, with counts, next to the crew's mass), **Did you know?** headline + "Still unknown" fields, Sources link, host **Next planet**.
+Stinger first (~1 s): **TIME** or **LOCKED IN**, then "Scoring…". Then pages with Back / Next and step dots (each player pages on their own): **1. Verdict:** MISSION SUCCESS / FAILED and one ✓/✗ line per system. **2. What went wrong** (only on a failure): each failed system's reason with the researched planet fact under it. **3. Best build:** the cheapest base that works here as piece icons, its CU vs yours, the host's **Next planet**, and the crew strip (code, leave).
 
 ---
 

@@ -857,6 +857,9 @@ button:disabled {
 .board-scene {
   --cell: min(54px, calc((100vw - 420px) / 10), calc((100vh - 360px) / 10));
   --tile-edge: 6px;
+  /* A slight forward tilt, no sideways twist: shows the fronts of the 3D pieces, rows stay ~94% tall. */
+  --tilt: 25deg;
+  --persp: 1100px;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -872,6 +875,10 @@ button:disabled {
   grid-template-areas:
     '. cols'
     'rows board';
+  /* BoardCanvas reads --tilt, --persp and this transform-origin (the board's center) to match it in 3D. */
+  transform: perspective(var(--persp)) rotateX(var(--tilt));
+  transform-origin: calc(1.3rem + var(--cell) * 4) calc(1.3rem + var(--cell) * 4);
+  transform-style: preserve-3d;
   position: relative;
   z-index: 1;
 }
@@ -1533,6 +1540,7 @@ button:disabled {
   .board-scene {
     --cell: min(46px, calc((100vw - 52px) / 8.4));
     --tile-edge: 4px;
+    --tilt: 20deg; /* gentler on phones so the far rows stay ~40px tall */
     padding: 0.4rem 0 0.6rem;
   }
 
@@ -1694,4 +1702,179 @@ button:disabled {
   .crew-strip {
     flex-wrap: wrap;
   }
+}
+
+/* ── Simplified flow: one idea per card ─────────────────────────────── */
+
+.back-link {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.step-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+}
+
+/* Lobby: the team, nothing else. */
+.card.lobby {
+  width: min(420px, 100%);
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.team {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.lobby-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.launching {
+  display: grid;
+  gap: 0.25rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.launch-log {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+/* Briefing beat 1: three big numbers instead of sentences. */
+.stat-tiles {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  gap: 0.5rem;
+}
+
+.stat-tiles li {
+  display: grid;
+  justify-items: center;
+  gap: 0.15rem;
+  padding: 0.75rem 0.4rem;
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.stat-icon {
+  font-size: 1.3rem;
+}
+
+.stat-tiles strong {
+  font-family: var(--mono);
+  font-size: clamp(1rem, 4.6vw, 1.35rem);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.budget-line {
+  font-size: 1.05rem;
+}
+
+.card.briefing,
+.card.debrief {
+  animation: hud-in 220ms ease-out both;
+}
+
+/* Debrief page 1: one mark per system. */
+.verdict-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.verdict-rows li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.verdict-rows li.pass .result-mark {
+  color: var(--ok);
+}
+
+.verdict-rows li.fail .result-mark {
+  color: var(--bad);
+}
+
+/* Debrief page 2: only the failures, each with its planet fact. */
+.why-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.why-head {
+  font-weight: 700;
+}
+
+.why-fact {
+  margin-top: 0.2rem;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.answer-pieces.big li {
+  font-size: 1rem;
+  padding: 0.25rem 0.55rem 0.25rem 0.3rem;
+}
+
+.step-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--rule);
+}
+
+.step-dots {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.step-dots .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--rule);
+}
+
+.step-dots .dot.on {
+  background: var(--accent);
+}
+
+.step-nav .hidden {
+  visibility: hidden;
 }

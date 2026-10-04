@@ -1,21 +1,23 @@
 // The build board drawn in 3D (docs/look.md → Board), in the same pixel-diorama style as the world. Purely
 // visual: the HTML grid in Grid.tsx stays on top as the (transparent) input layer, so taps, keyboard play and
-// aria labels are unchanged. The grid is flat (no tilt, so every tile is a full-size square target); depth comes
-// from an oblique projection: an orthographic top-down camera, 1 unit = 1 CSS px, with heights sheared upward on
-// screen, so pieces show their fronts and sides the way top-down pixel games draw them.
+// aria labels are unchanged. The grid has a slight forward tilt (CSS perspective(d) rotateX); the camera here
+// reproduces it exactly (eye at distance d in front of the tilt's pivot, 1 unit = 1 CSS px), so every 3D tile
+// sits under its button and the pieces show their fronts.
 
-import { Component, useMemo, useRef, type ReactNode } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Component, useEffect, useMemo, useRef, type ReactNode } from 'react';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { PieceKind, TileKind } from '@overburden/shared';
 import PieceModel from './PieceModel';
 import StylePass from './StylePass';
 import { useToonRamp } from './toon';
 
-/** Everything in CSS px, relative to the board's center, y down (as measured from the DOM). */
+/** Everything in CSS px, relative to the tilt's pivot (the plane's transform-origin), y down (measured from the DOM). */
 export interface BoardLayout {
-  width: number; // canvas size; the canvas is centered on the board
+  width: number; // canvas size; the canvas is centered on the pivot
   height: number;
+  perspective: number;
+  tilt: number; // radians, CSS rotateX
   cell: number;
   tiles: { cx: number; cy: number; w: number; h: number }[];
   board: { cx: number; cy: number; w: number; h: number };
@@ -36,9 +38,6 @@ const TILE_TOP: Record<string, number> = { lit: 0, ice: 0, shaded: -4 }; // shad
 const TILE_THICK = 10;
 const TILE_COLOR: Record<string, string> = { lit: '#d9cca8', shaded: '#3a3e48', ice: '#9fd3ea' };
 const ACCENT = '#2dd4bf';
-/** Oblique projection: each px of height draws this many px up the screen. Keeps tall pieces mostly on their tile. */
-const OBLIQUE = 0.5;
-const SHEAR = new THREE.Matrix4().set(1, 0, 0, 0, 0, 1, OBLIQUE, 0, 0, 0, 1, 0, 0, 0, 0, 1);
 const BAD = '#f87171';
 
 function useTileMaterials(ramp: THREE.Texture) {
@@ -144,6 +143,23 @@ function Habitat({ cell, ramp }: { cell: number; ramp: THREE.Texture }) {
   );
 }
 
+/** Camera = the CSS perspective: eye at distance d in front of the pivot, 1 world unit = 1 CSS px. */
+function CssCamera({ layout }: { layout: BoardLayout }) {
+  const { camera, invalidate } = useThree();
+  useEffect(() => {
+    const cam = camera as THREE.PerspectiveCamera;
+    cam.position.set(0, 0, layout.perspective);
+    cam.lookAt(0, 0, 0);
+    cam.fov = THREE.MathUtils.radToDeg(2 * Math.atan(layout.height / 2 / layout.perspective));
+    cam.aspect = layout.width / layout.height;
+    cam.near = layout.perspective * 0.2;
+    cam.far = layout.perspective * 3;
+    cam.updateProjectionMatrix();
+    invalidate();
+  }, [camera, invalidate, layout]);
+  return null;
+}
+
 function Board({ layout, state, ink, reducedMotion }: { layout: BoardLayout; state: BoardState; ink: string; reducedMotion: boolean }) {
   const ramp = useToonRamp();
   const mats = useTileMaterials(ramp);
@@ -154,10 +170,12 @@ function Board({ layout, state, ink, reducedMotion }: { layout: BoardLayout; sta
 
   return (
     <>
+      <CssCamera layout={layout} />
       <ambientLight intensity={0.9} />
       <directionalLight position={[-300, 500, 700]} intensity={2.2} color="#fff6e8" />
       <directionalLight position={[400, -200, 300]} intensity={0.6} color="#9fb4ff" />
-      <group matrix={SHEAR} matrixAutoUpdate={false}>
+      {/* CSS rotateX(a) with y down == three.js rotation.x = -a with y up. */}
+      <group rotation={[-layout.tilt, 0, 0]}>
         {/* The pad the tiles sit in (the dark gaps between tiles). */}
         <mesh position={[layout.board.cx, -layout.board.cy, -TILE_THICK - 4]}>
           <boxGeometry args={[layout.board.w + 8, layout.board.h + 8, 12]} />
@@ -221,8 +239,6 @@ export default function BoardCanvas({ layout, state, ink, onReady, onFail }: { l
     <Boundary onError={onFail}>
       <Canvas
         flat
-        orthographic
-        camera={{ position: [0, 0, 1000], near: 1, far: 3000, zoom: 1 }}
         frameloop="demand"
         dpr={[1, 2]}
         gl={{ antialias: false, alpha: true, powerPreference: 'low-power' }}
