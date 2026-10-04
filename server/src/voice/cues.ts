@@ -89,15 +89,23 @@ export async function fireCue(conn: DbConnection, roomId: bigint, cueIndex: numb
     return { mode, text: draft, voiced: false };
   }
 
-  // Caption appears immediately; it's replaced by the spoken transcript when Grok finishes.
-  await post(draft, true);
+  // ONE caption per cue — a second post changes the text and restarts the typewriter on every screen.
+  // Fact lines are read verbatim, so the draft is the caption. Hints are phrased by Grok, so its transcript
+  // is; generation finishes well before playback, so the caption still types out alongside the voice.
+  let captioned = false;
+  const caption = (text: string) => {
+    if (captioned || !text) return;
+    captioned = true;
+    void post(text, true);
+  };
+  if (mode === 'fact') caption(draft);
   state.grok ??= new GrokVoice();
   broadcastControl(roomId, { type: 'start', key });
   const utterance = {
     onAudio: (chunk: Buffer) => broadcastAudio(roomId, chunk),
     onTranscript: (text: string, done: boolean) => {
       // Captions show what was said, cleaned the same way as every other spoken line.
-      if (done && text.trim()) void post(noParens(text.trim()), true);
+      if (done) caption(noParens(text.trim()));
     },
   };
   try {
@@ -107,9 +115,11 @@ export async function fireCue(conn: DbConnection, roomId: bigint, cueIndex: numb
         ? await state.grok.sayVerbatim(speakable(draft), utterance)
         : await state.grok.sayHint(contextFor(rd, mode, read, draft, because, secondsLeft), MODE_INSTRUCTIONS[mode], utterance);
     state.speakingUntil = Date.now() + state.grok.lastSeconds * 1000;
+    caption(draft); // no transcript came back: fall back to the draft, still only once
     return { mode, text: noParens(spoken.trim()) || draft, voiced: true };
   } catch (e) {
     console.warn(`[voice] room ${roomId} cue ${cueIndex}: ${e instanceof Error ? e.message : e} — template fallback`);
+    if (captioned) return { mode, text: draft, voiced: true }; // already on screen (and partly spoken); don't retype
     await post(draft, false); // clients speak it themselves
     return { mode, text: draft, voiced: false };
   } finally {

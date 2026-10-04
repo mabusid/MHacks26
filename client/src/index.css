@@ -787,11 +787,9 @@ button:disabled {
       'bottom';
   }
 
-
   .game-timer {
     font-size: 2.2rem;
   }
-
 
   .room-code {
     font-size: 2.2rem;
@@ -813,12 +811,6 @@ button:disabled {
   align-items: center;
   gap: 0.6rem;
   flex-wrap: wrap;
-}
-
-.host-chip {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--warn);
 }
 
 .game-leave button {
@@ -861,13 +853,10 @@ button:disabled {
   color: var(--accent);
 }
 
-/* The board: thick 2.5D pad (flat on phones). Pieces are isometric models sitting on the tiles. */
+/* The board: a flat grid (no tilt, every tile a full square target). BoardCanvas draws it in 3D underneath. */
 .board-scene {
   --cell: min(54px, calc((100vw - 420px) / 10), calc((100vh - 360px) / 10));
   --tile-edge: 6px;
-  --tilt-x: 46deg;
-  --tilt-z: -16deg;
-  --persp: 980px;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -883,11 +872,6 @@ button:disabled {
   grid-template-areas:
     '. cols'
     'rows board';
-  /* perspective() on the same transform so an ancestor animation can't flatten it. */
-  /* BoardCanvas reads these same variables (and the transform-origin) to line the 3D board up with this one. */
-  transform: perspective(var(--persp)) rotateX(var(--tilt-x)) rotateZ(var(--tilt-z));
-  transform-origin: 50% 65%;
-  transform-style: preserve-3d;
   position: relative;
   z-index: 1;
 }
@@ -911,6 +895,11 @@ button:disabled {
 .is-3d .board {
   background: transparent;
   box-shadow: none;
+}
+
+/* The 3D pad's front edge drops a few px below the grid (oblique projection). */
+.is-3d .legend {
+  margin-top: 8px;
 }
 
 .is-3d .tile,
@@ -1458,23 +1447,6 @@ button:disabled {
   filter: var(--ink-outline);
 }
 
-.key-fact {
-  display: grid;
-  gap: 0.2rem;
-  border-left: 3px solid var(--accent);
-  padding-left: 0.75rem;
-}
-
-.more summary {
-  cursor: pointer;
-  font-size: 0.8rem;
-  color: var(--muted);
-}
-
-.more p {
-  margin-top: 0.35rem;
-}
-
 .debrief-foot {
   display: grid;
   gap: 0.75rem;
@@ -1523,11 +1495,6 @@ button:disabled {
   border-radius: 4px;
 }
 
-.icon-btn {
-  padding: 0.3rem 0.5rem;
-  border-radius: 4px;
-}
-
 .crew-strip button.secondary {
   padding: 0.3rem 0.6rem;
   font-size: 0.85rem;
@@ -1543,7 +1510,6 @@ button:disabled {
   font-size: 0.8rem;
   text-decoration: underline;
 }
-
 
 .board-read {
   font-size: 0.8rem;
@@ -1567,18 +1533,7 @@ button:disabled {
   .board-scene {
     --cell: min(46px, calc((100vw - 52px) / 8.4));
     --tile-edge: 4px;
-    --tilt-x: 0deg;
-    --tilt-z: 0deg;
     padding: 0.4rem 0 0.6rem;
-  }
-
-  /* Flat HTML board on phones; with 3D pieces a gentle tilt shows their sides and keeps rows ≥ 40px tall. */
-  .board-scene.is-3d {
-    --tilt-x: 22deg;
-  }
-
-  .board-scene:not(.is-3d) .board-plane {
-    transform: none;
   }
 
   .tile .piece-svg {

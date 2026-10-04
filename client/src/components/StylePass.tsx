@@ -23,12 +23,14 @@ const fragmentShader = /* glsl */ `
   uniform float pixel;
   uniform float near;
   uniform float far;
+  uniform bool ortho;
   uniform vec3 ink;
   uniform float levels;
   uniform float edge;
 
   float viewZ(vec2 uv) {
-    return -perspectiveDepthToViewZ(texture2D(tDepth, uv).r, near, far);
+    float d = texture2D(tDepth, uv).r;
+    return ortho ? -orthographicDepthToViewZ(d, near, far) : -perspectiveDepthToViewZ(d, near, far);
   }
   vec3 normalAt(vec2 uv) {
     return texture2D(tNormal, uv).rgb * 2.0 - 1.0;
@@ -98,6 +100,7 @@ export default function StylePass({ enabled, pixel, ink, edge = 0.08 }: { enable
         pixel: { value: 3 },
         near: { value: 0.1 },
         far: { value: 200 },
+        ortho: { value: false },
         ink: { value: new THREE.Color() },
         levels: { value: 20 },
         edge: { value: 0.08 },
@@ -153,10 +156,11 @@ export default function StylePass({ enabled, pixel, ink, edge = 0.08 }: { enable
       gl.render(scene, camera);
       return;
     }
-    const cam = camera as THREE.PerspectiveCamera;
+    const cam = camera as THREE.PerspectiveCamera | THREE.OrthographicCamera;
     const u = res.material.uniforms;
     u.near.value = cam.near;
     u.far.value = cam.far;
+    u.ortho.value = (cam as THREE.OrthographicCamera).isOrthographicCamera === true;
 
     const clearColor = gl.getClearColor(new THREE.Color());
     const clearAlpha = gl.getClearAlpha();

@@ -61,11 +61,22 @@ export function playPcm(buf: ArrayBuffer): void {
   playhead += audio.duration;
 }
 
+/** Common standard male English voices across macOS, Windows, Chrome, and Android (same feel as Grok's Rex). */
+const MALE = /\b(Daniel|Alex|Fred|Aaron|Arthur|Gordon|Rishi|David|Mark|Guy|George|Google UK English Male|Male)\b/i;
+
+/** A male English voice if the device has one; otherwise the browser default. */
+function maleVoice(): SpeechSynthesisVoice | undefined {
+  const english = window.speechSynthesis.getVoices().filter(v => v.lang.startsWith('en'));
+  return english.find(v => MALE.test(v.name) && v.lang === 'en-US') ?? english.find(v => MALE.test(v.name));
+}
+
 /** Fallback when the server has no voice: the browser reads the caption (same text on every device). */
 export function speak(text: string): void {
   if (muted || !('speechSynthesis' in window) || !text) return;
   window.speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(speakable(text));
+  const voice = maleVoice();
+  if (voice) u.voice = voice;
   u.rate = 1.05;
   window.speechSynthesis.speak(u);
 }

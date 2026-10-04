@@ -3,16 +3,14 @@ import { useReducer } from 'spacetimedb/react';
 import { PIECES, PIECE_KINDS, rulesFromRound, solveRound, type Counts, type PieceKind, type TileKind } from '@overburden/shared';
 import CrewStrip from '../components/CrewStrip';
 import PieceIcon from '../components/PieceIcon';
-import { paramLabel } from '../format';
 import { reducers } from '../module_bindings';
 import type { RoomData } from '../useRoom';
 import { useReducerCall } from '../useReducerCall';
 
 const ICON: Record<string, string> = { power: '⚡', life_support: '💧', twist: '⚠' };
-const SHORT: Record<string, string> = { power: 'Power', life_support: 'Life support' };
+/** Row names short enough for the name column (the twist by its kind). */
+const SHORT: Record<string, string> = { power: 'Power', life_support: 'Life support', radiation: 'Shielding', thermal: 'Thermal', dust: 'Dust storms' };
 const STINGER_MS = 1200;
-/** Follow from other unknowns (no water → no polar ice; no atmosphere → no weather), so not listed twice. */
-const UNKNOWN_SKIP = new Set(['polarIce', 'dustStorms']);
 
 /** "2 solar arrays · 6 batteries · 1 ice drill" */
 function buildText(c: Counts): string {
@@ -27,7 +25,7 @@ function buildText(c: Counts): string {
 
 /** Stinger (TIME / LOCKED IN) → verdict. One compact card beside the base (docs/design.md → Debrief). */
 export default function Debrief({ data }: { data: RoomData }) {
-  const { current, results, requirements, params, pieces, tiles, isHost, next } = data;
+  const { current, results, requirements, pieces, tiles, isHost, next } = data;
   const nextPlanet = useReducerCall(useReducer(reducers.rematch));
   const [stinger, setStinger] = useState(true);
   useEffect(() => {
@@ -60,14 +58,7 @@ export default function Debrief({ data }: { data: RoomData }) {
   const success = current.success === true;
   const because = (kind: string) => requirements.find(r => r.kind === kind)?.because;
   const massUsed = pieces.reduce((m, p) => m + PIECES[p.kind as PieceKind].mass, 0);
-  // "What we don't know yet" (Plan.md → Debrief): fields nobody has measured (estimated with no value).
-  const unknown = params
-    .filter(p => p.status === 'estimated' && p.num === undefined && !UNKNOWN_SKIP.has(p.field))
-    .map(p => paramLabel(p.field));
-  const sources = [...new Set(params.filter(p => p.sourceLabel).map(p => p.sourceLabel))];
-
-  const failed = results.filter(r => !r.pass).length;
-  const name = (kind: string) => (kind === 'twist' ? (requirements.find(r => r.kind === kind)?.title ?? 'Twist') : SHORT[kind]);
+  const name = (kind: string) => SHORT[kind === 'twist' ? current.twist : kind] ?? 'Twist';
 
   return (
     <div className="card debrief">
@@ -76,10 +67,7 @@ export default function Debrief({ data }: { data: RoomData }) {
         {!scored ? (
           <p className="muted blink">Scoring…</p>
         ) : (
-          <>
-            <h2 className={success ? 'verdict ok' : 'verdict bad'}>{success ? 'Mission success' : 'Mission failed'}</h2>
-            <p className="muted">{success ? 'Every system held.' : `${results.length - failed} of ${results.length} systems held.`}</p>
-          </>
+          <h2 className={success ? 'verdict ok' : 'verdict bad'}>{success ? 'Mission success' : 'Mission failed'}</h2>
         )}
       </header>
 
@@ -122,18 +110,6 @@ export default function Debrief({ data }: { data: RoomData }) {
             </section>
           )}
 
-          <section className="key-fact">
-            <p className="label">Did you know?</p>
-            <p>{current.headline}</p>
-          </section>
-
-          {(sources.length > 0 || unknown.length > 0) && (
-            <details className="more">
-              <summary>Sources & what we don’t know yet</summary>
-              {unknown.length > 0 && <p className="muted small">Not yet measured: {unknown.join(' · ')}</p>}
-              {sources.length > 0 && <p className="muted small">Sources: {sources.join(' · ')}</p>}
-            </details>
-          )}
         </>
       )}
 

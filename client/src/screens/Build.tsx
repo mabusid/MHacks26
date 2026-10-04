@@ -63,7 +63,6 @@ export default function Build({ data }: { data: RoomData }) {
   const rules = rulesFromRound(current);
   const massLeft = current.massBudget - massUsed;
   const tileKinds = tiles.map(t => t.kind as TileKind);
-  const host = members.find(m => room.host.isEqual(m.identity));
   const urgent = left !== undefined && left <= 30;
 
   return (
@@ -71,7 +70,6 @@ export default function Build({ data }: { data: RoomData }) {
       <header className="game-top">
         <div className="game-context">
           <span className="game-planet">{current.planetName}</span>
-          {host && <span className="host-chip">★ {host.name}</span>}
           <span className="game-leave">
             <LeaveButton />
           </span>

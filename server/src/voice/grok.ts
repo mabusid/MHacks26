@@ -37,7 +37,7 @@ export class GrokVoice {
           JSON.stringify({
             type: 'session.update',
             session: {
-              voice: process.env.XAI_VOICE ?? 'eve',
+              voice: process.env.XAI_VOICE ?? 'rex', // standard male voice (Ara/Eve are female)
               instructions: INSTRUCTIONS,
               turn_detection: { type: null },
               reasoning: { effort: 'none' },

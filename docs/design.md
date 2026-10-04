@@ -2,7 +2,7 @@
 
 Layout, look, and transitions for every phase. Rules, copy, and visibility: [Plan.md](./Plan.md). The 3D world's rendering style and camera: [look.md](./look.md).
 
-**Direction:** one **3D world** behind everything (a persistent React Three Fiber scene: planet → landing site → build site), with a **mission-control HUD** in HTML on top. The interactive **build board stays an HTML grid**, tilted for depth (2.5D) — exact taps, crisp A–H / 1–8 labels, keyboard play, and phones all keep working. *(Decided after an independent design review: a 3D raycast board would cost precision, accessibility, and phone usability for little gain.)*
+**Direction:** one **3D world** behind everything (a persistent React Three Fiber scene: planet → landing site → build site), with a **mission-control HUD** in HTML on top. The interactive **build board stays an HTML grid**, flat (no tilt) with 3D models drawn under it — exact taps, crisp A–H / 1–8 labels, keyboard play, and phones all keep working. *(Decided after an independent design review: a 3D raycast board would cost precision, accessibility, and phone usability for little gain.)*
 
 **Content principle:** less to read. Short labels, numbers over sentences, one line per idea. Detail (sources, full facts) is one tap away, never on the main HUD during the build.
 
@@ -13,7 +13,7 @@ Layout, look, and transitions for every phase. Rules, copy, and visibility: [Pla
 | Layer | Choice |
 | --- | --- |
 | 3D world | `@react-three/fiber` 9 + `@react-three/drei` 10 (React 19 compatible) — **one `<Canvas>` mounted for the whole session**, behind the HUD, never remounted between phases. Low-poly procedural terrain and habitat in toon materials, drawn through a low-res "pixel diorama" post pass (look.md). Renders on demand during the build and under reduced motion; DPR capped at 2 (only the final upscale pays for it). |
-| Board | HTML/CSS grid (focusable buttons with aria-labels), CSS 2.5D tilt on wide screens, **flat top-down on phones**. Tiles are thick terrain slabs. Pieces are isometric 3D models (same art in palette and on the board). |
+| Board | HTML/CSS grid (focusable buttons with aria-labels), **flat on every screen** so all tiles are full-size targets, and transparent once 3D loads. Underneath, `BoardCanvas` draws tile slabs, the habitat, and low-poly piece models in the world's pixel style, with an oblique projection (heights lift up the screen) for depth. SVG icons stay in the palette and as the no-WebGL fallback. |
 | HUD | Screen-space HTML panels with `--hud-*` design tokens (no in-world HTML). |
 | Fallback | If WebGL is unavailable or the context is lost, the scene is replaced by the CSS/SVG backdrop. The game is fully playable without 3D. |
 
@@ -64,7 +64,7 @@ Matte regolith, brushed-metal habitat, emissive teal only for interactive/select
 | **Home** | Generic planet as a horizon below the card, slow drift | One centered card: title, name, **Create room**, code + **Join** |
 | **Lobby** | Destination planet as a horizon once researched (generic before) | Split card: **Crew** · **Mission intel** |
 | **Briefing** | Camera drops from orbit to the landing site (2.2 s); base framed left of the card | Centered card: planet, headline fact, 1–2 numbers, goal line, 3 requirement lines, countdown |
-| **Build** | Static terrain around the site | Top bar · 2.5D board + palette · right rail · Mission Control |
+| **Build** | Static terrain around the site | Top bar · flat 3D board + palette · right rail · Mission Control |
 | **Debrief** | Build site, camera pulls back and slowly orbits the base | Split card: **Crew** · **Verdict** |
 
 ---
@@ -98,7 +98,7 @@ Centered card: planet name, **headline fact** (the planet's learning moment), 1�
 │ Mars · ★ Ana · Leave        ⏱ 1:02          ▓▓▓▓▓░░ 12/27 CU │
 ├──────────────────────────────────────────┬───────────────────┤
 │      A  B  C  D  E  F  G  H              │ REQUIREMENTS      │
-│   1  ▢  ▢  ▨  ▢  ▢  ▢  ▢  ▢   (tilted)   │ ⚡ Power … ▸       │
+│   1  ▢  ▢  ▨  ▢  ▢  ▢  ▢  ▢   (flat)     │ ⚡ Power … ▸       │
 │   2  ▢  ☀  ▢  ▢  ▢  ▢  ▢  ▢              │ 💧 12 water … ▸    │
 │   …        [ HAB ]                       │ ⚠ 4 berms … ▸     │
 │   legend: ▢ sunlit ▨ shaded ❄ ice        │ Planet facts ▸     │
@@ -151,7 +151,7 @@ Board **flat (no tilt)**, full width (~40 px tiles at 360 px). Order: top bar �
 
 1. Tokens + crew colors; HUD primitives (top bar, requirement row with tap-to-expand, crew list).
 2. Persistent `<World>` canvas in `App` with per-phase camera presets; WebGL fallback to the SVG backdrop.
-3. Board: SVG piece icons, tile patterns + legend, valid-tile highlighting, tilt, one-click berms, keyboard tile navigation.
+3. Board: SVG piece icons, tile patterns + legend, valid-tile highlighting, flat 3D board, one-click berms, keyboard tile navigation.
 4. Top bar host name + mass bar; in-HUD lock-in confirm; debrief stinger; host-change toast; lobby sound toggle.
 5. Module: allow joins during the debrief.
 6. Check at 360×640, 1280×720, ultrawide; two-tab play; reduced motion.

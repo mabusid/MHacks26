@@ -22,7 +22,7 @@ What we want, in one line each:
 | Lens | Perspective, **FOV 40°**, no lens tricks; shapes stay flat and readable. |
 | Home / lobby | **Planet horizon**: the globe curves across the bottom of the frame, so the centered card sits in open sky above it. Slow drift (±0.35 sway, ±0.25 bob). |
 | Briefing | Drop from orbit to the landing site, ease-in-out over **2.2 s**, then a slow drift. The base is framed **left of the centered card** (wide screens). |
-| Build | Fixed high angle over the site. **No drift**, and the 3D pad and habitat are hidden: the tilted HTML board is the pad (a 3D slab behind it never lines up across screen sizes). |
+| Build | Fixed high angle over the site. **No drift**, and the 3D pad and habitat are hidden: the HTML board (with its own 3D drawing) is the pad (a 3D slab behind it never lines up across screen sizes). |
 | Debrief | Pull back and around the site (2.2 s), then a slow orbit around the base. |
 | Transitions | Cubic ease-in-out, 1.5–2.5 s. Nothing moves while the build timer runs. |
 | Reduced motion | Cut straight to each shot, no drift, render on demand. |
@@ -76,7 +76,7 @@ Themes (rule-driven as in design.md): space (neutral blue-grey), airless (grey +
 | Terrain, craters, landing pad | Pieces on the board (isometric CSS art) |
 | Habitat (outside the build) | All text, timer, requirements, Mission Control |
 
-The board is **3D in the same style** (`BoardCanvas.tsx`): tile slabs (shaded tiles sunken, ice tiles with crystals, so color is never the only cue), the habitat, and low-poly piece models (`PieceModel.tsx`) that drop onto the pad, drawn through the same toon ramp and style pass (finer pixels, lower edge threshold). Its camera reproduces the CSS transform of `.board-plane` (`perspective(--persp) rotateX(--tilt-x) rotateZ(--tilt-z)` around the transform-origin, measured from the DOM), so the transparent HTML grid on top still takes every tap, key, and aria label. Without WebGL the HTML/SVG board shows as before. Phones get a gentle 22° tilt in 3D mode (rows stay ≥ ~40 px).
+The board is **3D in the same style** (`BoardCanvas.tsx`): tile slabs (shaded tiles sunken, ice tiles with crystals, so color is never the only cue), the habitat, and low-poly piece models (`PieceModel.tsx`) that drop onto the pad, drawn through the same toon ramp and style pass (finer pixels, lower edge threshold). The grid is **flat** (no tilt, so every tile is a full-size square target). Depth comes from an **oblique projection**: an orthographic top-down camera at 1 unit = 1 CSS px, with heights sheared up the screen (0.5 px per px of height), the way top-down pixel games draw objects. Tile positions are measured from the DOM, so the transparent HTML grid on top still takes every tap, key, and aria label. Without WebGL the HTML/SVG board shows as before.
 
 ## Performance & fallback
 

@@ -78,7 +78,7 @@ export default function Grid(props: Props) {
     const now = Date.now();
     if (now - lastSent.current < CURSOR_INTERVAL_MS) return;
     lastSent.current = now;
-    // Position inside the hovered tile → grid units. Works under the CSS tilt (each tile's own rect).
+    // Position inside the hovered tile → grid units (each tile's own rect).
     const r = e.currentTarget.getBoundingClientRect();
     const { x, y } = xy(i);
     props.onCursor(x + (e.clientX - r.left) / r.width, y + (e.clientY - r.top) / r.height, true);
@@ -104,43 +104,35 @@ export default function Grid(props: Props) {
     if (nx >= 0 && ny >= 0 && nx < GRID_SIZE && ny < GRID_SIZE) focusTile(ny * GRID_SIZE + nx);
   }
 
-  // Measure the live DOM so the 3D board matches the CSS one exactly, at any size and tilt.
+  // Measure the live DOM so the 3D board matches the HTML one exactly, at any size. Origin = board center.
   const measure = useCallback(() => {
     const scene = sceneRef.current, plane = planeRef.current, board = boardRef.current;
     if (!scene || !plane || !board) return;
-    const css = getComputedStyle(scene);
-    const [ox, oy] = getComputedStyle(plane).transformOrigin.split(' ').map(parseFloat);
-    const deg = (v: string) => (parseFloat(v) || 0) * (Math.PI / 180);
+    const bw = board.offsetWidth, bh = board.offsetHeight;
     const tiles = Array.from({ length: GRID_SIZE * GRID_SIZE }, (_, i) => {
       const el = cellRefs.current[i];
       const w = el?.offsetWidth ?? 0, h = el?.offsetHeight ?? 0;
-      return { cx: board.offsetLeft + (el?.offsetLeft ?? 0) + w / 2 - ox, cy: board.offsetTop + (el?.offsetTop ?? 0) + h / 2 - oy, w, h };
+      return { cx: (el?.offsetLeft ?? 0) + w / 2 - bw / 2, cy: (el?.offsetTop ?? 0) + h / 2 - bh / 2, w, h };
     });
     const hab = tiles.filter((_, i) => isHabitat(xy(i).x, xy(i).y));
     const cell = tiles[0].w;
-    // Canvas centered on the transform-origin, with room above the pad for piece heights.
-    const halfW = Math.ceil(Math.max(ox, plane.offsetWidth - ox) + cell * 2);
-    const halfH = Math.ceil(Math.max(oy, plane.offsetHeight - oy) + cell * 2.5);
+    // Canvas centered on the board, with room above it for the heights of the back row's pieces.
+    const halfW = Math.ceil(bw / 2 + cell * 0.5);
+    const halfH = Math.ceil(bh / 2 + cell * 1.2);
     setLayout({
-      left: plane.offsetLeft + ox - halfW,
-      top: plane.offsetTop + oy - halfH,
+      left: plane.offsetLeft + board.offsetLeft + bw / 2 - halfW,
+      top: plane.offsetTop + board.offsetTop + bh / 2 - halfH,
       ink: getComputedStyle(scene).getPropertyValue('--ink').trim() || '#262d3f',
       layout: {
         width: halfW * 2,
         height: halfH * 2,
-        perspective: parseFloat(css.getPropertyValue('--persp')) || 980,
-        tiltX: deg(css.getPropertyValue('--tilt-x')),
-        tiltZ: deg(css.getPropertyValue('--tilt-z')),
         cell,
         tiles,
-        board: { cx: board.offsetLeft + board.offsetWidth / 2 - ox, cy: board.offsetTop + board.offsetHeight / 2 - oy, w: board.offsetWidth, h: board.offsetHeight },
+        board: { cx: 0, cy: 0, w: bw, h: bh },
         habitat: { cx: hab.reduce((a, t) => a + t.cx, 0) / hab.length, cy: hab.reduce((a, t) => a + t.cy, 0) / hab.length },
       },
     });
   }, []);
-
-  // Re-measure when 3D turns on: phones switch from the flat board to a gentle tilt then.
-  useLayoutEffect(measure, [measure, ready3d]);
 
   useLayoutEffect(() => {
     measure();
