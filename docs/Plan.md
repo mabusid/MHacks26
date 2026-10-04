@@ -1,6 +1,6 @@
 # Overburden — plan (simple)
 
-Co-op **learning game** for **four players**. An agent researches a **random real planet** (solar system or exoplanet) from public space data, and **that research sets the win criteria** — the requirements, their thresholds, which pieces work, and the mass budget all come from the planet's real numbers. The crew has **1:30** to build a base on a shared grid that meets **three requirements** without going over the **mass budget**. There is no live score — players reason from per-piece stats and the planet's facts, and the **voice assistant's hints** are the only feedback. The debrief ties the result back to the real science.
+Co-op **learning game** for **four players**. An agent researches a **random real planet** (solar system or exoplanet) from public space data, and **that research sets the win criteria** — the requirements, their thresholds, which pieces work, and the mass budget all come from the planet's real numbers. The crew has **1:30** to build a base on a shared grid that meets **three requirements** without going over the **mass budget**. There is no live score or counts — players reason from per-piece stats and the planet's facts; a requirement line just **turns green once it's met**, and the **voice assistant's hints** explain what's missing. The debrief ties the result back to the real science.
 
 **Pitch:** a fun way to touch research/space data that rarely gets attention — real planets give a sense of **scale and variety**.
 
@@ -31,7 +31,7 @@ Co-op **learning game** for **four players**. An agent researches a **random rea
 3. **Short and readable.** At most **3 requirements**, 8 piece types, ~8–12 pieces in a winning base.
 4. **Tradeoffs, not chores.** Every piece trades **landed mass**, **build time**, or **power** against another — and the planet's real data decides which trade wins.
 5. **Shared everything.** No roles. Everyone can place every piece; the short timer and the "what should we build?" discussion drive cooperation.
-6. **Hints are the feedback.** No live pass/fail. Players reason from per-piece stats; Mission Control watches the grid and talks — fun facts early, then hints that name the weak system **and the researched fact behind it**.
+6. **Hints are the feedback.** No live numbers: each requirement line only turns green (with a ✓) once the board meets it, computed for display with the same shared `evaluate` the server scores with. Players reason from per-piece stats; Mission Control watches the grid and talks — fun facts early, then hints that name the weak system **and the researched fact behind it**.
 
 ---
 
@@ -53,7 +53,7 @@ Co-op **learning game** for **four players**. An agent researches a **random rea
 ```
 Lobby (create / join with code)  ← research agent runs here, in background
     → Briefing   (~12s)   automatic transition: planet, headline fact, goal line, 3 one-line requirements, countdown
-    → Build      (1:30)   place pieces on shared grid, voice hints, no live score
+    → Build      (1:30)   place pieces on shared grid, voice hints, requirement lines turn green when met
     → Evaluate   (instant) server formula
     → Debrief    (~20s)   per-requirement result, reason, the real fact behind it, sources
     → Rematch    (new planet)
@@ -401,7 +401,7 @@ Each stored requirement row: `{ round_id, kind: power | life_support | twist, th
 | Host migration | On host disconnect, the **longest-joined online member** becomes host. Voice is unaffected (it runs on the Node service). A returning ex-host rejoins as a normal member. |
 | Room lifetime | Join code valid while the room exists; room deleted **5 min after the last member leaves**. |
 | Disconnects mid-build | Round keeps going; pieces stay. Rejoining shows current state. |
-| Trust | Reducers are the only writers; reducers validate tile type, mass budget, adjacency, phase; clients never compute pass/fail. |
+| Trust | Reducers are the only writers; reducers validate tile type, mass budget, adjacency, phase; clients compute pass/fail only to turn requirement lines green; the server's evaluation at 0:00 is the score. |
 | Cursor rate | Client throttles `move_cursor` to ~15/s. |
 
 ---

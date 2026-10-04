@@ -23,7 +23,7 @@ Layout, look, and transitions for every phase. Rules, copy, and visibility: [Pla
 
 | Practice | Overburden |
 | --- | --- |
-| Critical info only | Build HUD = timer, mass, 3 requirement lines, palette + one info line, Mission Control. No live pass/fail (Plan). |
+| Critical info only | Build HUD = timer, mass, 3 requirement lines, palette + one info line, Mission Control. Requirement lines turn green + ✓ when met; no live numbers (Plan). |
 | Fixed homes | Top bar = context (planet, host, leave) · center = world/board · right rail = requirements · bottom = palette then Mission Control. Same positions in every phase that uses them. |
 | Hierarchy | Timer largest during the build; planet name secondary; everything else tertiary. |
 | Color is never alone | Valid tile = teal rim **+ dot**; invalid = dimmed, **no dot**; over budget = coral **+ "over by N"**; pass/fail = ✓/✗ glyphs. Tile types use **pattern + legend**, not only shade. |

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useReducer } from 'spacetimedb/react';
-import { PIECES, rulesFromRound, type PieceKind, type TileKind } from '@overburden/shared';
+import { PIECES, countBoard, evaluate, rulesFromRound, xy, type PieceKind, type TileKind } from '@overburden/shared';
 import BoardReadPanel from '../components/BoardReadPanel';
 import Grid, { type Tool } from '../components/Grid';
 import MissionControlBar from '../components/MissionControlBar';
@@ -65,6 +65,9 @@ export default function Build({ data }: { data: RoomData }) {
   const massLeft = current.massBudget - massUsed;
   const tileKinds = tiles.map(t => t.kind as TileKind);
   const urgent = left !== undefined && left <= 30;
+  // Display only, with the same shared check the server scores with at 0:00 (the server stays the authority).
+  const evaluation = evaluate(countBoard(pieces.map(p => ({ kind: p.kind as PieceKind, ...xy(p.index) }))), rules);
+  const met = new Set(Object.values(evaluation.requirements).filter(r => r.pass).map(r => r.kind));
 
   return (
     <div className="game">
@@ -112,7 +115,7 @@ export default function Build({ data }: { data: RoomData }) {
 
       <aside className="game-side">
         <p className="label">Requirements</p>
-        <RequirementList requirements={requirements} params={params} />
+        <RequirementList requirements={requirements} params={params} met={met} />
         {import.meta.env.DEV && tileKinds.length === 64 && <BoardReadPanel rules={rules} tiles={tileKinds} pieces={pieces} budget={current.massBudget} />}
         {isHost &&
           (confirmLock ? (
@@ -135,7 +138,7 @@ export default function Build({ data }: { data: RoomData }) {
       </aside>
 
       <footer className="game-bottom">
-        <MissionControlBar roomCode={room.code} hint={data.latestHint} standby={`Mission Control standing by on ${current.planetName}.`} />
+        <MissionControlBar roomCode={room.code} hint={data.latestHint} standby="Standing by…" />
       </footer>
     </div>
   );

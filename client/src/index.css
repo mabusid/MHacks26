@@ -15,7 +15,8 @@
   /* Panels share the 3D world's language (docs/look.md): theme-tinted 1px edge + a hard offset shadow, no blur. */
   --edge: color-mix(in srgb, var(--ground-hi) 45%, rgba(148, 163, 184, 0.25));
   --drop: 4px 4px 0 rgba(0, 0, 0, 0.45);
-  --display: 'Pixelify Sans', var(--mono);
+  --display: 'Silkscreen', var(--mono);
+  --pixel-small: 'Silkscreen', var(--mono);
   /* Planet theme (overridden by .theme-*) */
   --ground-1: #1b2230;
   --ground-2: #0b0f17;
@@ -563,12 +564,13 @@ button:disabled {
 .game {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px;
+  /* An empty column mirrors the rail, so the board sits dead center under the timer. */
+  grid-template-columns: 260px minmax(0, 1fr) 260px;
   grid-template-rows: auto 1fr auto;
   grid-template-areas:
-    'top top'
-    'board side'
-    'bottom bottom';
+    'top top top'
+    '. board side'
+    'bottom bottom bottom';
   gap: 12px;
   padding: 0 16px 16px;
   /* Opacity only: a transform here would make .game the containing block for the fixed Mission Control bar. */
@@ -855,7 +857,7 @@ button:disabled {
 
 /* The board: a flat grid (no tilt, every tile a full square target). BoardCanvas draws it in 3D underneath. */
 .board-scene {
-  --cell: min(54px, calc((100vw - 420px) / 10), calc((100vh - 360px) / 10));
+  --cell: min(54px, calc((100vw - 600px) / 10), calc((100vh - 360px) / 10));
   --tile-edge: 6px;
   /* A slight forward tilt, no sideways twist: shows the fronts of the 3D pieces, rows stay ~94% tall. */
   --tilt: 25deg;
@@ -1877,4 +1879,266 @@ button:disabled {
 
 .step-nav .hidden {
   visibility: hidden;
+}
+
+/* ── Theme pass: one game look ─────────────────────────────────────────────
+   Type: the pixel face of MISSION FAILED for everything that labels, counts, or commands
+   (labels, buttons, timer, mass, codes). Sentences — headlines, facts, captions — stay in the
+   readable sans/mono so they're easy to read at speed.
+   Frames: pixel-UI bevels instead of soft cards — a 2px theme-tinted edge, a 2px top highlight and
+   bottom shade inside, and a hard offset shadow outside (the world's edges are tinted, never blurred). */
+:root {
+  --frame: 2px solid var(--edge);
+  --bevel: inset 0 2px 0 rgba(255, 255, 255, 0.07), inset 0 -2px 0 rgba(0, 0, 0, 0.3);
+  --drop: 4px 4px 0 rgba(0, 0, 0, 0.45);
+  --drop-sm: 3px 3px 0 rgba(0, 0, 0, 0.4);
+  --corner: 4px;
+}
+
+/* One pixel family for the whole game: Silkscreen. Bold for display words (title, planet names, verdict,
+   codes), regular for labels, buttons, and numbers. (Pixelify Sans was tried first: its C reads as O and
+   its digits blur — "SUOOESS", "1:87".) */
+.title,
+.step-title,
+.room-code,
+.planet-name {
+  font-family: var(--display);
+}
+
+/* Silkscreen is a caps face: display words read as headings, like MISSION FAILED. */
+.planet-name,
+.step-title,
+.title,
+.verdict,
+.stinger {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* Numbers and units: Silkscreen's digits stay distinct at every size. */
+.game-timer,
+.countdown strong,
+.stat-tiles strong,
+.mono-accent {
+  font-family: var(--pixel-small);
+  font-weight: 400;
+}
+
+/* Small UI text: Silkscreen, a pixel face drawn for 8–14px, so "CU" never reads as "OU". */
+.label,
+.mass-text,
+.mc-label,
+.mc-state,
+.stat-label,
+.badge,
+.tag,
+.code-input,
+.game-planet,
+.verdict-rows,
+button:not(.req-row):not(.piece-btn):not(.mc-bar):not(.room-code) {
+  font-family: var(--pixel-small);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+}
+
+.label {
+  letter-spacing: 0.1em;
+}
+
+button.big {
+  letter-spacing: 0.08em;
+}
+
+/* Sentences stay readable: requirement rows, palette pieces, and Mission Control's caption. */
+.req-row,
+.piece-btn,
+.mc-text {
+  font-family: inherit;
+}
+
+.mc-text {
+  font-family: var(--mono);
+}
+
+.game-timer {
+  letter-spacing: 0.04em;
+}
+
+/* Frames */
+.card,
+.req-row,
+.piece-btn,
+.mc-bar,
+.stat-tiles li,
+.members li,
+.lock-confirm,
+.toast {
+  border: var(--frame);
+  border-radius: var(--corner);
+  box-shadow: var(--bevel), var(--drop);
+}
+
+.req-row,
+.piece-btn,
+.stat-tiles li,
+.members li {
+  box-shadow: var(--bevel), var(--drop-sm);
+}
+
+/* Mission Control keeps its signal colour, framed the same way. */
+.mc-bar {
+  border-color: #13584f;
+}
+
+/* Buttons: bevelled blocks that press in. */
+button,
+input {
+  border-width: 2px;
+  border-radius: var(--corner);
+}
+
+button {
+  box-shadow: var(--bevel), var(--drop-sm);
+  transition: transform 60ms ease-out, box-shadow 60ms ease-out;
+}
+
+button:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: var(--bevel), 1px 1px 0 rgba(0, 0, 0, 0.4);
+}
+
+button.primary {
+  border-color: #14b8a6;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.35), inset 0 -3px 0 rgba(4, 47, 43, 0.35), var(--drop-sm);
+}
+
+/* Highlights: a crisp accent edge, never a glow. */
+.piece-btn.selected,
+.req-row[aria-expanded='true'],
+input:focus {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px rgba(45, 212, 191, 0.35), var(--drop-sm);
+}
+
+input:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* Text-only buttons stay flat. */
+.back-link,
+.link-btn,
+.room-code,
+.mc-bar,
+.req-row {
+  transform: none;
+}
+
+.back-link,
+.link-btn,
+.room-code {
+  box-shadow: none;
+  border: none;
+}
+
+/* Mission Control standby: a quiet status, not a line being spoken. */
+.mc-standby {
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+
+/* Breathing room where controls were crowded. */
+.game-context {
+  gap: 1rem;
+}
+
+.piece-info {
+  margin-top: 0.6rem;
+}
+
+.game-side {
+  gap: 0.85rem;
+}
+
+.req-list {
+  gap: 0.6rem;
+}
+
+.team-foot {
+  flex-direction: row;
+  gap: 0.6rem;
+}
+
+.team-foot > button {
+  flex: 1;
+}
+
+.lobby-foot {
+  margin-top: 0.25rem;
+}
+
+.stat-tiles {
+  gap: 0.6rem;
+}
+
+.verdict-rows {
+  gap: 0.7rem;
+}
+
+/* Small laptops (1024–1279px): slimmer side columns and compact piece buttons keep the palette on one row
+   (at most 9 buttons: berms and thermal units never appear in the same round) with the board still centered. */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .game {
+    grid-template-columns: 220px minmax(0, 1fr) 220px;
+  }
+
+  .piece-btn {
+    width: 60px;
+    padding: 0.35rem 0.15rem;
+  }
+
+  .piece-btn .piece-svg {
+    width: 28px;
+    height: 25px;
+  }
+
+  .piece-label {
+    font-size: 0.68rem;
+  }
+}
+
+/* Silkscreen bold runs wide: keep long planet names ("MOON (SOUTH POLE)") on one line. */
+.planet-name {
+  font-size: clamp(1.25rem, 4.5vw, 1.6rem);
+  line-height: 1.2;
+}
+
+/* A requirement the current board meets turns green, with a ✓ in place of its icon (color is never alone). */
+.req-row.met {
+  border-color: var(--ok);
+  background: color-mix(in srgb, var(--ok) 16%, var(--panel));
+  transition: background 200ms, border-color 200ms;
+}
+
+.req-row.met .req-icon {
+  color: var(--ok);
+  font-weight: 900;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* 2px frames add width: keep all 9 pieces + Remove on one row on wide screens. */
+@media (min-width: 1024px) {
+  .piece-btn {
+    width: 74px;
+  }
 }

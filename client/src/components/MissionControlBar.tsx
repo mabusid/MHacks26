@@ -11,7 +11,9 @@ import { useVoice } from '../useVoice';
 export default function MissionControlBar({ roomCode, hint, standby }: { roomCode: string; hint: Hint | undefined; standby: string }) {
   const [muted, toggle] = useMute();
   const { locked } = useVoice(roomCode, true, hint, muted);
-  const typed = useTypewriter(hint?.text ?? standby);
+  // Only real lines type out (they're being spoken). The standby is a quiet status, not a line: typing it
+  // made it look like Mission Control was talking with no sound.
+  const typed = useTypewriter(hint?.text ?? '');
 
   const state = locked && !muted ? 'tap to enable sound' : muted ? 'muted · tap to unmute' : 'tap to mute';
   return (
@@ -27,10 +29,14 @@ export default function MissionControlBar({ roomCode, hint, standby }: { roomCod
       title={state}
     >
       <span className="mc-label">Mission Control</span>
-      <span className="mc-text">
-        {typed}
-        <span className="caret" aria-hidden />
-      </span>
+      {hint ? (
+        <span className="mc-text">
+          {typed}
+          <span className="caret" aria-hidden />
+        </span>
+      ) : (
+        <span className="mc-text mc-standby">{standby}</span>
+      )}
       <span className="mc-state">{state}</span>
     </button>
   );
