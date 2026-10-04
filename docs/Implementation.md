@@ -13,55 +13,100 @@ flowchart LR
   subgraph clients [Vite_React_clients]
     C1[Player_1_to_4]
   end
-  subgraph spacetime [SpacetimeDB_module]
+  subgraph spacetime [SpacetimeDB_2_module]
     ST[Tables_and_reducers]
-    SCH[Scheduled_build_timer]
+    SCH[Scheduled_rows_build_end_hint_cues_berms_TTL]
   end
   subgraph node [Node_service]
-    RES[Research_agent_xAI_chat]
-    VOX[Grok_Voice_plus_WS]
-    STC[Spacetime_server_identity]
+    RES[Research_agent_xAI_chat_tools]
+    VOX[Voice_relay_one_Grok_session_per_room]
+    STC[Spacetime_client_server_identity]
   end
-  C1 -->|subscribe_call_reducers| ST
+  C1 -->|subscribe_and_call_reducers| ST
   STC -->|commit_round_log_research_post_hint| ST
+  ST -->|room_board_hint_cue_updates| STC
   RES --> STC
   VOX --> STC
-  C1 -->|PTT_audio_WS| VOX
-  VOX -->|hint_audio_broadcast| C1
-  RES -->|TAP_and_JSON_fetch| Data[NASA_TAP_plus_data_JSON]
+  VOX -->|wss_api_x_ai_v1_realtime| Grok[xAI_Grok_Voice]
+  VOX -->|hint_audio_broadcast_WSS| C1
+  RES -->|TAP_query_and_JSON_read| Data[NASA_TAP_plus_data_JSON]
 ```
 
-**Recommended repo layout** (single npm/pnpm workspace):
+**Recommended repo layout** (single pnpm workspace):
 
 | Path | Purpose |
 |------|---------|
-| `packages/shared` | Types, piece defs, eval/diagnosis pure functions (unit-testable) |
-| `spacetimedb/` | Module: tables, reducers, scheduled timer, `commit_round` math |
-| `client/` | Vite + React + Spacetime SDK |
-| `server/` | Node TS: research agent, voice WS, Spacetime server token |
+| `packages/shared` | Types, piece defs, threshold derivation, eval, winnability, **board read** (diagnosis + suggestion) — pure functions (unit-testable) |
+| `spacetimedb/` | SpacetimeDB 2.x TypeScript module: tables, reducers, views, scheduled rows |
+| `client/` | Vite + React + Spacetime TS SDK (generated bindings) |
+| `server/` | Node TS: research agent, voice relay WS, Spacetime client with server identity |
 | `data/` | `game_constants.json`, `solar_system.json`, `cached_pack/` |
-| `scripts/` | Fact-sheet scrape (one-time), dev orchestration |
+| `scripts/` | Fact-sheet scrape (one-time), cached-pack builder (offline tier 3), dev orchestration |
 
-Shared eval logic should live in `packages/shared` and be **imported by the Spacetime module** (or duplicated minimally only if the SDK forbids sharing — verify when scaffolding; prefer one implementation).
+Shared eval logic lives in `packages/shared` and is **imported by the Spacetime module**, the client (hover stats), and the server (template hints). Verify in Phase 0 that the module bundler resolves the workspace package; if not, copy the built file into `spacetimedb/src/shared/` via a prebuild script — still one source of truth.
+
+---
+
+## Platform requirements
+
+### SpacetimeDB (2.x, TypeScript module)
+
+| Requirement | How |
+| --- | --- |
+| **Module API** | `table`, `schema`, `t` from `spacetimedb/server`; reducers/lifecycle hooks must be **`export const`** (bare calls are silently ignored). `ScheduleAt` imports from `spacetimedb`. Throw `SenderError` for rejected player actions. |
+| **Public vs private** | Player-visible tables `public: true`. `server_config` is private. There is **no diagnosis table** — Node computes the board read at cue time from public tables, so pass/fail is never stored where the client UI reads it. |
+| **Server identity** | `init` stores the publisher identity in `server_config.owner`. Owner calls `set_server_identity(identity)` once via `spacetime call` with the Node service's identity. Server-only reducers check `ctx.sender === server_config.server`. |
+| **Timers** | **Scheduled tables, not polling.** One-shot `ScheduleAt` rows for: build end (`build_ends_at`), hint cues (8 per round — see Plan.md cue schedule), berm completion, room TTL. Scheduled reducers run as the module identity — guard them so players can't call them directly. |
+| **Countdown** | Clients render the countdown locally from `round.build_ends_at`; the server is authoritative only at the scheduled end. |
+| **Determinism** | Tile layout uses a **seeded PRNG** (seed = `round_id`), no `Math.random()` in reducers. |
+| **Procedures** (HTTP from module) | Available but **not used** — all external fetches stay in Node, where the LLM loop and fetch cache live. |
+| **Client** | `spacetime generate --lang typescript --out-dir client/src/module_bindings --module-path spacetimedb`. Persist the auth token in `localStorage` and reconnect with it (refresh = same member). Use the SDK's React bindings if present (`spacetimedb/react`), else a small `useTable` hook. |
+| **Node** | Same TS SDK in Node with a persisted server token (`SPACETIME_TOKEN`). Subscribes to `room`, `round`, `planet_parameter`, `requirement`, `tile`, `piece`, `hint_cue` — everything needed to compute the board read locally. |
+| **Hosting** | Dev: `spacetime dev` locally. Demo: **Maincloud** (no tunnel needed for 4 devices). |
+
+### Grok Voice (xAI realtime)
+
+| Requirement | How |
+| --- | --- |
+| **Endpoint** | `wss://api.x.ai/v1/realtime?model=grok-voice-latest` (pin a versioned model for the demo once chosen). |
+| **Auth** | Session runs **in Node**, so use `Authorization: Bearer $XAI_API_KEY`. **No ephemeral tokens** — browsers never talk to xAI. |
+| **Mode** | **Text in, audio out.** No microphone input; players never talk to it. |
+| **Audio format** | Output `audio/pcm` 24 kHz, 16-bit little-endian, `audio.output.transport = "binary"` so Node relays raw frames without base64. |
+| **Turn detection** | `turn_detection: { type: null }` — no audio input, so turns are driven only by our `response.create` calls. |
+| **Cues** | On a `hint_cue` row: Node computes the board read, then `conversation.item.create` with one text item — **fact mode:** the fun fact text; **hint mode:** diagnosis, suggestion (piece + tile), board summary, change since last cue, time left. Then `response.create` with **per-response `instructions`** for the mode (fun fact / nudge / direction / exact). |
+| **Session instructions** | Persona (calm Mission Control), ≤ 2 sentences, use grid coordinates as given, never invent numbers or tiles, never mention pieces not in the suggestion during exact hints. |
+| **Tools** | **None.** All context is in the text item, so there are no tool-call round trips. Do not enable `web_search` / `x_search`. |
+| **Output** | `response.output_audio.*` frames → broadcast to every client in the room. Assistant transcript (on `response.done`; confirm exact transcript event name when wiring) → `post_hint` → captions. |
+| **Latency** | `reasoning.effort: "none"`; short instructions (one requirement + one fact, ≤ 2 sentences). Send the cue ~2 s early so speech lands on time. |
+| **Lifecycle** | Open the session at `begin_build`, close at debrief — no idle billing. One session per room. |
+| **Fallbacks** | Key present but model call fails → speak the template line verbatim with `force_message` (Grok voice, no model). No key → template line to `hint` table; clients speak it with `speechSynthesis`. Templates: fun facts verbatim; hints like "{Requirement} is short — {fact}. Try {piece} on {tile}." |
+| **Pronunciation** | `replace` map for planet names (e.g. "TRAPPIST-1 e"). |
+
+### Browser / network
+
+| Requirement | How |
+| --- | --- |
+| **Reachability** | All devices must reach the Node WS. If the client is served over HTTPS (Vercel/Netlify), Node must be `wss://` (e.g. `cloudflared` tunnel) to avoid mixed-content blocking. Same-LAN HTTP also works since there's no mic. |
+| **Autoplay** | Audio must be unlocked by a user gesture — create the `AudioContext` on the Join/Create click. |
+| **Playback** | `AudioWorklet` ring buffer per client; small jitter buffer (~100 ms). Local mute = gain 0; captions always on. |
 
 ---
 
 ## Phase 0 — Monorepo scaffold
 
-**Goal:** One command starts local Spacetime + client; empty server compiles.
+**Goal:** One command starts local Spacetime + client + server stub.
 
-- Initialize workspace (`pnpm` or `npm` workspaces).
-- `spacetime` CLI: local module project in `spacetimedb/`, publish name documented in README.
-- `client/`: Vite + React + TS, env `VITE_SPACETIME_URI`.
-- `server/`: TS + `tsx watch`, env `XAI_API_KEY` (optional), `SPACETIME_*` for server identity.
-- Root `package.json` scripts: `dev` (concurrently: spacetime dev, client, server stub).
-- `.env.example` for both apps; no secrets in git.
+- pnpm workspace: `packages/shared`, `spacetimedb`, `client`, `server`.
+- `spacetime init --lang typescript` into `spacetimedb/`; module name in README.
+- `client/`: Vite + React + TS; env `VITE_SPACETIME_URI`, `VITE_SPACETIME_DB`, `VITE_VOICE_WS_URL`.
+- `server/`: TS + `tsx watch`; env `XAI_API_KEY` (optional), `SPACETIME_URI`, `SPACETIME_DB`, `SPACETIME_TOKEN`.
+- Root `pnpm dev` (concurrently: `spacetime dev`, client, server). `.env.example` files; no secrets in git.
 
 ### Checkpoint 0
 
-- [ ] `pnpm dev` (or equivalent) starts without errors.
-- [ ] Client shows a placeholder; Spacetime module deploys locally.
-- [ ] `packages/shared` exports a trivial type consumed by client and module.
+- [ ] `pnpm dev` starts without errors.
+- [ ] Client shows a placeholder; module publishes locally; bindings generate.
+- [ ] `packages/shared` exports a function used by client **and** module (proves the import path).
 
 ---
 
@@ -69,20 +114,17 @@ Shared eval logic should live in `packages/shared` and be **imported by the Spac
 
 **Goal:** Multiplayer lobby without game rules yet.
 
-Implement tables and reducers from [Plan.md](./Plan.md) (subset first):
-
-- `room` (join code, host member id, phase: `lobby | briefing | build | debrief`, current `round_id`)
-- `member` (room, display name, joined_at, online, is_host)
-- `round` (minimal: planet display name placeholder, `mass_budget`, `build_ends_at` nullable)
-- Reducers: `create_room`, `join_room` (max 4), `client_connected` / `client_disconnected`
+- `server_config` (private): `owner`, `server`; `init` stores owner; `set_server_identity` (owner only).
+- `room` (join code, host member, phase `lobby | briefing | build | debrief`, `current_round_id`, `next_round_id`)
+- `member` (room, identity, display name, `joined_at`, `online`, `is_host`)
+- `round` (`status: researching | ready | active | done`, planet name, `mass_budget`, `build_ends_at?`)
+- Reducers: `create_room`, `join_room` (max 4, 4-letter code), lifecycle `clientConnected` / `clientDisconnected` (mark online/offline).
 - Host migration: on host disconnect, promote longest-joined **online** member.
 
-Defer: `tile`, `piece`, research tables until Phase 3–4.
+### Checkpoint 1 (acceptance #1 partial)
 
-### Checkpoint 1 (acceptance #1 partially)
-
-- [ ] Two browser tabs: create room, second joins with 4-letter code.
-- [ ] Both see same member list; host badge updates if host tab closes.
+- [ ] Two tabs: create room, second joins with code.
+- [ ] Same member list on both; host badge moves when the host tab closes; refresh rejoins as the same member.
 
 ---
 
@@ -92,46 +134,49 @@ Defer: `tile`, `piece`, research tables until Phase 3–4.
 
 In `packages/shared`:
 
-- Piece catalog (8 types + habitat rules) per Plan.md.
-- `game_constants.json` loader types; BVAD rates for debrief copy only at first.
-- **Pure functions:** `computeLoad`, `computePowerWaterO2Radiation`, `computeDiagnosis`, `computeNightBand`, twist flags from normalized profile.
-- **Winnability:** brute-force counts per plan (~90k combos) + simple grid feasibility (ice count, lit tiles for solar, berm adjacency count ≤ 8).
+- Piece catalog (8 types + habitat 2×2) per Plan.md.
+- **Threshold derivation** from a profile: night band, thermal load, ice/CO₂ flags, triggered twists, berm count.
+- **Eval:** `computeLoad`, `evaluate(board, profile, requirements)` → per-requirement pass/fail + reason.
+- **Board read:** `boardRead(board, profile, requirements, budget, prevRead?)` →
+  - diagnosis (per-requirement status, worst failing, shortfall, responsible parameter field)
+  - suggestion: from the winnability enumeration, the winning count-vector with the **fewest adds/removes** from the current board (tie → least mass), mapped to tiles (first valid free tile nearest the habitat, A–H × 1–8)
+  - board summary text (pieces + coordinates, free ice/lit/adjacent tiles, mass left, pending berms)
+  - change since last read (newly passing requirements, board unchanged?)
+- **Winnability:** brute-force counts (~90k combos) + tile feasibility (ice tiles, lit tiles, ≤ 8 habitat-adjacent tiles) → cheapest CU → `budget = clamp(ceil(min × 1.25), 14, 24)` or `reject`.
+- Seeded PRNG + tile generator (12 shaded, 4 ice; polar bodies put ice inside shade).
 
-In `data/`:
-
-- Stub `game_constants.json` (CU costs, thresholds 12/12, mission length).
-- Minimal `solar_system.json` for **one** body (Moon) to unblock Phase 3.
+In `data/`: `game_constants.json` (piece stats, 12/12, crew 4, 30 sols, BVAD rates); `solar_system.json` with Moon + Mars to start.
 
 ### Checkpoint 2
 
-- [ ] Unit tests (vitest in `packages/shared`) for Moon vs Mars-style profiles: different cheapest build / band.
-- [ ] Winnability returns budget in 14–24 CU or `reject`.
+- [ ] Vitest: Moon, Mars, Titan, bright-exoplanet fixtures reproduce the Plan.md balance table (cheapest build + CU).
+- [ ] Winnability returns a budget in 14–24 or `reject` for an impossible profile.
 
 ---
 
 ## Phase 3 — `commit_round` without LLM (fixture path)
 
-**Goal:** Full round **data** on server before agent exists.
+**Goal:** Full round **data** on the server before the agent exists.
 
-Spacetime tables: `planet_parameter`, `requirement`, `tile`, `research_log`.
+Tables: `planet_parameter`, `requirement`, `tile`, `research_log`.
 
-Reducer `commit_round` (server identity only — initially callable from a **dev reducer** or CLI script until Node identity exists):
+`commit_round(room_id, parameters[], twist, card_text)` — **server identity only**:
 
-1. Accept committed parameter rows (or ingest from a JSON fixture).
-2. Derive thresholds (night band, thermal load, berm count, ice tiles, dust flag).
-3. Generate 8×8 `tile` rows (12 shaded, 4 ice if applicable).
-4. Run winnability → set `round.mass_budget`.
-5. Write `requirement` rows + headline fields on `round`.
-6. Set phase → `briefing`; enable host `begin_build`.
+1. Validate every parameter has `sourced` + source, or `estimated` + note.
+2. Validate the chosen twist is one the parameters trigger.
+3. **Compute thresholds** with `packages/shared` (agent never sends numbers for thresholds).
+4. Generate tiles (seeded), seed habitat piece, run winnability → `mass_budget`, or reject.
+5. Write `requirement` rows (threshold + `derived_from` + because-text) and headline / scale text / 3 `fun_facts` on `round`.
+6. Set `round.status = ready` and `room.next_round_id`. **Does not change room phase** (so prefetch during debrief is safe).
 
-Player reducers: `start_round` (host, lobby only), `begin_build` (starts 150s timer via `build_ends_at` + schedule).
+Player reducers: `start_round` (host; lobby → briefing using `next_round_id`), `begin_build` (host; briefing → build, sets `build_ends_at = now + 150s`, inserts scheduled build-end and hint-cue rows).
 
-**Node stub:** HTTP `POST /dev/commit-fixture?room=&body=moon` that calls real `commit_round` with server token.
+Dev path: `log_research`/`commit_round` callable via `spacetime call` with the owner identity, or a Node `POST /dev/commit-fixture?room=&body=moon`.
 
 ### Checkpoint 3 (acceptance #2, #4 partial)
 
-- [ ] After fixture commit, all subscribers see Mission Requirements Card data in DB.
-- [ ] Impossible fixture rejected; valid fixture gets budget.
+- [ ] After fixture commit, all subscribers see the requirement card rows.
+- [ ] Impossible fixture rejected; valid fixture gets a budget; an untriggered twist is rejected.
 
 ---
 
@@ -139,51 +184,46 @@ Player reducers: `start_round` (host, lobby only), `begin_build` (starts 150s ti
 
 **Goal:** UI driven only by subscriptions.
 
-Screens:
-
-- **Home:** create / join.
-- **Lobby:** research log (empty or “using fixture”), members, host **Start** when `round` committed.
-- **Briefing:** planet card, requirements list (no pass/fail), **Begin build** (host).
-- Route on `room.phase`.
-
-Spacetime hook: single `useColony(roomId)` subscription SQL for room, members, round, parameters, requirements, tiles.
+- **Home:** create / join (this click also unlocks audio).
+- **Lobby:** members, live `research_log`, host **Start** enabled when a round is `ready`.
+- **Briefing:** planet card, Mission Requirements Card (threshold + because-line + source tag, no pass/fail), host **Begin build**.
+- Route on `room.phase`. One subscription set scoped to the room: room, members, round, parameters, requirements, tiles, pieces, cursors, hints, result.
 
 ### Checkpoint 4
 
-- [ ] Full path: create → join → fixture commit → briefing visible on both clients → host begins build (timer may not tick yet).
+- [ ] Create → join → fixture commit → briefing on both clients → host begins build; countdown renders from `build_ends_at`.
 
 ---
 
-## Phase 5 — Build phase: grid, placement, cursors
+## Phase 5 — Build phase: grid, placement, cursors, berms
 
-**Goal:** Authoritative placement.
+**Goal:** Authoritative placement, including the mass-vs-time berm mechanic.
 
-- `piece` table; habitat seeded in `commit_round` at center 2×2.
-- Reducers: `place_piece`, `remove_piece` (refund CU), `move_cursor` (throttle client ~15/s).
-- Validation: phase `build`, mass budget, tile rules (lit/ice/adjacent berm), piece-specific rules.
-- React **CSS grid** 8×8: tile classes, piece icons, hover stats using round parameters (insolation, etc.).
+- `piece` table; `cursor` table (one row per member).
+- Reducers: `place_piece`, `remove_piece` (refund), `move_cursor` (client throttles ~15/s).
+- Validation: phase `build`, budget, tile rules (lit / ice / habitat-adjacent), occupancy.
+- **Berms (server-timed):** `start_berm(tile)` inserts a `pending` berm + scheduled completion at `now + hold(g)`; `cancel_berm` on release deletes it. The scheduled reducer finalizes it. Client shows a progress ring.
+- React **CSS grid** 8×8: tile classes, piece icons, hover stats from `packages/shared` + round parameters.
 
 ### Checkpoint 5 (acceptance #1 complete)
 
-- [ ] Four tabs (or two + simulation): place/remove syncs; cursors visible; invalid place shows server error.
+- [ ] Four tabs: place/remove syncs; cursors visible; invalid placement shows the `SenderError` message; releasing a berm early cancels it.
 
 ---
 
-## Phase 6 — Diagnosis, timer, evaluate, debrief
+## Phase 6 — Timer, evaluate, debrief
 
 **Goal:** Complete game loop without AI.
 
-- On `place_piece` / `remove_piece`: recompute diagnosis → `diagnosis` table (worst failing requirement + fact ref).
-- Scheduled reducer: every second (or on `build_ends_at`), when time expired → `evaluate` → `result` rows → phase `debrief`.
-- `lock_build` (host early end).
-- Debrief UI: per-requirement pass/fail, kg copy, estimated fields, sources.
-- `rematch`: new `round_id`, clear pieces, phase `lobby`; **defer** prefetch to Phase 9.
+- Scheduled build-end reducer (or host `lock_build`, which deletes the schedule row) → `evaluate` → `result` rows → phase `debrief`.
+- Debrief UI: per-requirement pass/fail linked to its research line, kg figures, scale card, estimated fields, sources.
+- `rematch`: new round from `next_round_id` if `ready` (→ briefing), else → lobby until research commits. Clear pieces/cursors.
+- Room TTL: on last member offline, schedule deletion 5 min later; cancel if someone returns.
 
-### Checkpoint 6 (acceptance #5 partial, #8)
+### Checkpoint 6 (acceptance #8, #9)
 
-- [ ] Diagnosis row updates on placement (verify in Spacetime dashboard or hidden dev panel).
-- [ ] Timer hits 0; debrief matches hand-calculated formula for a known layout.
-- [ ] Refresh rejoins same member (`localStorage` token).
+- [ ] Dev panel (dev builds only) shows `boardRead` for the current grid; suggestion actually completes the base when followed.
+- [ ] Timer hits 0; debrief matches the hand-calculated formula for a known layout.
 
 ---
 
@@ -191,81 +231,82 @@ Spacetime hook: single `useColony(roomId)` subscription SQL for room, members, r
 
 **Goal:** Server can write research rows legally.
 
-- Register **server identity** with Spacetime; store token in server env.
-- Implement fetch cache + tool handlers **in process** (no LLM yet):
-  - `fetch_solar_system_body` → read `data/solar_system.json`
-  - `fetch_exoplanet` → TAP ADQL (can mock first)
-  - `set_parameter` / `mark_estimated` / `log_step` → buffer until commit
-- Call `commit_round` + `log_research` reducers from Node.
-- Wire `create_room` on client → server watches new room → kicks **scripted** research (hardcoded tool sequence for Moon) replacing dev fixture.
+- Generate the server identity on first run, persist `SPACETIME_TOKEN`, register it with `set_server_identity`.
+- Fetch cache + tool handlers **in process** (no LLM yet):
+  - `list_candidates`, `fetch_solar_system_body` (JSON), `fetch_exoplanet` (TAP ADQL against `pscomppars`, JSON output; mock first)
+  - `set_parameter(fetch_id, field)` / `mark_estimated` → buffered; `log_step` → `log_research` immediately
+- Node subscribes to `room`; a room with no `ready` round (or in debrief with no `next_round_id`) triggers research.
+- **Scripted** research (hardcoded tool sequence for Moon / Mars) replaces the dev fixture.
 
 ### Checkpoint 7 (acceptance #3 partial)
 
-- [ ] Create room triggers research log stream on clients.
-- [ ] Moon scripted path commits; Mars scripted path yields different twist/thresholds.
+- [ ] Creating a room streams research log lines to clients.
+- [ ] Moon and Mars scripted paths commit with different twists/thresholds.
+- [ ] `set_parameter` with an unknown `fetch_id` is rejected.
 
 ---
 
 ## Phase 8 — Research agent (xAI chat + tools)
 
-**Goal:** Live agent with provenance rules.
+**Goal:** Live agent under the provenance rules.
 
-- xAI chat with tool definitions mirroring Plan.md research tools table.
-- Enforce `fetch_id` in Node before any commit payload hits Spacetime.
-- Twist selection + `write_card` validation (because-lines reference parameter fields).
-- 20s timeout → `data/cached_pack/*.json`.
-- **Debrief prefetch:** start next planet research when phase = `debrief`.
-
-Populate `data/solar_system.json` (6 bodies) via script + manual mission fields; build **cached_pack** (~10 planets) for fallback.
+- xAI chat completions (OpenAI-compatible API at `https://api.x.ai/v1`) with function tools from the Plan.md tools table. Model via `XAI_RESEARCH_MODEL`.
+- Tool loop in Node; enforce `fetch_id` + "because-lines reference parameter rows" before calling `commit_round`.
+- 20 s timeout or 2 rejected commits → load a planet from `data/cached_pack/`.
+- **Debrief prefetch:** research the next planet as soon as phase = `debrief`.
+- `scripts/build-cached-pack`: offline run with xAI's server-side `web_search` tool restricted to the allowlist (limits on domains per tool — split into multiple passes if needed); write quotes + URLs for manual review.
+- Fill `data/solar_system.json` (6 bodies) via the scrape script + hand-entered mission fields.
 
 ### Checkpoint 8 (acceptance #2, #3, #9)
 
-- [ ] Live exoplanet round (or cache) commits within budget.
-- [ ] `set_parameter` without `fetch_id` rejected at Node layer.
-- [ ] Rematch uses prefetched round when ready.
+- [ ] A live exoplanet round (or cache fallback) commits within 20 s.
+- [ ] Two consecutive rounds produce different requirement cards.
+- [ ] Rematch uses the prefetched round instantly.
 
 ---
 
 ## Phase 9 — Voice: captions first, then Grok
 
-**Goal:** Same hint on all devices; game playable without xAI.
+**Goal:** Same hint on all devices; game fully playable without xAI.
 
 **9a — Hint pipeline (no voice)**
 
-- Table `hint`; reducer `post_hint` (server).
-- Node watches timer → at 1:30 / 0:45 / 0:15 emits **template** hints from `diagnosis`.
-- Client: caption bar; `speechSynthesis` optional per Plan.md fallback.
-- Spacetime: `claim_floor` / `release_floor` + `voice_floor` (UI only until audio).
+- `hint` table + `post_hint` (server only). `begin_build` inserts 8 `hint_cue` scheduled rows (2:25 / 2:05 / 1:45 fun facts; 1:30 nudge; 1:10, 0:50 direction; 0:30, 0:15 exact). Node fires each ~2 s early to absorb speech latency.
+- Node on cue: compute `boardRead` → apply no-repeat/escalate and acknowledge-progress rules → template line → `post_hint`. Skip the cue if the previous line is still playing.
+- Fun facts come from `round.fun_facts` (written by the research agent / fixture).
+- Client: caption bar; `speechSynthesis` reads new hints; mute toggle.
 
-**9b — WebSocket audio**
+**9b — Audio broadcast (no Grok yet)**
 
-- Room-scoped WS on server; PTT sends mic from one client; broadcast audio bytes (or use Grok’s output stream).
-- Mute local; captions always on.
+- Room-scoped WS endpoint on Node (receive-only for clients); client joins with room id + Spacetime identity.
+- Test by broadcasting a canned 24 kHz PCM clip on each cue (verifies relay, playback, sync, mute).
 
 **9c — Grok Voice**
 
-- One session per room on Node; tools read Spacetime via server subscription or poll.
-- Ephemeral credentials if required by xAI; never expose `XAI_API_KEY` to browser.
+- One session per room in Node (opened at `begin_build`, closed at debrief), configured per the **Grok Voice** requirements table.
+- Cues → text item (fun fact, or board read + time + mode) → `response.create` with mode instructions.
+- Output audio frames → broadcast; transcript → `post_hint` (captions). Speech replaces `speechSynthesis` when Grok is active.
 
 ### Checkpoint 9 (acceptance #5, #6)
 
-- [ ] Proactive hint at 1:30 shows same caption on 4 clients.
-- [ ] Mute silences audio on one device only.
-- [ ] With key: spoken hint references diagnosis + planet fact; without key: template hints still fire.
+- [ ] Opening fun facts play at 2:25 / 2:05 / 1:45; same caption and audio on 4 devices.
+- [ ] Mute silences audio on one device only; captions remain.
+- [ ] Hints track the grid: placing the suggested piece changes the next hint (acknowledges progress, moves to the next gap); an unchanged board escalates.
+- [ ] At 0:30 the hint names a specific piece + valid tile. Without key: template lines still fire.
 
 ---
 
 ## Phase 10 — Hardening + demo
 
-- Host migration during build (acceptance #7).
-- Room TTL 5 min after last member leaves.
-- Berm hold-to-place (client UX + server confirm after hold duration).
-- Polish: planet CSS backgrounds, piece tooltips.
-- Write demo script in Plan.md; rehearse ~3.5 min round.
+- Host migration during build (acceptance #7); Node voice session unaffected.
+- Node restart mid-round: re-subscribe, reopen the Grok session if phase = `build`.
+- Deploy rehearsal on 4 real devices (client host + Node reachable over `wss` + Maincloud).
+- Polish: planet CSS backgrounds, piece tooltips, research log animation.
+- Write the demo script in Plan.md; rehearse a ~3.5 min round.
 
-### Checkpoint 10 (full acceptance list)
+### Checkpoint 10
 
-Run all 9 checks in [Plan.md](./Plan.md) (Acceptance checks section).
+Run all 9 acceptance checks in [Plan.md](./Plan.md).
 
 ---
 
@@ -275,20 +316,24 @@ If time is short, stop after a checkpoint and still have a demo:
 
 | Minimum demo | Stop after |
 |--------------|------------|
-| “Multiplayer base builder” | Checkpoint 5 |
-| “Real planet card + win/lose” | Checkpoint 6 + fixture Moon |
-| “Space data + AI story” | Checkpoint 8 |
-| Full pitch | Checkpoint 9b or 9c |
+| "Multiplayer base builder" | Checkpoint 5 |
+| "Real planet card + win/lose" | Checkpoint 6 + fixture Moon |
+| "Space data + AI story" | Checkpoint 8 |
+| Full pitch | Checkpoint 9c (9a + `speechSynthesis` is a usable fallback) |
 
-**Do not start** Grok Voice before diagnosis + timer work (Phase 6); voice is worthless without `diagnosis` rows.
+**Do not start** Grok Voice before `boardRead` works (Phase 2) and the loop runs (Phase 6) — voice is useless without it.
 
 ---
 
-## Risks to decide during Phase 0
+## Risks to resolve early
 
-- Spacetime TS module **importing** shared npm package — confirm SDK bundling; if blocked, keep eval in `packages/shared` and call from reducers via copied build step.
-- Scheduled reducer granularity for 2:30 timer — use `build_ends_at` timestamp compare each tick.
-- Deploy: hackathon likely **local Spacetime + tunneled client**; document production host later.
+| Risk | When | Mitigation |
+| --- | --- | --- |
+| Module bundler can't import `packages/shared` | Phase 0 | Prebuild copy into `spacetimedb/src/shared/` |
+| Suggestion feels like the game playing itself | Playtest | Exact hints only from 0:30; earlier hints stay at system/piece-type level |
+| 4 devices playing slightly out of sync in one room | Phase 9b | ~100 ms jitter buffer; players can mute all but one device |
+| Grok latency makes hints late | Phase 9c | `reasoning.effort: "none"`, send cue ~2 s early, `force_message` fallback |
+| TAP query slow / down | Phase 8 | 20 s timeout → cached pack; prefetch during lobby and debrief |
 
 ---
 
@@ -297,10 +342,10 @@ If time is short, stop after a checkpoint and still have a demo:
 | CP | Command / action |
 |----|------------------|
 | 0 | `pnpm dev` |
-| 1–6 | 2–4 browser windows, same LAN or localhost |
+| 1–6 | 2–4 browser windows on localhost |
 | 7–8 | Server logs + `research_log` table |
-| 9 | 4 devices or tabs + mute test |
-| 10 | Checklist in Plan.md |
+| 9 | 4 real devices + mute test |
+| 10 | Acceptance checklist in Plan.md |
 
 ---
 
@@ -309,11 +354,11 @@ If time is short, stop after a checkpoint and still have a demo:
 | Phase | Focus |
 |-------|--------|
 | 0 | Monorepo scaffold |
-| 1 | Room / join / host migration |
-| 2 | Shared eval + vitest + data stubs |
+| 1 | Room / join / identity / host migration |
+| 2 | Shared math, winnability, tiles + vitest |
 | 3 | `commit_round` fixture path |
-| 4–5 | Client phases + grid placement |
-| 6 | Diagnosis, timer, debrief |
-| 7–8 | Node research + xAI agent |
-| 9 | Hints, voice, Grok |
-| 10 | Polish + acceptance tests |
+| 4–5 | Client phases, grid, placement, berms |
+| 6 | Timer, debrief, rematch, board-read dev panel |
+| 7–8 | Node research plumbing + xAI agent |
+| 9 | Hints → audio broadcast → Grok Voice |
+| 10 | Hardening, deploy, demo |

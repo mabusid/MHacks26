@@ -30,7 +30,7 @@ Co-op **learning game** for **four players**. An agent researches a **random rea
 3. **Short and readable.** At most **3 requirements**, 8 piece types, ~8–12 pieces in a winning base.
 4. **Tradeoffs, not chores.** Every piece trades **landed mass**, **build time**, or **power** against another — and the planet's real data decides which trade wins.
 5. **Shared everything.** No roles. Everyone can place every piece; the short timer and the "what should we build?" discussion drive cooperation.
-6. **Hints are the feedback.** No live pass/fail. Players reason from per-piece stats and ask the assistant.
+6. **Hints are the feedback.** No live pass/fail. Players reason from per-piece stats; Mission Control watches the grid and talks — fun facts early, increasingly specific hints later.
 
 ---
 
@@ -38,9 +38,9 @@ Co-op **learning game** for **four players**. An agent researches a **random rea
 
 | Layer | Choice | Role |
 | --- | --- | --- |
-| **Live multiplayer & sim** | [SpacetimeDB](https://spacetimedb.com/) (TypeScript module + client SDK) | Rooms, join codes, placements, cursors, timer, diagnosis, evaluation, hint captions; **reducers** are the only writers; clients **subscribe**. |
-| **Node service** | Node + TypeScript, WebSocket server | Holds `XAI_API_KEY`; runs the **research agent** and **one Grok Voice session per room**; relays push-to-talk audio in and broadcasts hint audio out. Connects to Spacetime with a **server identity**. |
-| **In-game AI** | [xAI Grok Voice](https://docs.x.ai/) (realtime voice) | Phrases hints from server-computed diagnosis. Runs server-side so every device hears the same thing. |
+| **Live multiplayer & sim** | [SpacetimeDB](https://spacetimedb.com/) (TypeScript module + client SDK) | Rooms, join codes, placements, cursors, timer, evaluation, hint captions; **reducers** are the only writers; clients **subscribe**. |
+| **Node service** | Node + TypeScript, WebSocket server | Holds `XAI_API_KEY`; runs the **research agent** and **one Grok Voice session per room**; broadcasts hint audio out. Connects to Spacetime with a **server identity**. |
+| **In-game AI** | [xAI Grok Voice](https://docs.x.ai/) (realtime voice) | Watches the grid (via a server-computed board read) and speaks fun facts early, then increasingly specific hints. Runs server-side so every device hears the same thing. |
 | **Research agent** | xAI chat API with tool calling, on the Node service | One provider, one key. Fetches planet data, maps it to the schema, streams progress, commits the round. |
 | **Frontend** | Vite + React + TypeScript; grid as **DOM/CSS grid** (no canvas) | 8×8 grid is small — DOM gives hover tooltips, click targets, and styling for free. Planet background via CSS art per planet type. |
 | **Research data** | NASA Exoplanet Archive (live) + checked-in solar-system JSON + NASA BVAD | See **Research sources**. |
@@ -159,6 +159,7 @@ Cheapest winning build per planet should differ — this is what makes planets f
 - **Ice tiles:** 4 if the planet has water/ice, else 0. On polar bodies (Moon, Mercury) ice tiles are **inside shaded tiles** — real permanently shadowed craters.
 - Solar on lit tiles only; drills on ice tiles only; everything else anywhere free.
 - Everyone sees everyone's **live cursor** (name + color).
+- **Coordinates** labeled on the grid edges (columns **A–H**, rows **1–8**) so spoken hints can point at tiles ("put a drill on the ice at C6").
 
 ---
 
@@ -176,7 +177,7 @@ Cheapest winning build per planet should differ — this is what makes planets f
 
 ---
 
-## Evaluation & diagnosis
+## Evaluation & board read
 
 Counts below only include validly placed pieces.
 
@@ -195,27 +196,48 @@ Radiation  : berms adjacent to habitat ≥ required (4 or 6, from researched dos
 ```
 
 - **Evaluation** runs once at 0:00 and stores per-requirement pass/fail + reason.
-- **Diagnosis** reuses the formula on every place/remove and stores the **worst-failing requirement, the shortfall, and the planet fact responsible** (e.g. "Power: night short by 4; night = 14 Earth days"). The voice reads this; players never see it directly.
+- **Board read** (computed by the Node service at each voice cue from public tables, using the same shared code):
+  - **Diagnosis:** per-requirement status, the **worst-failing requirement, its shortfall, and the planet fact responsible** (e.g. "Power: night short by 4; night = 14 Earth days").
+  - **Suggestion:** from the winnability enumeration, the winning build **closest to the current board** (fewest adds/removes, then least mass) → a short action list with tiles, e.g. `add ice_drill @ C6`, `remove solar @ F2`. Tiles = first valid free tile nearest the habitat.
+  - **Board summary:** pieces with coordinates, free ice / lit / habitat-adjacent tiles, mass used / remaining, pending berms.
+  - **Change since last cue:** requirements that flipped to passing, whether the board changed at all.
+  - Players never see the board read directly — only what Mission Control says.
 - **Winnability check** (in `commit_round`): brute-force piece counts (solar 0–12, battery 0–9, reactor 0–2, each tank 0–4, drill 0–2, O₂ unit 0–2 → ~90k combos, trivial), confirm one fits the grid's tile constraints, compute cheapest cost, set the mass budget, or reject.
 
 ---
 
 ## Voice assistant (in-game)
 
-Same voice on **every device**, with a per-device **mute**.
+**Listen-only.** Players don't talk to it — Mission Control speaks timed hints. Same voice on **every device**, with a per-device **mute**.
 
 | Topic | Direction |
 | --- | --- |
-| **Session** | **One Grok Voice session per room, run on the Node service** (not in a browser). Survives host changes. |
-| **Push-to-talk** | Any player holds the talk button on their own device. Floor control via Spacetime: `claim_floor` / `release_floor` — first press wins; others see "Sam is asking…". Mic audio streams from that device to the Node service. |
+| **Session** | **One Grok Voice session per room, run on the Node service** (not in a browser). Survives host changes. Text in, audio out — no microphones. |
+| **What it looks at** | The **grid**: at every cue Node computes a fresh **board read** (diagnosis + suggestion + board summary + change since last cue) and sends it as one text message with the time left and the cue's mode. No tool calls needed. |
+| **When it speaks** | Scheduled cues from Spacetime, ~every 20 s, shifting from facts to hints (see schedule below). |
 | **Output** | Node broadcasts Grok's audio to **all devices in the room** over WebSocket; transcript written to the `hint` table → **captions on every screen**. |
-| **Mute** | Local toggle per device (audio off, captions stay). Default on. The talking device auto-ducks playback while its button is held; mic uses browser echo cancellation. |
-| **Grounding** | Never does math. Reads the server **diagnosis** and planet facts via tools, then phrases a hint. |
-| **Tools** | `read_diagnosis`, `read_time_left`, `read_requirements`, `read_planet_fact(field)`, `read_board` |
-| **Proactive hints** | Node service watches the room timer and prompts Grok at **1:30, 0:45, 0:15** left. |
-| **Escalation** | Vague → specific: "your water plan won't last" → "short on water; this planet has ice" → "an ice drill on the ice tile bottom-left closes it" |
-| **Style** | One requirement + the researched fact behind it per hint; ≤ 2 sentences (expect only 2–4 exchanges per round). |
-| **No API key / API down** | Node writes template hints from the diagnosis to the `hint` table on the same schedule; every device speaks them with browser `speechSynthesis` (still same audio everywhere, still mutable). |
+| **Mute** | Local toggle per device (audio off, captions stay). Default on. |
+| **Grounding** | Never does math and never invents numbers — it only phrases the board read, facts, and tiles it was given. |
+| **Style** | ≤ 2 sentences. Hints name one requirement, the researched fact behind it, and (later) a piece + tile. |
+| **Acknowledge progress** | If a requirement flipped to passing since the last cue, open with a short "Nice — power's covered." |
+| **No repeats** | If the board hasn't changed since the last hint, escalate one level instead of repeating. If audio is still playing when a cue fires, skip that cue. |
+| **All passing** | Encouragement + a fun fact, and "you can lock in early." |
+| **No API key / API down** | Node writes template lines (fun facts verbatim; hints from the board read) to the `hint` table on the same schedule; every device speaks them with browser `speechSynthesis` (still same audio everywhere, still mutable). |
+
+### Cue schedule (2:30 build)
+
+| Time left | Mode | Example |
+| --- | --- | --- |
+| **2:25** | Welcome + fun fact | "Welcome to the Moon's south pole. A single night here lasts about 14 Earth days." |
+| **2:05** | Fun fact | "The ice you're standing near sits in craters that haven't seen sunlight in billions of years — LCROSS confirmed it in 2009." |
+| **1:45** | Fun fact (ties to a requirement) | "With no atmosphere, radiation hits the surface at about 1.4 millisieverts a day." |
+| **1:30** | Hint — **nudge** (which system is weak) | "Your crew's going to get thirsty." |
+| **1:10** | Hint — **direction** (piece type + why) | "Water's short, and this planet has ice — something should be drilling." |
+| **0:50** | Hint — **direction** | "Nights here are two weeks long; solar alone won't carry you." |
+| **0:30** | Hint — **exact** (piece + tile) | "Put an ice drill on C6." |
+| **0:15** | Hint — **exact** / last call | "Two berms next to the habitat — D3 and E3 — and you're done." |
+
+Fun facts come from the research agent (see `write_card`), so they're sourced like everything else. Hint levels are a floor: "no repeats" can push a hint more specific earlier.
 
 ---
 
@@ -248,7 +270,7 @@ Runs in the **lobby** (and during debrief for the next round) so players never w
 2. **Fetch** via tier 1 or 2 and **map** fetched fields to the profile with `set_parameter(fetch_id, field)`.
 3. **Mark unknowns** with `mark_estimated` and write a plain "why we don't know" note (e.g. *"Rotation hasn't been measured; planets this close to their star are often tidally locked."*).
 4. **Choose the twist** among those the data triggers (prefer one different from last round) and write a one-line justification referencing the parameter.
-5. **Write the card text:** each requirement's because-line, the headline fact, and a scale comparison (distance, size vs Earth, sunlight vs Earth). If `reflink` is present, credit the paper ("radius measured by …").
+5. **Write the card text:** each requirement's because-line, the headline fact, a scale comparison (distance, size vs Earth, sunlight vs Earth), and **3 fun facts** for Mission Control's opening cues (the third ties to a requirement). If `reflink` is present, credit the paper ("radius measured by …").
 6. **Narrate** to `research_log` as it goes (shown in the lobby/briefing — the research is part of the show), e.g. *"Querying NASA Exoplanet Archive… TRAPPIST-1 e: 0.66× Earth's sunlight."*
 7. **Commit** via `commit_round`. The reducer checks every parameter has a source or estimate note, **computes the thresholds**, runs the winnability check, and sets the mass budget.
 
@@ -262,7 +284,7 @@ Runs in the **lobby** (and during debrief for the next round) so players never w
 | `set_parameter(fetch_id, field)` | Copies a fetched value into the round profile |
 | `mark_estimated(field, note)` | Applies the fixed default + explanation |
 | `choose_twist(kind, justification, param_ref)` | Must be a twist the parameters trigger |
-| `write_card(because_lines[], headline, scale_text)` | Each line references a parameter row |
+| `write_card(because_lines[], headline, scale_text, fun_facts[3])` | Each line and fun fact references a parameter row |
 | `log_step(text)` | Streams to `research_log` |
 | `commit_round()` | Server validates, computes thresholds, winnability, budget |
 
@@ -334,10 +356,10 @@ Each stored requirement row: `{ round_id, kind: power | life_support | twist, th
 
 | Topic | Notes |
 | --- | --- |
-| Tables | `room`, `member`, `round`, `planet_parameter`, `requirement`, `tile`, `piece`, `cursor`, `diagnosis`, `research_log`, `hint`, `voice_floor`, `result` |
-| Player reducers | `create_room`, `join_room`, `start_round`, `begin_build`, `place_piece`, `remove_piece`, `move_cursor`, `claim_floor`, `release_floor`, `lock_build`, `rematch` |
-| Server-only reducers | `commit_round`, `log_research`, `post_hint` (Node service identity only) |
-| Timer | Scheduled reducer ends the build at 0:00 and runs evaluation |
+| Tables | Public: `room`, `member`, `round`, `planet_parameter`, `requirement`, `tile`, `piece`, `cursor`, `research_log`, `hint`, `result`. Private: `server_config`. Scheduled: build end, `hint_cue`, berm completion, room TTL |
+| Player reducers | `create_room`, `join_room`, `start_round`, `begin_build`, `place_piece`, `remove_piece`, `start_berm`, `cancel_berm`, `move_cursor`, `lock_build`, `rematch` |
+| Server-only reducers | `commit_round`, `log_research`, `post_hint` (Node service identity only); `set_server_identity` (publisher only) |
+| Timer | One-shot scheduled row ends the build at 0:00 and runs evaluation; clients count down locally from `build_ends_at` |
 | Lifecycle | `client_connected` / `client_disconnected` mark members online/offline |
 | Identity | Anonymous Spacetime identities; token kept in `localStorage` so a refresh rejoins as the same member |
 | Host migration | On host disconnect, the **longest-joined online member** becomes host. Voice is unaffected (it runs on the Node service). A returning ex-host rejoins as a normal member. |
@@ -354,7 +376,7 @@ Each stored requirement row: `{ round_id, kind: power | life_support | twist, th
 2. Research agent (or cached pack) commits a planet; all clients show the same Mission Requirements Card, with every threshold traceable to a sourced parameter.
 3. Two different planets produce different requirement cards (different twist or thresholds); `set_parameter` rejects a value with no matching `fetch_id`.
 4. Winnability check rejects an impossible planet and sets the budget for a valid one.
-5. Diagnosis updates on place/remove; a voice hint cites the failing requirement and the researched fact behind it from tools.
+5. Opening cues speak sourced fun facts; later cues reflect the **current grid** (failing requirement, its researched fact, and a specific piece + tile at 0:30).
 6. A hint plays on all four devices; muting one device silences only that device while captions remain.
 7. Host disconnects mid-build; another member becomes host and the round continues.
 8. Timer hits 0:00; evaluation and debrief match the formula.
