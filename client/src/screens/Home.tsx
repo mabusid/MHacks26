@@ -42,7 +42,7 @@ export default function Home() {
     return (
       <div className="card home">
         <h1 className="title">Overburden</h1>
-        <p className="muted">Land on a real planet. Build a base in 90 seconds.</p>
+        <p className="muted">Land on a real planet. Build a base in 2 minutes.</p>
         <button className="primary big" onClick={() => setStep('create')}>
           Create a team
         </button>

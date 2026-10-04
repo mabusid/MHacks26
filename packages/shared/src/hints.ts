@@ -10,16 +10,18 @@ import { noParens } from './speech';
 export type CueMode = 'fact' | 'nudge' | 'direction' | 'exact';
 
 /**
- * Seconds left on the 1:30 build clock when each cue fires, and what it says. Help is capped so the voice
+ * Seconds left on the 2:00 build clock when each cue fires, and what it says. Help is capped so the voice
  * confirms the crew's reasoning instead of solving the round: one exact move, at the very end.
+ * Evenly spaced ~20 s apart: a two-sentence line takes ~8–10 s to speak, so each one finishes with room to
+ * act before the next (15 s gaps made lines run together, and a cue is skipped while the last still plays).
  */
 export const CUES: { secondsLeft: number; mode: CueMode }[] = [
-  { secondsLeft: 85, mode: 'fact' },
-  { secondsLeft: 72, mode: 'fact' },
-  { secondsLeft: 60, mode: 'nudge' },
-  { secondsLeft: 45, mode: 'direction' },
-  { secondsLeft: 30, mode: 'direction' },
-  { secondsLeft: 15, mode: 'exact' },
+  { secondsLeft: 116, mode: 'fact' },
+  { secondsLeft: 98, mode: 'fact' },
+  { secondsLeft: 78, mode: 'nudge' },
+  { secondsLeft: 58, mode: 'direction' },
+  { secondsLeft: 38, mode: 'direction' },
+  { secondsLeft: 18, mode: 'exact' },
 ];
 
 const ESCALATE: Record<CueMode, CueMode> = { fact: 'fact', nudge: 'direction', direction: 'exact', exact: 'exact' };

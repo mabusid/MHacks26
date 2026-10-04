@@ -3,6 +3,7 @@ import { boardRead } from './boardRead';
 import { FIXTURES } from './fixtures';
 import { generateTiles, mulberry32 } from './grid';
 import { effectiveMode, templateHint, CUES } from './hints';
+import { BUILD_SECONDS } from './pieces';
 import { speakable } from './speech';
 import { deriveRules } from './rules';
 import { solveRound, winningBuilds } from './winnability';
@@ -19,9 +20,11 @@ const input = (mode: Parameters<typeof templateHint>[0]['mode'], read = boardRea
 });
 
 describe('cue schedule', () => {
-  it('runs facts first, then nudge → direction, with one exact move at the end, inside 1:30', () => {
+  it('runs facts first, then nudge → direction, with one exact move at the end, inside 2:00', () => {
     expect(CUES.map(c => c.mode)).toEqual(['fact', 'fact', 'nudge', 'direction', 'direction', 'exact']);
-    expect(CUES.every(c => c.secondsLeft > 0 && c.secondsLeft < 90)).toBe(true);
+    expect(CUES.every(c => c.secondsLeft > 0 && c.secondsLeft < BUILD_SECONDS)).toBe(true);
+    // Room to finish speaking (~10 s) before the next cue.
+    for (let i = 1; i < CUES.length; i++) expect(CUES[i - 1].secondsLeft - CUES[i].secondsLeft).toBeGreaterThanOrEqual(18);
   });
 });
 

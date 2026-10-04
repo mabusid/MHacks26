@@ -1,5 +1,5 @@
 // Checkpoint 3: commit_round (fixture path), validation, start → auto briefing → build transitions.
-// Needs `pnpm dev` running. Run: pnpm check:phase3   (add --wait-end to also wait out the 1:30 build timer)
+// Needs `pnpm dev` running. Run: pnpm check:phase3   (add --wait-end to also wait out the 2:00 build timer)
 import { execFileSync } from 'node:child_process';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -173,11 +173,11 @@ await step('host Start → Briefing for everyone with a ~10 s countdown; guest c
   return `${secs.toFixed(0)} s countdown`;
 });
 
-await step('build starts automatically when the countdown ends: Build phase, ~90 s timer, round active', async () => {
+await step('build starts automatically when the countdown ends: Build phase, ~120 s timer, round active', async () => {
   await until('auto build', () => room()!.phase.tag === 'Build', 13_000);
   const rd = db.round.id.find(room()!.currentRoundId!)!;
   const secs = (Number(rd.buildEndsAt!.microsSinceUnixEpoch / 1000n) - Date.now()) / 1000;
-  if (rd.status.tag !== 'Active' || rd.briefingEndsAt !== undefined || secs < 85 || secs > 91) {
+  if (rd.status.tag !== 'Active' || rd.briefingEndsAt !== undefined || secs < 115 || secs > 121) {
     throw new Error(`status ${rd.status.tag}, ${secs.toFixed(1)} s left`);
   }
   return `${secs.toFixed(0)} s left`;

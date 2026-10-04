@@ -116,7 +116,7 @@ Stinger first (~1 s): **TIME** or **LOCKED IN**, then "Scoring…". Then pages w
 | Home → Lobby | Create / Join | HUD swaps; the canvas stays mounted | Code, crew, research streaming; sound enabled by the click |
 | Lobby (researching) | Host wants to start | Start disabled "Researching…" | Log rows stream (fetch steps, then "exploring…" narration while the agent writes); the fallback chain caps research at ~20 s (typically ~3–6 s) |
 | Lobby → Briefing | Host **Start** | Camera push-in (~2 s) inside a 12 s countdown | Planet + 3 lines; host may **Skip** |
-| Briefing → Build | Countdown ends or Skip | Briefing card fades; HUD fades in (220 ms, opacity only) | 1:30 timer counts from the server's end time; welcome fact ~4 s later |
+| Briefing → Build | Countdown ends or Skip | Briefing card fades; HUD fades in (220 ms, opacity only) | 2:00 timer counts from the server's end time; welcome fact ~4 s later |
 | Build → Debrief | 0:00 or host Lock in | Stinger **TIME** / **LOCKED IN** → "Scoring…" → verdict | Placing stops immediately |
 | Debrief → Briefing | **Next planet** with one prepared | As Lobby → Briefing | Anyone who joined during the debrief is in the crew |
 | Debrief → Lobby | **Next planet**, none prepared | Lobby with research streaming | Joins open |

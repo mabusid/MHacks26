@@ -11,6 +11,32 @@ let playhead = 0;
 let muted = false;
 const listeners = new Set<() => void>();
 
+/**
+ * The line being spoken right now, timed on the audio clock so captions can type in step with the voice:
+ * `start` = when its first chunk is scheduled to play, `duration` = audio received so far, `done` once the
+ * server says the line is complete (Grok generates faster than real time, so that's before playback ends).
+ */
+let line: { key: string; start?: number; duration: number; done: boolean } | undefined;
+
+export function beginLine(key: string): void {
+  line = { key, duration: 0, done: false };
+}
+
+export function endLine(key: string): void {
+  if (line?.key === key) line.done = true;
+}
+
+/**
+ * How much of line `key` has been heard, 0–1, or undefined if it isn't playing here (sound blocked, or no
+ * audio for it). Until the line is complete, its length is the larger of the audio so far and `estimateS`.
+ */
+export function lineProgress(key: string, estimateS: number): number | undefined {
+  if (!ctx || !line || line.key !== key || line.start === undefined) return undefined;
+  const total = line.done ? line.duration : Math.max(line.duration, estimateS);
+  if (total <= 0) return 0;
+  return Math.min(1, Math.max(0, (ctx.currentTime - line.start) / total));
+}
+
 function ensure(): AudioContext | undefined {
   if (ctx) return ctx;
   try {
@@ -58,6 +84,10 @@ export function playPcm(buf: ArrayBuffer): void {
   src.connect(gain);
   playhead = Math.max(playhead, c.currentTime + JITTER_S);
   src.start(playhead);
+  if (line) {
+    line.start ??= playhead;
+    line.duration += audio.duration;
+  }
   playhead += audio.duration;
 }
 

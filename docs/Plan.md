@@ -1,6 +1,6 @@
 # Overburden — plan (simple)
 
-Co-op **learning game** for **four players**. An agent researches a **random real planet** (solar system or exoplanet) from public space data, and **that research sets the win criteria** — the requirements, their thresholds, which pieces work, and the mass budget all come from the planet's real numbers. The crew has **1:30** to build a base on a shared grid that meets **three requirements** without going over the **mass budget**. There is no live score or counts — players reason from per-piece stats and the planet's facts; a requirement line just **turns green once it's met**, and the **voice assistant's hints** explain what's missing. The debrief ties the result back to the real science.
+Co-op **learning game** for **four players**. An agent researches a **random real planet** (solar system or exoplanet) from public space data, and **that research sets the win criteria** — the requirements, their thresholds, which pieces work, and the mass budget all come from the planet's real numbers. The crew has **2:00** to build a base on a shared grid that meets **three requirements** without going over the **mass budget**. There is no live score or counts — players reason from per-piece stats and the planet's facts; a requirement line just **turns green once it's met**, and the **voice assistant's hints** explain what's missing. The debrief ties the result back to the real science.
 
 **Pitch:** a fun way to touch research/space data that rarely gets attention — real planets give a sense of **scale and variety**.
 
@@ -16,7 +16,7 @@ Co-op **learning game** for **four players**. An agent researches a **random rea
 | | |
 | --- | --- |
 | Players | 4, co-op in one room, each on their own device |
-| Round length | ~2 min total (briefing ~12s, **build 1:30**, debrief ~20s) |
+| Round length | ~2.5 min total (briefing ~12s, **build 2:00**, debrief ~20s) |
 | Variety | Random real planet per round; **same loop, same timer, same pieces** — **research sets the win criteria** (thresholds, twist, usable pieces, mass budget) |
 | View | Persistent **3D world** behind the HUD (React Three Fiber); the build board is an HTML grid tilted for depth (2.5D). See [design.md](./design.md) |
 | Authority | **SpacetimeDB** — shared state, reducers, subscriptions; clients render only |
@@ -53,7 +53,7 @@ Co-op **learning game** for **four players**. An agent researches a **random rea
 ```
 Lobby (create / join with code)  ← research agent runs here, in background
     → Briefing   (~12s)   automatic transition: planet, headline fact, goal line, 3 one-line requirements, countdown
-    → Build      (1:30)   place pieces on shared grid, voice hints, requirement lines turn green when met
+    → Build      (2:00)   place pieces on shared grid, voice hints, requirement lines turn green when met
     → Evaluate   (instant) server formula
     → Debrief    (~20s)   per-requirement result, reason, the real fact behind it, sources
     → Rematch    (new planet)
@@ -253,16 +253,18 @@ Dust       : charged batteries ≥ ceil(night · (band + 1) / 3)   # storm reser
 | **All passing** | Encouragement + a fun fact, and "you can lock in early." |
 | **No API key / API down** | Node writes template lines (fun facts verbatim; hints from the board read) to the `hint` table on the same schedule; every device speaks them with browser `speechSynthesis` (still same audio everywhere, still mutable). |
 
-### Cue schedule (1:30 build)
+### Cue schedule (2:00 build)
+
+Evenly spaced ~20 s apart so each line (~8–10 s spoken) finishes with time to act before the next. **Captions follow the audio clock:** the voice socket brackets each line with `start`/`end`, the client records when its audio actually plays and how long it is, and the caption reveals text in proportion to what's been heard (steady 15 chars/s only when no audio is playing on that device).
 
 | Time left | Mode | Example |
 | --- | --- | --- |
-| **1:25** | Welcome + fun fact | "Welcome to the Moon's south pole, where one night lasts about two Earth weeks." |
-| **1:12** | Fun fact | "LCROSS crashed into a shadowed crater here and found water in the plume." |
-| **1:00** | Hint — **nudge** (which system is weak + the researched fact why) | "Heads up, crew. Your people are going to run short on water or air. Remember, LCROSS found water ice in permanently shadowed craters." |
-| **0:45** | Hint — **direction** (problem in words + researched fact, **no counts**) | "The crew will run out of water before the mission ends. Remember, LCROSS found water ice in permanently shadowed craters." |
-| **0:30** | Hint — **direction** | "When night falls, your batteries won’t last until sunrise. Remember, a lunar night lasts about 15 Earth days, with no sunlight at all." |
-| **0:15** | Hint — **exact** (one piece + tile) | "Try putting an ice drill on C6." |
+| **1:56** | Welcome + fun fact | "Welcome to the Moon's south pole, where one night lasts about two Earth weeks." |
+| **1:38** | Fun fact | "LCROSS crashed into a shadowed crater here and found water in the plume." |
+| **1:18** | Hint — **nudge** (which system is weak + the researched fact why) | "Heads up, crew. Your people are going to run short on water or air. Remember, LCROSS found water ice in permanently shadowed craters." |
+| **0:58** | Hint — **direction** (problem in words + researched fact, **no counts**) | "The crew will run out of water before the mission ends. Remember, LCROSS found water ice in permanently shadowed craters." |
+| **0:38** | Hint — **direction** | "When night falls, your batteries won’t last until sunrise. Remember, a lunar night lasts about 15 Earth days, with no sunlight at all." |
+| **0:18** | Hint — **exact** (one piece + tile) | "Try putting an ice drill on C6." |
 
 **Suggestion target:** the cheapest winning build that still contains everything the crew placed (respects their choices, teaches the planet's cheap answer). If none exists, the fewest-changes build. **Mission Control never talks about the cargo budget or removals:** the mass bar already shows the limit, and moves happen faster than a cue can react, so budget advice arrived out of date. The exact cue only ever names a placement.
 

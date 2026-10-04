@@ -13,7 +13,7 @@ export default function MissionControlBar({ roomCode, hint, standby }: { roomCod
   const { locked } = useVoice(roomCode, true, hint, muted);
   // Only real lines type out (they're being spoken). The standby is a quiet status, not a line: typing it
   // made it look like Mission Control was talking with no sound.
-  const typed = useTypewriter(hint?.text ?? '');
+  const typed = useTypewriter(hint?.text ?? '', hint?.key, hint?.voiced);
 
   const state = locked && !muted ? 'tap to enable sound' : muted ? 'muted · tap to unmute' : 'tap to mute';
   return (

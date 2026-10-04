@@ -304,7 +304,7 @@ Notes: Europa's dose has no verified surface measurement, so it's estimated (4 b
 
 **9a — Hint pipeline (no voice)**
 
-- `hint` table + `post_hint` (server only). Six cues on the 1:30 clock (`CUES` in `hints.ts`): 1:25 / 1:12 fun facts; 1:00 nudge; 0:45, 0:30 direction; 0:15 exact. Node fires each ~2 s early to absorb speech latency.
+- `hint` table + `post_hint` (server only). Six cues on the 2:00 clock (`CUES` in `hints.ts`): 1:55 / 1:30 fun facts; 1:00 nudge; 0:45, 0:30 direction; 0:15 exact. Node fires each ~2 s early to absorb speech latency.
 - Node on cue: compute `boardRead` → apply no-repeat/escalate and acknowledge-progress rules → template line → `post_hint`. Skip the cue if the previous line is still playing.
 - Fun facts come from `round.fun_facts` (written by the research agent / fixture).
 - Client: caption bar; `speechSynthesis` reads new hints; mute toggle.

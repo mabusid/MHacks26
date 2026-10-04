@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { audioLocked, onAudioStateChange, playPcm, setAudioMuted, speak } from './audio';
+import { audioLocked, beginLine, endLine, onAudioStateChange, playPcm, setAudioMuted, speak } from './audio';
 import type { Hint } from './module_bindings/types';
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL ?? 'http://localhost:8787';
@@ -25,7 +25,15 @@ export function useVoice(roomCode: string | undefined, active: boolean, latest: 
       ws = new WebSocket(`${VOICE_URL}/voice?room=${roomCode}`);
       ws.binaryType = 'arraybuffer';
       ws.onmessage = e => {
-        if (e.data instanceof ArrayBuffer) playPcm(e.data);
+        if (e.data instanceof ArrayBuffer) return playPcm(e.data);
+        // {type:'start'|'end', key}: brackets each spoken line so its caption can follow the audio clock.
+        try {
+          const msg = JSON.parse(String(e.data)) as { type?: string; key?: string };
+          if (msg.key && msg.type === 'start') beginLine(msg.key);
+          else if (msg.key && msg.type === 'end') endLine(msg.key);
+        } catch {
+          // Not a control message.
+        }
       };
       ws.onclose = () => {
         if (!closed) retry = setTimeout(open, 2000);
