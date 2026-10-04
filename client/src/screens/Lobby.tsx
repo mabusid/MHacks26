@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useReducer } from 'spacetimedb/react';
 import TeamPanel from '../components/TeamPanel';
-import { keyFacts } from '../format';
+import { factChips } from '../format';
 import { reducers } from '../module_bindings';
 import type { RoomData } from '../useRoom';
 import { useReducerCall } from '../useReducerCall';
@@ -40,9 +40,13 @@ export default function Lobby({ data }: { data: RoomData }) {
             <p className="label">Destination</p>
             <h2 className="planet-name">{next.planetName}</h2>
             <p className="headline">{next.headline}</p>
-            <ul className="key-facts">
-              {keyFacts(params).map(f => (
-                <li key={f}>{f}</li>
+            <ul className="chips" aria-label="Key facts">
+              {factChips(params).map(c => (
+                <li key={c.label} className="chip">
+                  <span aria-hidden>{c.icon}</span>
+                  <strong>{c.text}</strong>
+                  <span className="chip-label">{c.label}</span>
+                </li>
               ))}
             </ul>
           </>

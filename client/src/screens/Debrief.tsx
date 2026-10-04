@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useReducer } from 'spacetimedb/react';
 import { PIECES, PIECE_KINDS, rulesFromRound, solveRound, type Counts, type PieceKind, type TileKind } from '@overburden/shared';
-import TeamPanel from '../components/TeamPanel';
+import CrewStrip from '../components/CrewStrip';
+import PieceIcon from '../components/PieceIcon';
 import { paramLabel } from '../format';
 import { reducers } from '../module_bindings';
 import type { RoomData } from '../useRoom';
 import { useReducerCall } from '../useReducerCall';
 
 const ICON: Record<string, string> = { power: '⚡', life_support: '💧', twist: '⚠' };
+const SHORT: Record<string, string> = { power: 'Power', life_support: 'Life support' };
 const STINGER_MS = 1200;
 /** Follow from other unknowns (no water → no polar ice; no atmosphere → no weather), so not listed twice. */
 const UNKNOWN_SKIP = new Set(['polarIce', 'dustStorms']);
@@ -23,11 +25,10 @@ function buildText(c: Counts): string {
     .join(' · ');
 }
 
-/** Stinger (TIME / LOCKED IN) → verdict. Split card: crew | outcome (docs/design.md → Debrief). */
+/** Stinger (TIME / LOCKED IN) → verdict. One compact card beside the base (docs/design.md → Debrief). */
 export default function Debrief({ data }: { data: RoomData }) {
   const { current, results, requirements, params, pieces, tiles, isHost, next } = data;
   const nextPlanet = useReducerCall(useReducer(reducers.rematch));
-  const [showSources, setShowSources] = useState(false);
   const [stinger, setStinger] = useState(true);
   useEffect(() => {
     const t = setTimeout(() => setStinger(false), STINGER_MS);
@@ -65,65 +66,88 @@ export default function Debrief({ data }: { data: RoomData }) {
     .map(p => paramLabel(p.field));
   const sources = [...new Set(params.filter(p => p.sourceLabel).map(p => p.sourceLabel))];
 
+  const failed = results.filter(r => !r.pass).length;
+  const name = (kind: string) => (kind === 'twist' ? (requirements.find(r => r.kind === kind)?.title ?? 'Twist') : SHORT[kind]);
+
   return (
-    <div className="card split">
-      <TeamPanel data={data} />
-      <div className="half planet">
+    <div className="card debrief">
+      <header className="debrief-head">
         <p className="label">{current.planetName}</p>
         {!scored ? (
           <p className="muted blink">Scoring…</p>
         ) : (
           <>
             <h2 className={success ? 'verdict ok' : 'verdict bad'}>{success ? 'Mission success' : 'Mission failed'}</h2>
-            <ul className="results">
-              {results.map(r => (
-                <li key={String(r.id)} className={r.pass ? 'pass' : 'fail'}>
-                  <span className="result-mark" aria-label={r.pass ? 'passed' : 'failed'}>
-                    {r.pass ? '✓' : '✗'}
-                  </span>
-                  <span className="req-icon" aria-hidden>
-                    {ICON[r.kind]}
-                  </span>
-                  <span className="result-text">
-                    {r.reason}
-                    {because(r.kind) && <span className="result-why">{because(r.kind)}</span>}
-                  </span>
-                </li>
-              ))}
-            </ul>
-            {cheapest && (
-              <div className="answer-key">
-                <p className="label">{success && massUsed <= cheapest.mass ? 'Perfect build — the cheapest base here' : 'Cheapest base that works here'}</p>
-                <p>
-                  {buildText(cheapest.counts)} · <strong>{cheapest.mass} CU</strong>
-                </p>
-                <p className="muted small">Yours: {massUsed} CU</p>
-              </div>
-            )}
-            <div className="key-fact">
-              <p className="label">Did you know?</p>
-              <p>{current.headline}</p>
-              {unknown.length > 0 && <p className="muted small">Still unknown: {unknown.join(' · ')}</p>}
-            </div>
-            {sources.length > 0 && (
-              <button className="link-btn" onClick={() => setShowSources(s => !s)}>
-                {showSources ? sources.join(' · ') : 'Sources'}
-              </button>
-            )}
+            <p className="muted">{success ? 'Every system held.' : `${results.length - failed} of ${results.length} systems held.`}</p>
           </>
         )}
+      </header>
 
-        <div className="planet-foot">
-          {isHost ? (
-            <button className="primary big" disabled={!scored || nextPlanet.pending} onClick={() => nextPlanet.run()}>
-              {next?.status.tag === 'Ready' ? `Next planet: ${next.planetName}` : 'Next planet'}
-            </button>
-          ) : (
-            <p className="muted">Waiting for the host… · friends can join now with the code</p>
+      {scored && (
+        <>
+          {/* One row per requirement; the planet fact only where it failed — that's the lesson. */}
+          <ul className="results">
+            {results.map(r => (
+              <li key={String(r.id)} className={r.pass ? 'pass' : 'fail'}>
+                <span className="result-mark" aria-label={r.pass ? 'passed' : 'failed'}>
+                  {r.pass ? '✓' : '✗'}
+                </span>
+                <span className="result-name">
+                  <span aria-hidden>{ICON[r.kind]}</span> {name(r.kind)}
+                </span>
+                <span className="result-text">
+                  {r.reason}
+                  {!r.pass && because(r.kind) && <span className="result-why">{because(r.kind)}</span>}
+                </span>
+              </li>
+            ))}
+          </ul>
+
+          {cheapest && (
+            <section className="answer-key">
+              <div className="answer-head">
+                <p className="label">{success && massUsed <= cheapest.mass ? 'Perfect build' : 'Cheapest base here'}</p>
+                <p className="answer-mass">
+                  <strong>{cheapest.mass} CU</strong> <span className="muted">· yours {massUsed}</span>
+                </p>
+              </div>
+              <ul className="answer-pieces" aria-label={buildText(cheapest.counts)}>
+                {PIECE_KINDS.filter(k => cheapest.counts[k] > 0).map(k => (
+                  <li key={k} title={PIECES[k].label}>
+                    <PieceIcon kind={k} size={26} />
+                    <span>×{cheapest.counts[k]}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
           )}
-          {nextPlanet.error && <p className="error">{nextPlanet.error}</p>}
-        </div>
-      </div>
+
+          <section className="key-fact">
+            <p className="label">Did you know?</p>
+            <p>{current.headline}</p>
+          </section>
+
+          {(sources.length > 0 || unknown.length > 0) && (
+            <details className="more">
+              <summary>Sources & what we don’t know yet</summary>
+              {unknown.length > 0 && <p className="muted small">Not yet measured: {unknown.join(' · ')}</p>}
+              {sources.length > 0 && <p className="muted small">Sources: {sources.join(' · ')}</p>}
+            </details>
+          )}
+        </>
+      )}
+
+      <footer className="debrief-foot">
+        {isHost ? (
+          <button className="primary big" disabled={!scored || nextPlanet.pending} onClick={() => nextPlanet.run()}>
+            {next?.status.tag === 'Ready' ? `Next planet: ${next.planetName}` : 'Next planet'}
+          </button>
+        ) : (
+          <p className="muted">Waiting for the host to pick the next planet…</p>
+        )}
+        {nextPlanet.error && <p className="error">{nextPlanet.error}</p>}
+        <CrewStrip data={data} />
+      </footer>
     </div>
   );
 }

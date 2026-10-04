@@ -67,20 +67,20 @@ export const PHASE_LABEL: Record<string, string> = {
   Debrief: 'Debrief',
 };
 
-/** 2–3 short numbers for the lobby and briefing (less to read than the full facts). */
-export function keyFacts(params: readonly PlanetParameter[]): string[] {
+/** Lobby + briefing stat chips: icon + a few characters each, scanned at a glance (numbers over sentences). */
+export function factChips(params: readonly PlanetParameter[]): { icon: string; text: string; label: string }[] {
   const get = (f: string) => params.find(p => p.field === f);
-  const out: string[] = [];
+  const out: { icon: string; text: string; label: string }[] = [];
   const sun = get('insolation');
   if (sun?.num !== undefined) {
     const pct = sun.num * 100;
-    out.push(pct < 10 ? `${pct.toFixed(1)}% of Earth’s sunlight` : `${Math.round(pct)}% of Earth’s sunlight`);
+    out.push({ icon: '☀', text: `${pct < 10 ? pct.toFixed(1) : Math.round(pct)}%`, label: 'Earth’s sunlight' });
   }
   const night = get('nightHours');
-  if (night?.num === 0) out.push('No night (always faces its star)');
-  else if (night?.num !== undefined) out.push(night.num > 48 ? `${Math.round(night.num / 24)}-day nights` : `${Math.round(night.num)}-hour nights`);
-  else if (night) out.push('night length unknown');
+  if (night?.num === 0) out.push({ icon: '☾', text: 'None', label: 'night' });
+  else if (night?.num !== undefined) out.push({ icon: '☾', text: night.num > 48 ? `${Math.round(night.num / 24)} d` : `${Math.round(night.num)} h`, label: 'nights' });
+  else if (night) out.push({ icon: '☾', text: '?', label: 'night length' });
   const temp = get('meanTempK');
-  if (temp?.num !== undefined) out.push(`${Math.round(temp.num - 273.15)} °C`);
+  if (temp?.num !== undefined) out.push({ icon: '🌡', text: `${Math.round(temp.num - 273.15)} °C`.replace('-', '−'), label: 'average' });
   return out;
 }
