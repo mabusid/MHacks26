@@ -141,10 +141,14 @@ await step('Next planet with nothing prepared → lobby; the finished round is c
   if ([...A.db.result.iter()].some(r => r.roundId === moonRound)) throw new Error('results left behind');
 });
 
+const late = await connect();
+const lateIsMember = () => [...A.db.member.iter()].some(m => m.roomId === A.room().id && m.identity.toHexString() === late.hex);
+
 let titanRound = 0n;
 await step('empty Titan base → MISSION FAILED, each ✗ with a reason and the responsible fact', async () => {
   await toBuild(host, 'titan');
   titanRound = A.rid();
+  await rejects('join mid-build', late.conn.reducers.joinRoom({ code: A.room().code, name: 'Late' }), /join at the debrief/);
   await host.conn.reducers.lockBuild({});
   await until('debrief', () => A.room().phase.tag === 'Debrief' && A.results(titanRound).length === 3);
   const res = A.results(titanRound);
@@ -154,17 +158,25 @@ await step('empty Titan base → MISSION FAILED, each ✗ with a reason and the 
   return res.map(r => `${r.reason} [${r.fact}]`).join(' · ');
 });
 
-await step('a planet prepared during the debrief → Next planet goes straight to its briefing', async () => {
+await step('a friend refused mid-round can join during the debrief', async () => {
+  await late.conn.reducers.joinRoom({ code: A.room().code, name: 'Late' });
+  await until('late joined', lateIsMember);
+});
+
+await step('a planet prepared during the debrief → Next planet goes straight to its briefing, with the late joiner in the crew', async () => {
   const res = await fetch(`${SERVER}/dev/commit-fixture?room=${A.room().code}&planet=mars`, { method: 'POST' });
   if (!res.ok) throw new Error(`commit-fixture mars: ${res.status}`);
   await until('next ready', () => A.room().nextRoundId !== undefined && A.room().phase.tag === 'Debrief');
   await host.conn.reducers.rematch({});
   await until('briefing', () => A.room().phase.tag === 'Briefing');
+  if (!lateIsMember()) throw new Error('late joiner dropped by rematch');
   return A.db.round.id.find(A.rid())!.planetName;
 });
 
 await step('an empty room schedules its cleanup; it is cancelled when someone comes back', async () => {
   const roomId = A.room().id;
+  await late.conn.reducers.leaveRoom({});
+  late.conn.disconnect();
   await guest.conn.reducers.leaveRoom({});
   host.conn.disconnect();
   await new Promise(r => setTimeout(r, 500));

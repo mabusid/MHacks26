@@ -7,8 +7,6 @@ export interface PlacedPiece {
   kind: PieceKind;
   x: number;
   y: number;
-  /** Berm still being dug (hold in progress) — occupies the tile but doesn't count yet. */
-  pending?: boolean;
 }
 
 export function occupied(board: readonly PlacedPiece[]): Set<number> {
@@ -34,10 +32,9 @@ export function placementError(kind: PieceKind, x: number, y: number, tiles: Til
   }
 }
 
-/** Counts of completed pieces (pending berms excluded). */
 export function countBoard(board: readonly PlacedPiece[]): Counts {
   const c = emptyCounts();
-  for (const p of board) if (!p.pending) c[p.kind]++;
+  for (const p of board) c[p.kind]++;
   return c;
 }
 

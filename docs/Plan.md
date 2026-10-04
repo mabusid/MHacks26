@@ -139,7 +139,7 @@ Mass is in **cargo units (CU)**. The **habitat** (2×2) is pre-placed at grid ce
 
 ### Balance (tuned with the solver over all real planets)
 
-Constants were chosen by sweeping 288 combinations against every planet in the cached pack (each planet's real data, 30 tile layouts). Before tuning, one planet-blind build (reactor + tanks) won on **10/10** planets and the reactor was required on 10/10; after tuning, the best planet-blind build wins on **4–6/10** (the exoplanets share unmeasured defaults), there are **7 distinct cheapest builds**, and the reactor is required on **4/10**. Every planet stays winnable on 30/30 layouts.
+Constants were chosen by sweeping 288 combinations against every planet in the cached pack (each planet's real data, 30 tile layouts). Before tuning, one planet-blind build (reactor + tanks) won on **10/10** planets and the reactor was required on 10/10; after tuning, the best planet-blind build wins on **5/10** (the exoplanets share unmeasured defaults), there are **6 distinct cheapest builds**, and the reactor is required on **4/10** (current pack; rerun after `pnpm build:pack`, which redraws the exoplanets). Every planet stays winnable on 30/30 layouts.
 
 | Planet (twist) | Cheapest build | CU | What the data teaches |
 | --- | --- | --- | --- |
@@ -148,7 +148,8 @@ Constants were chosen by sweeping 288 combinations against every planet in the c
 | **Mars** (dust) | Reactor + O₂ unit (CO₂ air) + 2 water tanks | 23 | Dust halves solar; make O₂ from the air (MOXIE) |
 | **Ceres** (radiation) | Reactor + ice drill + 2 O₂ tanks + 4 berms | 28 | 13% sunlight; Dawn's crater ice |
 | **Titan / Europa** (thermal) | Reactor + 2 water tanks + 2 O₂ tanks | 30 | ~1–4% sunlight and bitter cold |
-| **Bright exoplanets** (radiation) | 1–2 solar + 4 batteries + 3 water tanks + O₂ unit + 4 berms | 26–27 | Bright star, but no measured ice or CO₂ — ship water |
+| **Bright exoplanets** (radiation) | 1 solar + 4 batteries + 3 water tanks + O₂ unit + 4 berms | 26 | Bright star, but no measured ice or CO₂ — ship water |
+| **Hot exoplanets** (thermal) | 1 solar + 4 batteries + 3 water tanks + O₂ unit | 22 | Archive equilibrium temperature sets the cooling load; still no ice or CO₂ |
 
 ### Mass budget
 

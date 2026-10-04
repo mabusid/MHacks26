@@ -58,7 +58,7 @@ Shared eval logic lives in `packages/shared` and is **imported by the Spacetime 
 | **Server identity** | `init` stores the publisher identity in `server_config.owner`. Server-only reducers accept the **owner or** a registered `server_config.server` (`set_server_identity`, owner only). In dev the Node service uses the local CLI login (`spacetime login show --token`) — the publisher — so no registration step; in production set `SPACETIME_TOKEN`. |
 | **Enums** | Declare variants in **PascalCase** (`'Lobby'`): generated client bindings use the canonical PascalCase tag, so module and client then compare identical strings. |
 | **Bindings** | `spacetime.json` generates two targets: `client/src/module_bindings` and `server/src/module_bindings`. |
-| **Timers** | **Scheduled tables, not polling.** One-shot `ScheduleAt` rows for: build end (`build_ends_at`), hint cues (8 per round — see Plan.md cue schedule), room TTL. Scheduled reducers run as the module identity; clients calling them get "No such procedure" (verified) — keep a `ctx.sender.equals(ctx.databaseIdentity)` guard anyway. Scheduled table option: `scheduled: (): any => reducerName`. |
+| **Timers** | **Scheduled tables, not polling.** One-shot `ScheduleAt` rows for: build end (`build_ends_at`), hint cues (6 per round — see Plan.md cue schedule), room TTL. Scheduled reducers run as the module identity; clients calling them get "No such procedure" (verified) — keep a `ctx.sender.equals(ctx.databaseIdentity)` guard anyway. Scheduled table option: `scheduled: (): any => reducerName`. |
 | **Countdown** | Clients render the countdown locally from `round.build_ends_at`; the server is authoritative only at the scheduled end. |
 | **Determinism** | Use **`ctx.random`** (verified: `ctx.random()`, `ctx.random.integerInRange(a, b)`) for tile layout — stdlib RNG/clocks are unavailable in modules. |
 | **Procedures** (HTTP from module) | Available but **not used** — all external fetches stay in Node, where the LLM loop and fetch cache live. |
@@ -148,7 +148,7 @@ In `packages/shared`:
   - suggestion: from the winnability enumeration, the winning count-vector with the **fewest adds/removes** from the current board (tie → least mass), mapped to tiles (first valid free tile nearest the habitat, A–H × 1–8)
   - board summary text (pieces + coordinates, free ice/lit/adjacent tiles, mass left)
   - change since last read (newly passing requirements, board unchanged?)
-- **Winnability:** brute-force counts (~90k combos) + tile feasibility (ice tiles, lit tiles, ≤ 8 habitat-adjacent tiles) → cheapest CU → `budget = clamp(ceil(min × 1.25), 14, 24)` or `reject`.
+- **Winnability:** brute-force counts (~90k combos) + tile feasibility (ice tiles, lit tiles, ≤ 8 habitat-adjacent tiles) → cheapest CU → `budget = clamp(ceil(min × 1.15), 14, 34)` or `reject` (constants retuned in the UI overhaul — see Plan.md → Balance).
 - Seeded PRNG + tile generator (12 shaded, 4 ice; polar bodies put ice inside shade).
 
 Constants (piece stats, 12/12, crew 4, 30 sols, BVAD kg) in `pieces.ts`; test fixtures for Moon / Mars / Titan / bright exoplanet in `fixtures.ts` (approximate values — sourced profiles come in Phase 8).
@@ -157,8 +157,8 @@ Implementation notes: suggestions fill the habitat-adjacent ring last so berms a
 
 ### Checkpoint 2
 
-- [x] Vitest: Moon, Mars, Titan, bright-exoplanet fixtures reproduce the Plan.md balance table (cheapest build + CU + budget 20 / 19 / 23 / 22).
-- [x] Winnability returns a budget in 14–24 or `reject` (grid can't fit / over 24 CU).
+- [x] Vitest: Moon, Mars, Titan, bright-exoplanet fixtures reproduce the Plan.md balance table (cheapest build + CU + budget).
+- [x] Winnability returns a budget in 14–34 or `reject` (grid can't fit / over 34 CU).
 - [x] Following the board-read suggestion from an empty board wins on all four fixtures; over-budget boards get a remove suggestion.
 
 ---
@@ -188,7 +188,7 @@ Dev path: `log_research`/`commit_round` callable via `spacetime call` with the o
 - [x] Invalid research rejected (untriggered twist, missing source, unknown citation field, wrong fun-fact count); valid fixture gets a budget; players can't call `commit_round`.
 - [x] `pnpm check:phase3` (9 checks; `--wait-end` also waits out the scheduled build end).
 
-Note: with the current constants every *legitimate* profile is winnable (one reactor + tanks always fits under 24 CU), so the winnability rejection path is covered by unit tests with synthetic rules.
+Note: with the current constants every *legitimate* profile is winnable (one reactor + tanks always fits under 34 CU), so the winnability rejection path is covered by unit tests with synthetic rules.
 
 Round rules (solar per array, night band, thermal load, CO₂, ice, berms) are stored as columns on `round`, derived server-side; the Node service reconnects automatically (startup race with `spacetime dev`, breaking republishes).
 
@@ -304,7 +304,7 @@ Notes: Europa's dose has no verified surface measurement, so it's estimated (4 b
 
 **9a — Hint pipeline (no voice)**
 
-- `hint` table + `post_hint` (server only). `begin_build` inserts 8 `hint_cue` scheduled rows (2:25 / 2:05 / 1:45 fun facts; 1:30 nudge; 1:10, 0:50 direction; 0:30, 0:15 exact). Node fires each ~2 s early to absorb speech latency.
+- `hint` table + `post_hint` (server only). Six cues on the 1:30 clock (`CUES` in `hints.ts`): 1:25 / 1:12 fun facts; 1:00 nudge; 0:45, 0:30 direction; 0:15 exact. Node fires each ~2 s early to absorb speech latency.
 - Node on cue: compute `boardRead` → apply no-repeat/escalate and acknowledge-progress rules → template line → `post_hint`. Skip the cue if the previous line is still playing.
 - Fun facts come from `round.fun_facts` (written by the research agent / fixture).
 - Client: caption bar; `speechSynthesis` reads new hints; mute toggle.
@@ -322,7 +322,7 @@ Notes: Europa's dose has no verified surface measurement, so it's estimated (4 b
 
 ### Checkpoint 9 (acceptance #5, #6)
 
-- [x] Opening fun facts play automatically (first at 2:25); every listener gets the same caption and audio (`check:phase9`: ~5 s of Grok audio broadcast).
+- [x] Opening fun facts play automatically (first at 1:25); every listener gets the same caption and audio (`check:phase9`: ~5 s of Grok audio broadcast).
 - [ ] Mute silences audio on one device only; captions remain (manual — README checklist; mute is client-side gain + speechSynthesis cancel).
 - [x] Hints track the grid: placing pieces → next hint acknowledges progress and moves to the next gap; an unchanged board escalates (nudge → direction → exact).
 - [x] Exact hints name a piece + valid tile from the board read. Without a key (or if Grok fails), template lines post with `voiced=false` and each browser speaks them.

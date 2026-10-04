@@ -1,5 +1,5 @@
 // Checkpoint 3: commit_round (fixture path), validation, start → auto briefing → build transitions.
-// Needs `pnpm dev` running. Run: pnpm check:phase3   (add --wait-end to also wait out the 2:30 build timer)
+// Needs `pnpm dev` running. Run: pnpm check:phase3   (add --wait-end to also wait out the 1:30 build timer)
 import { execFileSync } from 'node:child_process';
 import { homedir } from 'node:os';
 import { join } from 'node:path';

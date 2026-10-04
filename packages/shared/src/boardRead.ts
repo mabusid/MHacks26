@@ -31,7 +31,7 @@ const REQUIREMENT_PIECES: Record<RequirementKind, PieceKind[]> = {
 
 function signatureOf(board: readonly PlacedPiece[]): string {
   return board
-    .map(p => `${p.kind}@${tileName(pieceIndex(p))}${p.pending ? '*' : ''}`)
+    .map(p => `${p.kind}@${tileName(pieceIndex(p))}`)
     .sort()
     .join(',');
 }
@@ -51,7 +51,7 @@ function closest(builds: readonly Build[], current: Counts): Build | undefined {
 
 function planActions(board: readonly PlacedPiece[], tiles: Tiles, target: Counts, current: Counts, order: PieceKind[]): Action[] {
   const actions: Action[] = [];
-  const remaining = board.filter(p => !p.pending);
+  const remaining = [...board];
   // Remove the pieces farthest from the habitat first.
   for (const kind of PIECE_KINDS) {
     const extra = current[kind] - target[kind];
@@ -62,8 +62,7 @@ function planActions(board: readonly PlacedPiece[], tiles: Tiles, target: Counts
       remaining.splice(remaining.indexOf(v), 1);
     }
   }
-  // Pending berms keep their tiles; everything else removed above frees its tile.
-  const taken = occupied([...remaining, ...board.filter(p => p.pending)]);
+  const taken = occupied(remaining);
   // Nearest the habitat first, but keep the habitat-adjacent ring for berms.
   const ring = new Set(HABITAT_ADJACENT);
   const candidates = tiles
@@ -92,18 +91,14 @@ function summarize(board: readonly PlacedPiece[], tiles: Tiles, massUsed: number
       .map((_, i) => i)
       .filter(i => !taken.has(i) && pred(i))
       .map(tileName);
-  const pieces = board.filter(p => !p.pending).map(p => `${PIECES[p.kind].label} ${tileName(pieceIndex(p))}`);
-  const pending = board.filter(p => p.pending).map(p => tileName(pieceIndex(p)));
+  const pieces = board.map(p => `${PIECES[p.kind].label} ${tileName(pieceIndex(p))}`);
   return [
     `Pieces: ${pieces.join(', ') || 'none'}`,
     `Mass: ${massUsed}/${budget} CU`,
     `Free ice tiles: ${free(i => tiles[i] === 'ice').join(', ') || 'none'}`,
     `Free habitat-adjacent tiles: ${free(i => HABITAT_ADJACENT.includes(i)).join(', ') || 'none'}`,
     `Free sunlit tiles: ${free(i => tiles[i] === 'lit').length}`,
-    pending.length ? `Berms being dug: ${pending.join(', ')}` : '',
-  ]
-    .filter(Boolean)
-    .join('\n');
+  ].join('\n');
 }
 
 export function boardRead(
@@ -132,7 +127,7 @@ export function boardRead(
     }
   }
 
-  const massUsed = massOf(current) + board.filter(p => p.pending).reduce((m, p) => m + PIECES[p.kind].mass, 0);
+  const massUsed = massOf(current);
   const signature = signatureOf(board);
   const newlyPassing = prev
     ? (Object.keys(evaluation.requirements) as RequirementKind[]).filter(

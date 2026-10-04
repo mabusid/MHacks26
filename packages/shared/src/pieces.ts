@@ -1,6 +1,6 @@
 // Piece catalog and fixed mission constants (Plan.md → Piece library, Goals).
 // Tuned with the solver over all real planets so the planet data — not one universal build — decides what wins
-// (docs/Implementation.md → Balance).
+// (docs/Plan.md → Balance).
 
 export const PIECE_KINDS = ['solar', 'battery', 'reactor', 'water_tank', 'o2_tank', 'ice_drill', 'o2_unit', 'berm'] as const;
 export type PieceKind = (typeof PIECE_KINDS)[number];

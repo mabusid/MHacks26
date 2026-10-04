@@ -1254,8 +1254,59 @@ button:disabled {
     gap: 0.6rem;
   }
 
+  /* 8 pieces + Remove in two rows, so the palette stays above the pinned Mission Control bar. */
+  .palette {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    width: 100%;
+  }
+
   .piece-btn {
-    width: 70px;
+    width: auto;
+    min-width: 0;
+    padding: 0.35rem 0.15rem;
+  }
+
+  .piece-label {
+    font-size: 0.66rem;
+  }
+
+  /* Requirements as a one-line chip row; the tapped chip takes the full row for its detail. */
+  .game-side .req-list {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .game-side .req-list li {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .game-side .req-list li:has(> .req-detail) {
+    flex-basis: 100%;
+    order: 1;
+  }
+
+  .game-side .req-row {
+    min-height: 44px;
+    padding: 0.45rem 0.55rem;
+    gap: 0.35rem;
+    font-size: 0.82rem;
+  }
+
+  .game-side .req-row[aria-expanded='false'] .req-summary {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .game-side .req-row .req-caret {
+    display: none;
+  }
+
+  .game-side .req-detail {
+    padding-left: 0.75rem;
   }
 
   /* Room for the fixed Mission Control bar so nothing hides behind it. */

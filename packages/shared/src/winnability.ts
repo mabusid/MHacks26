@@ -63,7 +63,7 @@ export function winningBuilds(rules: RoundRules, tiles: Tiles, maxMass = Infinit
 
 export type Solve = { ok: true; cheapest: Build; budget: number } | { ok: false; reason: string };
 
-/** Cheapest winning build → mass budget = ceil(cheapest × 1.25), clamped 14–24; reject if nothing fits under 24. */
+/** Cheapest winning build → mass budget = ceil(cheapest × BUDGET_SLACK), clamped BUDGET_MIN–BUDGET_MAX; reject if nothing fits under BUDGET_MAX. */
 export function solveRound(rules: RoundRules, tiles: Tiles): Solve {
   const builds = winningBuilds(rules, tiles, BUDGET_MAX);
   if (!builds.length) return { ok: false, reason: `No winning build fits under ${BUDGET_MAX} CU` };

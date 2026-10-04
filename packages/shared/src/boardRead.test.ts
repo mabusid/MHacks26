@@ -70,12 +70,4 @@ describe('boardRead', () => {
     expect(berms.every(a => HABITAT_ADJACENT.map(tileName).includes(a.tile))).toBe(true);
     expect(next.summary).toContain(`Berm ${berms[0].tile}`);
   });
-
-  it('counts pending berms toward mass and tiles but not shielding', () => {
-    const { tiles, rules, budget, winners } = setup('moon');
-    const read = boardRead([{ kind: 'berm', x: 3, y: 2, pending: true }], tiles, rules, budget, winners);
-    expect(read.evaluation.requirements.twist.pass).toBe(false);
-    expect(read.summary).toContain(`Berms being dug: ${tileName(2 * 8 + 3)}`);
-    expect(read.suggestion.every(a => a.tile !== 'D3')).toBe(true);
-  });
 });

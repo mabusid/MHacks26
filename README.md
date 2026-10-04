@@ -46,7 +46,7 @@ pnpm typecheck   # all packages
 pnpm check:phase1   # multiplayer checks against the running dev stack (needs `pnpm dev`)
 pnpm check:phase3   # research commit + start/briefing/build (add --wait-end to wait out the timer)
 pnpm check:phase4   # room-scoped subscriptions
-pnpm check:phase5   # placement, budget, berm digging, cursors
+pnpm check:phase5   # placement, budget, berms, cursors
 pnpm check:phase6   # scoring, debrief results, rematch, room cleanup
 pnpm check:phase7   # automatic research, provenance (live NASA archive)
 pnpm check:phase8   # research agent (live xAI), curated bodies, cached pack
