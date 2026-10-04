@@ -1,7 +1,7 @@
 // Pure game logic shared by the SpacetimeDB module, the client, and the Node service.
 // No runtime dependencies: this package is bundled into the module.
 
-export const SHARED_VERSION = '0.0.4';
+export const SHARED_VERSION = '0.0.5';
 
 export * from './room';
 export * from './grid';
@@ -13,5 +13,6 @@ export * from './winnability';
 export * from './boardRead';
 export * from './requirements';
 export * from './pieceInfo';
+export * from './hints';
 export * from './params';
 export * from './fixtures';

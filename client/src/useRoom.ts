@@ -23,6 +23,7 @@ export function useRoom() {
   const [rounds] = useTable(tables.round.where(r => r.roomId.eq(roomId)), { enabled: inRoom });
   const [log] = useTable(tables.researchLog.where(l => l.roomId.eq(roomId)), { enabled: inRoom });
   const [cursors] = useTable(tables.cursor.where(c => c.roomId.eq(roomId)), { enabled: inRoom });
+  const [hints] = useTable(tables.hint.where(h => h.roomId.eq(roomId)), { enabled: inRoom });
 
   const room = rooms[0];
   // The round on screen: the one being played, or (in the lobby) the one being prepared.
@@ -53,6 +54,8 @@ export function useRoom() {
     tiles: [...tiles].sort((a, b) => a.index - b.index),
     pieces,
     cursors,
+    /** Mission Control's latest line for the round on screen. */
+    latestHint: [...hints].filter(h => h.roundId === focusId).sort((a, b) => b.cue - a.cue)[0],
     results: [...results].sort((a, b) => KIND_ORDER.indexOf(a.kind) - KIND_ORDER.indexOf(b.kind)),
   };
 }

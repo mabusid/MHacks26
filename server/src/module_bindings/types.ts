@@ -47,6 +47,19 @@ export const Cursor = __t.object("Cursor", {
 });
 export type Cursor = __Infer<typeof Cursor>;
 
+export const Hint = __t.object("Hint", {
+  id: __t.u64(),
+  key: __t.string(),
+  roomId: __t.u64(),
+  roundId: __t.u64(),
+  cue: __t.u8(),
+  mode: __t.string(),
+  text: __t.string(),
+  voiced: __t.bool(),
+  at: __t.timestamp(),
+});
+export type Hint = __Infer<typeof Hint>;
+
 export const Member = __t.object("Member", {
   identity: __t.identity(),
   roomId: __t.u64(),

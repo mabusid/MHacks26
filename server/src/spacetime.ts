@@ -24,7 +24,7 @@ function attempt(): void {
           console.log(`[server] spacetime connected as ${identity.toHexString().slice(0, 12)}…`);
           for (const hook of connectedHooks) hook(c);
         })
-        .subscribe([tables.room, tables.round]);
+        .subscribe([tables.room, tables.round, tables.tile, tables.piece, tables.requirement]);
     })
     .onDisconnect(() => {
       // Also fires when `spacetime dev` republishes a breaking schema change.

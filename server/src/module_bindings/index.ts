@@ -44,6 +44,7 @@ import LockBuildReducer from "./lock_build_reducer";
 import LogResearchReducer from "./log_research_reducer";
 import MoveCursorReducer from "./move_cursor_reducer";
 import PlacePieceReducer from "./place_piece_reducer";
+import PostHintReducer from "./post_hint_reducer";
 import RematchReducer from "./rematch_reducer";
 import RemovePieceReducer from "./remove_piece_reducer";
 import SetServerIdentityReducer from "./set_server_identity_reducer";
@@ -54,6 +55,7 @@ import StartRoundReducer from "./start_round_reducer";
 
 // Import all table schema definitions
 import CursorRow from "./cursor_table";
+import HintRow from "./hint_table";
 import MemberRow from "./member_table";
 import PieceRow from "./piece_table";
 import PlanetParameterRow from "./planet_parameter_table";
@@ -82,6 +84,27 @@ const tablesSchema = __schema({
       { name: 'cursor_identity_key', constraint: 'unique', columns: ['identity'] },
     ],
   }, CursorRow),
+  hint: __table({
+    name: 'hint',
+    indexes: [
+      { accessor: 'id', name: 'hint_id_idx_btree', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { accessor: 'key', name: 'hint_key_idx_btree', algorithm: 'btree', columns: [
+        'key',
+      ] },
+      { accessor: 'roomId', name: 'hint_room_id_idx_btree', algorithm: 'btree', columns: [
+        'roomId',
+      ] },
+      { accessor: 'roundId', name: 'hint_round_id_idx_btree', algorithm: 'btree', columns: [
+        'roundId',
+      ] },
+    ],
+    constraints: [
+      { name: 'hint_id_key', constraint: 'unique', columns: ['id'] },
+      { name: 'hint_key_key', constraint: 'unique', columns: ['key'] },
+    ],
+  }, HintRow),
   member: __table({
     name: 'member',
     indexes: [
@@ -223,6 +246,7 @@ const reducersSchema = __reducers(
   __reducerSchema("log_research", LogResearchReducer),
   __reducerSchema("move_cursor", MoveCursorReducer),
   __reducerSchema("place_piece", PlacePieceReducer),
+  __reducerSchema("post_hint", PostHintReducer),
   __reducerSchema("rematch", RematchReducer),
   __reducerSchema("remove_piece", RemovePieceReducer),
   __reducerSchema("set_server_identity", SetServerIdentityReducer),

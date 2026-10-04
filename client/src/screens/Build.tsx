@@ -117,7 +117,7 @@ export default function Build({ data }: { data: RoomData }) {
       </aside>
 
       <footer className="game-bottom">
-        <MissionControlBar line={`Welcome to ${current.planetName}. ${current.headline}`} />
+        <MissionControlBar roomCode={data.room!.code} hint={data.latestHint} standby={`Mission Control standing by on ${current.planetName}.`} />
       </footer>
     </div>
   );

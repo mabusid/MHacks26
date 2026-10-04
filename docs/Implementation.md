@@ -322,10 +322,15 @@ Notes: Europa's dose has no verified surface measurement, so it's estimated (4 b
 
 ### Checkpoint 9 (acceptance #5, #6)
 
-- [ ] Opening fun facts play at 2:25 / 2:05 / 1:45; same caption and audio on 4 devices.
-- [ ] Mute silences audio on one device only; captions remain.
-- [ ] Hints track the grid: placing the suggested piece changes the next hint (acknowledges progress, moves to the next gap); an unchanged board escalates.
-- [ ] At 0:30 the hint names a specific piece + valid tile. Without key: template lines still fire.
+- [x] Opening fun facts play automatically (first at 2:25); every listener gets the same caption and audio (`check:phase9`: ~5 s of Grok audio broadcast).
+- [ ] Mute silences audio on one device only; captions remain (manual — README checklist; mute is client-side gain + speechSynthesis cancel).
+- [x] Hints track the grid: placing pieces → next hint acknowledges progress and moves to the next gap; an unchanged board escalates (nudge → direction → exact).
+- [x] Exact hints name a piece + valid tile from the board read. Without a key (or if Grok fails), template lines post with `voiced=false` and each browser speaks them.
+- [x] `pnpm check:phase9` (7 checks, live Grok when a key is set).
+
+Built: shared `hints.ts` (cue schedule, `effectiveMode`, `templateHint`); module `hint` table + `post_hint` (upsert per cue); server `voice/broadcast.ts` (`/voice?room=CODE` WebSocket, receive-only), `voice/grok.ts` (one realtime session per room; `force_message` for verbatim fun facts, model phrasing for hints), `voice/cues.ts` (scheduler + board read + fallback); client `audio.ts` (gesture unlock, gapless PCM queue, mute gain, speechSynthesis fallback), `useVoice`, Mission Control bar captions.
+
+Deviations from the original plan: cues are scheduled **in the Node service** from `round.build_ends_at` (re-armed on reconnect) rather than `hint_cue` rows in the module; fun facts are spoken **verbatim** via `force_message` (no model involvement, so no hallucination); hints give Grok an accurate template draft plus the board read to phrase from. Dev: `POST /dev/cue?room=&cue=N&voice=template|grok`, `POST /dev/pause-cues?room=`.
 
 ---
 

@@ -5,6 +5,8 @@ import { FIXTURE_KEYS, commitFixture, type FixtureKey } from './fixtures';
 import { SCRIPTED_TARGETS } from './research/scripted';
 import { isResearching, research, setAutoResearch, startResearchWatcher, type ResearchMode } from './research/trigger';
 import { db, isConnected, roomByCode, startSpacetime } from './spacetime';
+import { attachVoiceSocket, listenerCount } from './voice/broadcast';
+import { fireCue, pauseSchedule, startCueScheduler } from './voice/cues';
 
 function send(res: ServerResponse, status: number, body: unknown) {
   res.writeHead(status, {
@@ -31,6 +33,23 @@ const server = createServer(async (req, res) => {
     try {
       await commitFixture(room.id, planet);
       return send(res, 200, { ok: true });
+    } catch (e) {
+      return send(res, 422, { error: e instanceof Error ? e.message : String(e) });
+    }
+  }
+  if (config.dev && req.method === 'POST' && url.pathname === '/dev/pause-cues') {
+    const room = roomByCode(url.searchParams.get('room') ?? '');
+    if (!room) return send(res, 404, { error: 'No room with that code' });
+    pauseSchedule(room.id);
+    return send(res, 200, { ok: true });
+  }
+  if (config.dev && req.method === 'POST' && url.pathname === '/dev/cue') {
+    const room = roomByCode(url.searchParams.get('room') ?? '');
+    const cue = Number(url.searchParams.get('cue') ?? '0');
+    if (!room) return send(res, 404, { error: 'No room with that code' });
+    try {
+      const out = await fireCue(db(), room.id, cue, url.searchParams.get('voice') !== 'template' && !!config.xaiApiKey);
+      return send(res, 200, { ok: true, ...out, listeners: listenerCount(room.id) });
     } catch (e) {
       return send(res, 422, { error: e instanceof Error ? e.message : String(e) });
     }
@@ -80,6 +99,8 @@ process.on('unhandledRejection', onFatal);
 
 startSpacetime();
 startResearchWatcher();
+startCueScheduler();
+attachVoiceSocket(server);
 server.listen(config.port, () => {
   console.log(`[server] listening on :${config.port} (shared ${SHARED_VERSION}, xAI key ${config.xaiApiKey ? 'set' : 'missing — template hints only'})`);
 });

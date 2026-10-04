@@ -240,7 +240,7 @@ Radiation  : berms adjacent to habitat ≥ required (4 or 6, from researched dos
 | **0:30** | Hint — **exact** (piece + tile) | "Put an ice drill on C6." |
 | **0:15** | Hint — **exact** / last call | "Two berms next to the habitat — D3 and E3 — and you're done." |
 
-Fun facts come from the research agent (see `write_card`), so they're sourced like everything else. Hint levels are a floor: "no repeats" can push a hint more specific earlier.
+Fun facts come from the research agent (see `write_card`), so they're sourced and fact-checked like everything else — and Grok speaks them **verbatim**. Hints: the server writes an accurate template from the board read and Grok phrases it (same facts, tiles, and numbers); if Grok is unavailable the template itself is the caption and each browser speaks it. Hint levels are a floor: "no repeats" escalates when the same level would repeat.
 
 ---
 

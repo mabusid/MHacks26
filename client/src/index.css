@@ -1007,3 +1007,7 @@ button:disabled {
   padding-left: 1.2rem;
   font-family: var(--mono);
 }
+
+.mc-bar.locked .mc-state {
+  color: var(--warn);
+}

@@ -149,6 +149,23 @@ const piece = table(
   }
 );
 
+// Mission Control's lines (captions). One row per cue; the server may update it as speech transcribes.
+const hint = table(
+  { name: 'hint', public: true },
+  {
+    id: t.u64().primaryKey().autoInc(),
+    key: t.string().unique(),
+    roomId: t.u64().index('btree'),
+    roundId: t.u64().index('btree'),
+    cue: t.u8(),
+    mode: t.string(),
+    text: t.string(),
+    /** true: audio is streamed from the server (Grok); false: clients speak it themselves. */
+    voiced: t.bool(),
+    at: t.timestamp(),
+  }
+);
+
 // Per-requirement outcome, written once when the build ends (debrief).
 const result = table(
   { name: 'result', public: true },
@@ -229,7 +246,7 @@ const ParamInput = t.object('ParamInput', {
 const BecauseInput = t.object('BecauseInput', { kind: t.string(), text: t.string(), field: t.string() });
 
 const spacetimedb = schema({
-  serverConfig, session, room, member, round, planetParameter, requirement, tile, researchLog, piece, result, cursor, bermDone, buildStart, buildEnd, roomCleanup,
+  serverConfig, session, room, member, round, planetParameter, requirement, tile, researchLog, piece, hint, result, cursor, bermDone, buildStart, buildEnd, roomCleanup,
 });
 export default spacetimedb;
 
@@ -271,6 +288,7 @@ function ensureOnlineHost(ctx: Ctx, r: RoomRow) {
 function deleteRound(ctx: Ctx, roundId: bigint) {
   for (const pc of [...ctx.db.piece.roundId.filter(roundId)]) ctx.db.piece.id.delete(pc.id);
   for (const res of [...ctx.db.result.roundId.filter(roundId)]) ctx.db.result.id.delete(res.id);
+  for (const h of [...ctx.db.hint.roundId.filter(roundId)]) ctx.db.hint.id.delete(h.id);
   for (const p of [...ctx.db.planetParameter.roundId.filter(roundId)]) ctx.db.planetParameter.id.delete(p.id);
   for (const r of [...ctx.db.requirement.roundId.filter(roundId)]) ctx.db.requirement.id.delete(r.id);
   for (const tl of [...ctx.db.tile.roundId.filter(roundId)]) ctx.db.tile.id.delete(tl.id);
@@ -707,3 +725,20 @@ export const moveCursor = spacetimedb.reducer({ x: t.f32(), y: t.f32(), visible:
   if (ctx.db.cursor.identity.find(ctx.sender)) ctx.db.cursor.identity.update(row);
   else ctx.db.cursor.insert(row);
 });
+
+// ── Mission Control ─────────────────────────────────────────────────────────────────────────────
+
+/** Server only: create or update the caption for one cue. */
+export const postHint = spacetimedb.reducer(
+  { roomId: t.u64(), roundId: t.u64(), cue: t.u8(), mode: t.string(), text: t.string(), voiced: t.bool() },
+  (ctx, { roomId, roundId, cue, mode, text, voiced }) => {
+    requireServer(ctx);
+    const rd = ctx.db.round.id.find(roundId);
+    if (!rd || rd.roomId !== roomId) throw new SenderError('No such round in that room');
+    const key = `${roundId}:${cue}`;
+    const existing = ctx.db.hint.key.find(key);
+    const row = { roomId, roundId, cue, mode, text: text.slice(0, 400), voiced, key };
+    if (existing) ctx.db.hint.id.update({ ...existing, ...row });
+    else ctx.db.hint.insert({ id: 0n, ...row, at: ctx.timestamp });
+  }
+);

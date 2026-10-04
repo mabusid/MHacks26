@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useReducer } from 'spacetimedb/react';
 import { NAME_MAX_LENGTH, ROOM_CODE_LENGTH, normalizeRoomCode, validateName } from '@overburden/shared';
+import { unlockAudio } from '../audio';
 import { reducers } from '../module_bindings';
 import { useReducerCall } from '../useReducerCall';
 
@@ -25,6 +26,7 @@ export default function Home() {
   const error = create.error ?? join.error;
 
   function remember() {
+    unlockAudio(); // a click: the one moment browsers let us enable sound
     try {
       if (nameCheck.ok) localStorage.setItem(NAME_KEY, nameCheck.name);
     } catch {

@@ -22,10 +22,10 @@ export const FIXTURES = {
   moon: {
     twist: 'radiation',
     card: {
-      headline: 'A single lunar night lasts about 14 Earth days.',
+      headline: 'A single lunar night lasts about 15 Earth days.',
       scaleText: '384,000 km away · ¼ of Earth’s width · same sunlight as Earth',
       because: {
-        power: { text: 'A lunar night lasts ~14 Earth days, so solar alone can’t carry you.', field: 'nightHours' },
+        power: { text: 'A lunar night lasts ~15 Earth days, so solar alone can’t carry you.', field: 'nightHours' },
         life_support: { text: 'Water ice sits in permanently shadowed craters (LCROSS, 2009).', field: 'waterIce' },
         twist: { text: 'No atmosphere: surface dose is ~1.4 mSv/day (Chang’e 4).', field: 'radiationDoseMSvPerDay' },
       },
