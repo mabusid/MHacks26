@@ -63,7 +63,7 @@ Lobby (create / join with code)  ← research agent runs here, in background
 | --- | --- |
 | **Room + code** | Host creates room; up to 4 join with a 4-letter code, during the lobby or the debrief (not mid-round). No spectators in v1. |
 | **Research** | Starts automatically on room create; next planet pre-researched during each debrief so rematch is instant. Host's **Start** is enabled once a round is committed. |
-| **Briefing** | Short automatic transition (~12 s countdown, host can skip); not counted against the build timer. The build starts on its own. |
+| **Briefing** | Automatic transition (~24 s countdown: planet, then mission; host can skip); not counted against the build timer. The build starts on its own. |
 | **Build** | Timer runs server-side; ends at 0:00 (or host locks early). |
 | **Evaluate** | Reducer applies the evaluation formula; writes result + reason. |
 | **Rematch** | New round id, new planet, grid and mass budget reset. |

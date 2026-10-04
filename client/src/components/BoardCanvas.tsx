@@ -29,7 +29,7 @@ export interface BoardState {
   pieces: ReadonlyMap<number, PieceKind>;
   /** Per tile: the selected tool can act here (place, or remove). */
   valid: readonly boolean[];
-  /** Mark the valid tiles: only when the tool restricts where it goes (sunlit, ice, next to the habitat). */
+  /** Mark the valid tiles (any piece selected; not in remove mode). */
   marked: boolean;
   habitatCells: ReadonlySet<number>;
   hover: number | null;

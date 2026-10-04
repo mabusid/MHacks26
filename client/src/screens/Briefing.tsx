@@ -7,8 +7,8 @@ import type { RoomData } from '../useRoom';
 import { useReducerCall } from '../useReducerCall';
 import { useSecondsLeft } from '../useSecondsLeft';
 
-/** Seconds left in the countdown when the card turns from the planet to the mission. */
-const MISSION_AT = 7;
+/** Seconds left in the countdown when the card turns from the planet to the mission (~14 s planet, 10 s mission). */
+const MISSION_AT = 10;
 
 /**
  * Two beats while the camera lands: the planet you're on (one line + three numbers), then the mission

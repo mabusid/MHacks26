@@ -62,4 +62,4 @@ export function massOf(counts: Counts): number {
 /** Build phase length (Plan.md → Round structure). */
 export const BUILD_SECONDS = 120;
 /** Automatic briefing transition before the build (host can skip). */
-export const BRIEFING_SECONDS = 12;
+export const BRIEFING_SECONDS = 24;

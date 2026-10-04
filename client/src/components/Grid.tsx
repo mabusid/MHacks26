@@ -41,8 +41,8 @@ function webglAvailable(): boolean {
 
 /**
  * The 2.5D build board (docs/design.md → Build). HTML buttons, so taps are exact and keyboard play works.
- * Selecting a piece that only fits some tiles (sunlit, ice, next to the habitat) marks those tiles (teal rim + dot);
- * pieces that fit anywhere mark nothing. Hover/focus always highlights the tile under the pointer.
+ * Selecting a piece marks every tile it can go on (teal rim + dot): only sunlit tiles for a solar array, every free
+ * tile for a piece that fits anywhere. Hover/focus always highlights the tile under the pointer.
  */
 export default function Grid(props: Props) {
   const { tiles, pieces, cursors, members, me, tool, massLeft } = props;
@@ -157,7 +157,7 @@ export default function Grid(props: Props) {
     tiles,
     pieces: new Map(pieces.map(p => [p.index, p.kind as PieceKind])),
     valid,
-    marked: tool !== 'remove' && PIECES[tool].placement !== 'any',
+    marked: tool !== 'remove',
     habitatCells: HABITAT_CELLS,
     hover,
     removing: tool === 'remove',

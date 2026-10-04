@@ -26,7 +26,7 @@ Layout, look, and transitions for every phase. Rules, copy, and visibility: [Pla
 | Critical info only | Build HUD = timer, mass, 3 requirement lines, palette + one info line, Mission Control. Requirement lines turn green + ✓ when met; no live numbers (Plan). |
 | Fixed homes | Top bar = context (planet, host, leave) · center = world/board · right rail = requirements · bottom = palette then Mission Control. Same positions in every phase that uses them. |
 | Hierarchy | Timer largest during the build; planet name secondary; everything else tertiary. |
-| Color is never alone | Valid tile (restricted pieces only) = teal rim **+ dot**; others unmarked; over budget = coral **+ "over by N"**; pass/fail = ✓/✗ glyphs. Tile types use **pattern + legend**, not only shade. |
+| Color is never alone | Valid tile = teal rim **+ dot**; others unmarked; over budget = coral **+ "over by N"**; pass/fail = ✓/✗ glyphs. Tile types use **pattern + legend**, not only shade. |
 | Reserved colors | Teal = valid/primary, coral = invalid/urgent/fail, green = success, amber = host/estimated. **Crew colors avoid all four:** blue `#60a5fa`, pink `#f472b6`, yellow `#facc15`, violet `#a78bfa`. |
 | Don't block the play area | Panels sit on edges; the board never sits under a panel; toasts appear between board and palette. |
 | Touch | No hover-only information: selecting a tool marks **all valid tiles at once**; requirement details expand on tap; the info line mirrors any tooltip. Targets ≥ 40 px. |
@@ -77,8 +77,8 @@ Two choices on the first card: **Create a team** (primary) and **Join a team**. 
 ### Lobby
 One card, the team only: the team code (tap to copy, "share to invite"), the crew, Sound on/off, Leave. The planet stays a surprise; research runs in the background. The host's **Launch** works at any time: if research isn't done it shows "Locating landing site…" with the latest log line and starts as soon as the planet is ready. Others see "Waiting for the host to launch…". Dev test-planet loader stays here (dev only).
 
-### Briefing (~12 s, automatic)
-Two beats while the camera lands. **Landing on:** planet name, the headline fact, and three big stat tiles (sunlight, nights, temperature). At 7 s left (or **Mission ›**) it turns to **Your mission:** the 3 requirement lines and "Stay under N CU". "Build in N" counts down throughout; the host sees **Start now** on the mission beat.
+### Briefing (~24 s, automatic)
+Two beats while the camera lands. **Landing on:** planet name, the headline fact, and three big stat tiles (sunlight, nights, temperature). At 10 s left (or **Mission ›**) it turns to **Your mission:** the 3 requirement lines and "Stay under N CU". "Build in N" counts down throughout; the host sees **Start now** on the mission beat.
 
 ### Build
 ```
