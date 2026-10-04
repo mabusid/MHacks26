@@ -1,6 +1,30 @@
-# Mission Control (MHacks26)
+# Mission Control
 
-Co-op learning game: four players build a base on a real planet researched from NASA data, with Grok Voice as Mission Control. Design in [docs/Plan.md](docs/Plan.md); build phases in [docs/Implementation.md](docs/Implementation.md).
+**MHacks 26** — a 1–4 player co-op learning game. An agent researches a real planet from public NASA data; that research sets the win criteria. Your crew has two minutes on a shared grid to build a base that meets three requirements without blowing the mass budget. Grok Voice is Mission Control: the same audio on every device, fun facts early, then grid-aware hints.
+
+Story, challenges, and what we learned: [docs/final_learned.md](docs/final_learned.md) · Design: [docs/Plan.md](docs/Plan.md) · Build phases: [docs/Implementation.md](docs/Implementation.md)
+
+## Built with
+
+- **SpacetimeDB** — realtime multiplayer state, reducers, subscriptions
+- **React 19** + **Vite** + **TypeScript** — client
+- **React Three Fiber** + **Drei** + **Three.js** — pixel-diorama 3D world
+- **Node.js** + **WebSockets** — research agent & voice broadcast
+- **xAI Grok** — Mission Control voice + planet research
+- **NASA Exoplanet Archive** (+ NASA fact sheets / BVAD) — planet data
+- **pnpm** monorepo · **Vercel** / **Railway** / **SpacetimeDB Maincloud** — deploy
+
+## How a round works
+
+```
+Lobby (create / join)  ← research runs here
+  → Briefing   planet, headline fact, 3 requirements
+  → Build      2:00 on a shared grid + Mission Control voice
+  → Debrief    ✓/✗ per requirement, sources, answer key
+  → Rematch    new planet
+```
+
+Every number comes from a fetch or is labeled *estimated*. A solver finds the cheapest winning build and sets the mass budget so every planet is solvable and tight.
 
 ## Setup
 
@@ -37,6 +61,7 @@ Optional: copy `server/.env.example` → `server/.env` and set `XAI_API_KEY` (a 
 | `client/` | Vite + React client; `src/module_bindings` is generated — don't edit by hand |
 | `server/` | Node service |
 | `scripts/dev.mjs` | The `pnpm dev` orchestrator |
+| `docs/` | Plan, design, implementation notes, [final_learned.md](docs/final_learned.md) |
 
 ## Commands
 
@@ -59,6 +84,23 @@ If a schema change can't migrate existing rows, reset the local DB: `cd /tmp && 
 
 Run ad-hoc `spacetime` commands from outside the repo, or rely on `spacetime.json` (database `mission-control`, server `local`).
 
+## Public demo deploy
+
+Three hosted pieces — no LAN IPs:
+
+| Piece | Host | Notes |
+| --- | --- | --- |
+| SpacetimeDB | **Maincloud** | Database `mhacks-mission-control` — `pnpm deploy:maincloud` |
+| Client | **Vercel** | Root `vercel.json`; set `VITE_*` from `client/.env.production.example` |
+| Node (voice/research) | **Railway** | `railway.toml` + `server/Dockerfile`; set vars from `server/.env.production.example` |
+
+Dashboard: https://spacetimedb.com/mhacks-mission-control
+
+1. `spacetime login` then `pnpm deploy:maincloud`
+2. Deploy Node on Railway from this repo (Dockerfile). Copy `SPACETIME_TOKEN` from `spacetime login show --token`, plus optional `XAI_API_KEY`.
+3. Deploy client on Vercel. Point `VITE_VOICE_WS_URL` / `VITE_SERVER_URL` at the Railway HTTPS host (`wss://` / `https://`).
+4. Open the Vercel URL on any device.
+
 ## Manual UI check (two tabs)
 
 1. Home: base-scene backdrop with one card — name, **Create room**, code + **Join**.
@@ -79,5 +121,5 @@ Run ad-hoc `spacetime` commands from outside the repo, or rely on `spacetime.jso
 `test/` (git-ignored) has a Playwright script that plays a round as a desktop host + phone guest and screenshots every screen:
 
 ```sh
-cd test && npm install && npx playwright install chromium && node shots.mjs   # needs pnpm dev; writes test/shots/*.png
+cd test && npm install && npx playwright install chromium && node shots.mjs   # needs `pnpm dev`; writes test/shots/*.png
 ```
