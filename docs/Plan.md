@@ -1,6 +1,8 @@
 # Overburden — plan (simple)
 
-Co-op game for **four players**: an agent prepares a **real-planet** round from consistent sources; the crew builds a base under **time pressure** and must meet **sustainability requirements** to win. Repeat with a new planet or rematch.
+Co-op **learning game** for **four players**. An agent researches a **random real planet** (solar system or exoplanet) from public space data; the crew has **2:30** to build a base on a shared 2D grid that meets **three goals**. There is no live score — the **voice assistant's hints** are the only feedback. The debrief ties the result back to the real science.
+
+**Pitch:** a fun way to touch research/space data that rarely gets attention — real planets give a sense of **scale and variety**.
 
 **Status:** design only. Items marked **`[MISSING]`** need a decision before implementation.
 
@@ -10,190 +12,263 @@ Co-op game for **four players**: an agent prepares a **real-planet** round from 
 
 | | |
 | --- | --- |
-| Players | 4 (co-op in one room) |
-| Variety | Random (or drawn) **real** planet/body per round; same round **shape**, different **parameters** |
-| Authority | Game server holds truth (placement, stocks, clock, win/loss). Clients display and send actions. |
-| Assistant | Voice helper during play: hints tied to time left and round requirements. Research agent runs **before** the build clock. |
+| Players | 4, co-op in one room, each on their own device |
+| Round length | ~3.5 min total (briefing ~20s, **build 2:30**, debrief ~20s) |
+| Variety | Random real planet per round; **same loop, same timer, same pieces** — planet data changes piece stats and the twist goal |
+| View | **2D** grid; background art changes per planet type |
+| Authority | **SpacetimeDB** — shared state, reducers, subscriptions; clients render only |
+| Assistant | **Grok Voice** in-match hints; separate **research agent** runs during the lobby |
 
 ---
 
-## Game details
+## Design pillars
 
-### Properties per planet
+1. **Learning first.** Every number the game uses comes from a cited source (or is labeled *estimated*). Briefing, hints, and debrief all repeat the planet's **headline fact**.
+2. **Short and readable.** At most **3 goals**, ~7 piece types, ~8–12 pieces in a winning base.
+3. **Tradeoffs, not chores.** Every piece trades **landed mass**, **build time**, or **power** against another — and the planet's real data decides which trade wins.
+4. **Shared everything.** No roles. Everyone can place every piece; the short timer and the "what should we build?" discussion drive cooperation.
+5. **Hints are the feedback.** No live pass/fail. Players reason from per-piece stats and ask the assistant.
 
-Each round loads a **planet profile**: numbers the sim uses plus one-line **source** per field (or `[MISSING]` until the research pipeline fills them).
+---
 
-| Property | Used for | Notes |
+## Tech stack
+
+| Layer | Choice | Role |
 | --- | --- | --- |
-| Body name & type | UI, briefing | e.g. Moon, Mars, Mercury |
-| Surface gravity | Mass, structures (if modeled) | `[MISSING]` — required for v1 or defer? |
-| Day / sol length | In-game clock vs real session timer | `[MISSING]` — scale formula |
-| Solar flux / insolation | Power generation | |
-| Atmosphere (pressure, composition) | ISRU, leaks, greenhouses | Optional for airless bodies |
-| Surface temperature range | Thermal / heaters | `[MISSING]` — simplify to bands? |
-| Radiation environment | Dose / shielding | `[MISSING]` — which table per body |
-| Water / ice availability | Mining, closed loop | Boolean + class (polar ice, subsurface, none) |
-| Dust / weather events | Scripted hazards | `[MISSING]` — fixed event deck per body vs agent-picked |
-| Regolith / soil constraints | Berms, farming | e.g. perchlorates on Mars |
-| Max landed mass | Manifest cap | e.g. single cargo limit from vehicle guide |
+| **Live multiplayer & sim** | [SpacetimeDB](https://spacetimedb.com/) (TypeScript module + client SDK) | Rooms, join codes, placements, timer, diagnosis, evaluation; **reducers** are the only writers; clients **subscribe**. |
+| **In-game AI** | [xAI Grok Voice](https://docs.x.ai/) (realtime voice) | Hints grounded in server-computed diagnosis. Small **Node** service holds `XAI_API_KEY` and mints ephemeral tokens. |
+| **Pre-round research** | Research agent on the Node service | Fetches planet data, maps it to the round schema, streams progress, commits via a `commit_round` reducer. |
+| **Frontend** | 2D web client (likely Vite + React + canvas/PixiJS) | Grid, pieces, live cursors, briefing/debrief screens. |
+| **Research source data** | NASA Exoplanet Archive + NASA Planetary Fact Sheets + NASA BVAD | See **Research sources**. |
 
-**`[MISSING]`** Planet roster for v1 (recommend **3–5 bodies**, not “any exoplanet”).  
-**`[MISSING]`** How much the **agent may tune** vs must copy verbatim from source.  
-**`[MISSING]`** Grid topology (fixed size? tiles for sun/shade/ice?).
-
-### Properties to track for players (ledger)
-
-What players see updating during the round:
-
-| Track | Win/lose relevance |
-| --- | --- |
-| Build phase timer | Session urgency |
-| In-sim time (optional) | Sustainability window | `[MISSING]` — one clock or two? |
-| Oxygen | Life support |
-| Water (drinking + loop) | Life support |
-| Food | Life support / greenhouse |
-| Power (generation vs load) | Everything powered |
-| Radiation dose (crew) | Long trials | `[MISSING]` — track in v1? |
-| Landed mass used / remaining | Placement |
-| Round requirements checklist | Win condition progress |
-
-**`[MISSING]`** Exact loss rules (any stock zero? power out for N seconds? dose cap?).  
-**`[MISSING]`** Piece library (cabins, solar, tanks, processors, etc.) and which pieces exist on all planets.  
-**`[MISSING]`** Roles (everyone places everything vs power / life support / logistics split).
-
-### Time to build
-
-| Phase | Purpose |
-| --- | --- |
-| **Briefing** | Agent outputs planet profile + win requirements; players read manifest cap and goals. |
-| **Build** | Place pieces from manifest until timer ends or host locks build. |
-| **Trial** (optional) | Fast-forward sim for “sustain N days” | `[MISSING]` — build-only win vs build + sim |
-
-**`[MISSING]`** Build phase duration (e.g. 15 / 20 / 30 minutes).  
-**`[MISSING]`** Whether build timer **pauses** for briefing or research.  
-**`[MISSING]`** Trial length in in-sim days and tick rate (real-time vs accelerated).
+**`[MISSING]`** Research agent framework (likely xAI chat + tool calls, to keep one provider).  
+**`[MISSING]`** Final frontend libraries (canvas vs PixiJS).
 
 ---
 
-## Game loop
+## Round structure
 
 ```
-Lobby (create / join with code)
-    → Research & briefing (agent fills planet profile + requirements)
-    → Build phase (timer runs)
-    → Evaluate (requirements + ledger)
-    → Win or lose screen
-    → Rematch (same room: new planet or same planet)
+Lobby (create / join with code)  ← research agent runs here, in background
+    → Briefing   (~20s)   planet card, headline fact, scale comparison, 3 goals
+    → Build      (2:30)   place pieces on shared grid, voice hints, no live score
+    → Evaluate   (instant) server formula
+    → Debrief    (~20s)   per-goal result, reason, the real fact behind it, sources
+    → Rematch    (new planet)
 ```
 
 | Step | Behavior |
 | --- | --- |
-| **Public room + code** | Host creates colony; up to 4 join; spectators? `[MISSING]` |
-| **Start** | Host starts round after briefing is committed to server |
-| **Play** | Shared state; placements and stocks update for all clients |
-| **End** | Win if requirements met when timer/sim ends; else lose + reason |
-| **Repeat** | New round id; new planet draw; reset grid/manifest |
-
-**`[MISSING]`** Backend choice (e.g. SpacetimeDB vs other realtime DB).  
-**`[MISSING]`** Join code lifetime, host migration, disconnect handling.  
-**`[MISSING]`** Anti-cheat / server-only simulation rules.
+| **Room + code** | Host creates room; up to 4 join with a code. No spectators in v1. |
+| **Research** | Starts automatically on room create; re-runs on rematch. Host's **Start** is enabled once a round is committed. |
+| **Briefing** | Not counted against the build timer. |
+| **Build** | Timer runs server-side; ends at 0:00 (or host locks early). |
+| **Evaluate** | Reducer applies the evaluation formula; writes result + reason. |
+| **Rematch** | New round id, new planet, grid and mass budget reset. |
 
 ---
 
-## Research pipeline
+## Goals (max 3 per round)
 
-Runs **before** the build timer (or overlaps briefing only).
+Every round uses the same template:
 
-### Agent responsibilities
-
-1. Pick or receive **planet** (random from allowlist).
-2. **Fetch / map** environment and mission facts into the **round schema** (no free-form physics in the reducer).
-3. Output **win requirements** (template filled: e.g. “close water loop”, “survive 7 sols”, “shield dose under X”).
-4. Store result on server as **`parameter` rows** players and the voice helper can read.
-
-### Agent design
-
-| Topic | Direction |
-| --- | --- |
-| **Platform** | `[MISSING]` — e.g. xAI API (chat + tools), Cursor agent, local script |
-| **Where it runs** | `[MISSING]` — server-side job only (recommended); never client with secrets |
-| **Tools** | `[MISSING]` — list, e.g. `get_planet_facts`, `set_parameter`, `set_win_conditions` |
-| **Validation** | Reject profile rows without `source_id`; cap numeric ranges; human-readable briefing card |
-| **Search** | `[MISSING]` — allowed during research only; forbidden during build? |
-
-**`[MISSING]`** Latency budget (max seconds for research before players wait).  
-**`[MISSING]`** Fallback if agent fails (cached default pack for that planet).  
-**`[MISSING]`** Who triggers research (host button vs auto on room create).
-
----
-
-## Research source
-
-Goal: **one primary source** (or one API) that is **easy to parse** and covers most planets in the allowlist.
-
-| Candidate | Pros | Cons |
+| Goal | Type | Passes when |
 | --- | --- | --- |
-| **NASA Planetary Fact Sheets** (HTML tables per body) | Official, one row per planet, comparable fields | Not all bodies; some fields sparse; HTML parsing |
-| **NASA SSD / Horizons** | Ephemerides, precise | Overkill for surface colony; harder for “habitat” facts |
-| **Wikipedia + Wikidata** | Broad coverage, structured props in Wikidata | Mixed provenance; not ideal as *single* authority |
-| **Custom JSON pack** (you maintain) | Fully parseable; game-safe | Not “live research”; agent only selects/composes |
+| **Power** | Fixed | Daytime generation ≥ load, **and** night is covered (battery storage ≥ load × night length, or reactor output ≥ load) |
+| **Life support** | Fixed | Water **and** O₂ each last the mission: `starting stock + (production − use) × mission length ≥ 0` |
+| **Planet twist** | Picked from the planet's most extreme known parameter | See below |
 
-**Working recommendation until decided:** treat **Planetary Fact Sheets** as the **canonical numeric surface** for the allowlist, plus a **checked-in JSON override** for game-specific fields (mass cap, crew size, life-support rates). Agent maps sheet → schema; gaps marked `assumption` with defaults.
+| Twist | Triggered by | Requirement |
+| --- | --- | --- |
+| **Radiation** | No / thin atmosphere, or flare-prone star | ≥ N berm tiles adjacent to the habitat |
+| **Cold** | Low surface / equilibrium temperature | Extra heating load added to Power goal |
+| **Low light / dust** | Low insolation or dust storms | Solar output reduced further; night storage requirement increased |
 
-**`[MISSING]`** Final choice of single source.  
-**`[MISSING]`** Citation format stored on each parameter row.  
-**`[MISSING]`** Life-support rates source (separate NASA doc — not on fact sheets).  
-**`[MISSING]`** Parser: static scrape vs manual JSON vs MCP tool.
+Mission length is a fixed abstract duration (e.g. 30 sols) so the math stays the same every round; the planet changes the rates.
+
+**`[MISSING]`** Exact thresholds for picking each twist.
+
+---
+
+## Piece library
+
+The **habitat** is pre-placed at grid center. Players place everything else from a shared mass budget. Pieces can be **removed for a full refund** (trial and error is part of the game).
+
+| Piece | Cost | Gives | Planet data it depends on |
+| --- | --- | --- | --- |
+| **Solar array** | Light | Power × insolation (Earth = 1.0); 0 at night | Insolation, day/night length, dust |
+| **Battery** | Medium | Stores power for the night | Night length |
+| **Reactor** (RTG/fission) | Very heavy | Flat power, day and night | — (the "far from the star" answer) |
+| **Water tank** | Mass = water | Fixed water, no power | — |
+| **Ice drill** | Medium + power | Water over time; **ice tiles only** | Water/ice presence |
+| **O₂ unit** | Light + power | O₂ from water (electrolysis) or CO₂ atmosphere if present | Atmosphere composition |
+| **Berm** (Overburden) | **0 mass**, slow to build (~3s hold) | Radiation shielding when adjacent to habitat | Radiation; gravity sets dig speed |
+
+Core tradeoffs:
+
+- **Ship it vs make it:** tanks are fast but heavy; drill/O₂ unit are light but cost power.
+- **Mass vs time:** berms cost no mass but cost build time — the game's namesake.
+- **Solar vs reactor:** decided by distance from the star (e.g. Mars ≈ 0.43× Earth sunlight, Titan ≈ 0.01×).
+- **Grid placement:** drills need ice tiles; berms must touch the habitat; solar needs lit tiles.
+
+Design rule: each planet should change the best build in **at least two** of these tradeoffs. Every planet field must move at least one piece stat, or it is cut.
+
+**`[MISSING]`** Base numbers (mass, output, power draw) per piece.  
+**`[MISSING]`** Total mass budget (fixed across rounds; may be scaled by the winnability check).
+
+---
+
+## Grid
+
+- **8×8**, 2D, habitat pre-placed at center.
+- Tile types: **lit**, **shaded**, **ice**, set per planet (e.g. ice only where the planet has water/ice).
+- Placement is near-instant (except berms). Everyone sees everyone's **live cursor**.
+
+---
+
+## What players see
+
+| Visible | Hidden |
+| --- | --- |
+| Build timer | Whether each goal currently passes |
+| Mass used / remaining | Aggregate production totals |
+| Placed pieces |  |
+| Per-piece stats **on this planet** on hover (e.g. "Solar: 0.43× here") |  |
+| The 3 goals (no checkmarks) |  |
+| Headline fact + planet card (re-openable) |  |
+
+---
+
+## Evaluation & diagnosis
+
+- **Evaluation** is a deterministic formula (see **Goals**), not a time-stepped sim. Runs once at 0:00.
+- **Diagnosis** reuses the same formula. A reducer recomputes it on every place/remove and stores the **worst-failing goal + shortfall + the planet fact responsible** (e.g. "Power: night storage short by 40%, night = 11 Earth days"). The voice assistant reads this; players never see it directly.
+- **Winnability check:** on `commit_round`, the server brute-forces piece counts within the mass budget (few piece types → cheap) and confirms at least one winning build fits the grid. If none, scale the mass budget or redraw.
 
 ---
 
 ## Voice assistant (in-game)
 
-During **build** (and trial if present): players ask for help; hints tighten as **time runs down**.
-
 | Topic | Direction |
 | --- | --- |
-| **API** | Voice realtime API (e.g. xAI Grok Voice) via **server-minted ephemeral token** |
-| **Inputs** | Round parameters, ledger, requirements checklist, **time remaining** |
-| **Outputs** | Spoken hints; optional **one suggested action** (confirm before placing) |
-| **Rules** | `[MISSING]` — no invented rates; must read server state via tools |
-| **Escalation** | `[MISSING]` — e.g. at 50% / 25% time, more specific hints |
-
-**`[MISSING]`** Tool list (`read_timer`, `read_stocks`, `read_requirements`, …).  
-**`[MISSING]`** Behavior when API key absent (text-only or disabled).  
-**`[MISSING]`** Mobile vs desktop UX for push-to-talk.
-
----
-
-## Frontend format
-
-**Deferred** until game details, loop, and server schema are stable.
-
-**`[MISSING]`** Stack (e.g. Vite + React + 3D grid).  
-**`[MISSING]`** Phone role (spectator sheet vs full player).
+| **API** | Grok Voice (realtime) via server-minted ephemeral token |
+| **Where it runs** | **One session on the host device** (shared speaker); anyone in the room talks to it via push-to-talk on the host (e.g. spacebar / big button). Avoids four devices talking over each other. |
+| **Grounding** | Never does math. Reads the server **diagnosis** and planet facts via tools, then phrases a hint. |
+| **Tools** | `read_diagnosis`, `read_time_left`, `read_goals`, `read_planet_fact(field)`, `read_board` |
+| **Proactive hints** | At **1:30, 0:45, 0:15** left, triggered by the host client on timer thresholds |
+| **Escalation** | Vague → specific: "your water plan won't last" → "short on water; this planet has ice" → "an ice drill on the ice tile bottom-left closes it" |
+| **Style** | One goal + one real fact per hint; short (expect only 2–4 exchanges per round) |
+| **No API key** | Same diagnosis rendered as text hints on the same schedule |
 
 ---
 
-## Backend & multiplayer (recommended tab)
+## Research pipeline
+
+Runs in the **lobby** so briefing never waits.
+
+### Agent steps
+
+1. Draw a planet from the eligible pool.
+2. Fetch data (Exoplanet Archive / Fact Sheets) and map to the **planet profile** schema.
+3. Mark unknown fields **estimated** with a default and a one-line "why unknown" for the briefing.
+4. Pick the twist, the headline fact, and a scale comparison (distance, size vs Earth).
+5. Stream progress lines to a `research_log` table (shown on the briefing screen — the research is part of the show).
+6. Call `commit_round` via the Node service (server identity). Reducer validates ranges, requires a source per field, and runs the winnability check.
+
+### Agent tools
+
+`fetch_exoplanet(name | random_filtered)`, `fetch_fact_sheet(body)`, `set_parameter(field, value, source, status)`, `set_twist(kind)`, `set_headline(text)`, `log_step(text)`, `commit_round()`.
+
+### Rules
+
+- The agent may **pick and phrase** (twist, headline, briefing text). It may **not** change sourced numbers.
+- No search or agent calls during build.
+- **Fallback:** a checked-in **cached pack** (~10 pre-validated planets). If research fails or exceeds the latency budget, draw from the pack.
+
+**`[MISSING]`** Latency budget (suggest ≤ 20s, then fall back to cache).
+
+---
+
+## Planet pool & profile
+
+### Pool
+
+- **Solar system:** rocky bodies with a surface — candidates: Moon, Mars, Mercury, Ceres, Titan, Europa.
+- **Exoplanets:** NASA Exoplanet Archive, filtered to likely-rocky (radius ≤ ~1.6 Earth radii) with insolation and equilibrium temperature known and within a playable range.
+- Excluded: gas giants, Venus-surface-like extremes. Anything that fails the winnability check is redrawn.
+
+**`[MISSING]`** Final solar-system list and exoplanet filter thresholds.
+
+### Profile fields
+
+| Field | Drives | Source (solar system / exoplanet) |
+| --- | --- | --- |
+| Name, type, distance, size vs Earth | Briefing, scale comparison | Fact Sheet / `sy_dist`, `pl_rade` |
+| Insolation (Earth = 1) | Solar output | Fact Sheet / `pl_insol` |
+| Day/night length | Battery requirement | Fact Sheet / usually **estimated** (rotation unknown) |
+| Temperature | Cold twist, heating load | Fact Sheet / `pl_eqt` |
+| Gravity | Berm dig speed | Fact Sheet / derived from `pl_rade` + `pl_bmasse` |
+| Atmosphere | O₂ unit mode, radiation twist | Fact Sheet / usually **estimated** |
+| Water/ice | Ice tiles, drill availability | Mission literature / **estimated** |
+| Radiation / dust | Twist selection | Curated / star type (`st_spectype`) |
+
+Each stored parameter: `{ field, value, unit, status: sourced | estimated, source_label, source_url }`.
+
+---
+
+## Research sources
+
+| Source | Used for |
+| --- | --- |
+| **NASA Exoplanet Archive** (TAP API, structured) | Exoplanet insolation, temperature, radius, mass, distance, star type |
+| **NASA Planetary / Satellite Fact Sheets** | Solar-system body numbers |
+| **NASA BVAD** (Baseline Values and Assumptions Document) | Crew life-support rates (e.g. ~0.84 kg O₂ per person per day) |
+| **Checked-in game constants** | Piece stats, mass budget, mission length |
+
+**`[MISSING]`** Parser for Fact Sheets (one-time scrape into JSON is likely simplest).
+
+---
+
+## Debrief (learning moment)
+
+- Per-goal pass/fail with the reason in plain language.
+- The **real fact behind the result**: "You ran out of power on night 3 — this planet's night lasts 11 Earth days."
+- Scale card: distance (light-years), size vs Earth, sunlight vs Earth.
+- **What we don't know yet**: list of *estimated* fields.
+- Sources with links.
+
+---
+
+## Backend & multiplayer (SpacetimeDB)
 
 | Topic | Notes |
 | --- | --- |
-| Shared state | Room, members, planet profile, pieces, stocks, timer, win/loss |
-| Tick / sim | `[MISSING]` — continuous timer only vs discrete resource ticks |
-| Identity | `[MISSING]` — anonymous join vs accounts |
+| Tables | `room`, `member`, `round`, `planet_parameter`, `piece`, `cursor`, `diagnosis`, `research_log`, `result` |
+| Reducers | `create_room`, `join`, `start_round`, `place_piece`, `remove_piece`, `move_cursor`, `lock_build`, `evaluate`, `rematch`, `commit_round` (server identity only) |
+| Timer | Scheduled reducer ends the build at 0:00 and calls `evaluate` |
+| Identity | Anonymous Spacetime identities; no accounts |
+| Room lifetime | Join code lives as long as the room. If the host drops, the next member becomes host (and voice moves to their device). |
+| Trust | Reducers are the only writers; clients never compute pass/fail |
 
 ---
 
-## Acceptance checks (when building)
+## Acceptance checks
 
-1. Four clients join one code; one placement visible on all screens.  
-2. Agent (or fixture) commits a planet profile; all clients show same requirements.  
-3. Timer reaches zero; win/loss matches server evaluation.  
-4. Voice helper cites time left and a requirement from server tools, not guesswork.  
-5. Rematch starts new round without stale planet data.
+1. Four clients join one code; a placement and live cursors appear on all screens.
+2. Research agent (or cached pack) commits a planet; all clients show the same briefing, goals, and sourced facts.
+3. Winnability check rejects an impossible planet.
+4. Diagnosis updates on place/remove; voice hint cites the failing goal and a real planet fact from tools.
+5. Timer hits 0:00; evaluation and debrief match the server formula.
+6. Rematch loads a new planet with no stale data.
+
+---
+
+## Demo script
+
+**`[MISSING]`** To write after the core is built (target: one full ~3.5 min round).
 
 ---
 
 ## Archive
 
-The previous long design (fixed Moon/Mars sites, cited reducer pack, Spacetime table list) is superseded by this document. Recover from git history if needed.
+Earlier designs (fixed Moon/Mars sites, longer build + trial phases, roles) are superseded by this document. Recover from git history if needed.
