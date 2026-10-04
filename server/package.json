@@ -1,0 +1,22 @@
+{
+  "name": "@overburden/server",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --env-file-if-exists=.env src/index.ts",
+    "start": "tsx --env-file-if-exists=.env src/index.ts",
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "@overburden/shared": "workspace:*",
+    "spacetimedb": "2.10.*",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/ws": "^8.5.12",
+    "tsx": "^4.19.0",
+    "typescript": "~5.6.2"
+  }
+}

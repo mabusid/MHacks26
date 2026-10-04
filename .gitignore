@@ -2,3 +2,9 @@ node_modules/
 .env
 *.wav
 test/
+dist/
+.DS_Store
+*.log
+# written by `spacetime dev` (per machine)
+.env.local
+spacetime.local.json

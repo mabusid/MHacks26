@@ -1,0 +1,7 @@
+packages:
+  - packages/*
+  - spacetimedb
+  - client
+  - server
+allowBuilds:
+  esbuild: true
