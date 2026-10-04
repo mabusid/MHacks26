@@ -1,45 +1,45 @@
 {
-  "planetName": "GJ 411 b",
+  "planetName": "TRAPPIST-1 f",
   "params": [
     {
       "field": "insolation",
-      "num": 3.13,
+      "num": 0.373,
       "flag": null,
       "unit": "× Earth",
       "status": "sourced",
-      "sourceLabel": "Stock et al. 2020 via NASA Exoplanet Archive",
-      "sourceUrl": "https://ui.adsabs.harvard.edu/abs/2020A&A...643A.112S/abstract",
+      "sourceLabel": "Agol et al. 2021 via NASA Exoplanet Archive",
+      "sourceUrl": "https://ui.adsabs.harvard.edu/abs/2021PSJ.....2....1A/abstract",
       "note": ""
     },
     {
       "field": "meanTempK",
-      "num": 349.83,
+      "num": 217.7,
       "flag": null,
       "unit": "K",
       "status": "sourced",
-      "sourceLabel": "D&iacute;az et al. 2019 via NASA Exoplanet Archive",
-      "sourceUrl": "https://ui.adsabs.harvard.edu/abs/2019A&A...625A..17D/abstract",
+      "sourceLabel": "Ducrot et al. 2020 via NASA Exoplanet Archive",
+      "sourceUrl": "https://ui.adsabs.harvard.edu/abs/2020A&A...640A.112D/abstract",
       "note": "Equilibrium temperature"
     },
     {
       "field": "gravity",
-      "num": 14.22,
+      "num": 9.33,
       "flag": null,
       "unit": "m/s²",
-      "status": "estimated",
-      "sourceLabel": "Calculated Value via NASA Exoplanet Archive",
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/docs/pscp_calc.html",
-      "note": "Mass not directly measured; assumes Earth-like density from its radius"
+      "status": "sourced",
+      "sourceLabel": "Agol et al. 2021 via NASA Exoplanet Archive",
+      "sourceUrl": "https://ui.adsabs.harvard.edu/abs/2021PSJ.....2....1A/abstract",
+      "note": "Derived from mass 1.039 and radius 1.045 (Earth = 1)"
     },
     {
       "field": "nightHours",
-      "num": null,
+      "num": 0,
       "flag": null,
-      "unit": "",
+      "unit": "h",
       "status": "estimated",
-      "sourceLabel": "",
-      "sourceUrl": "",
-      "note": "Rotation not measured — planets this close to their star are often tidally locked"
+      "sourceLabel": "Agol et al. 2021 via NASA Exoplanet Archive",
+      "sourceUrl": "https://ui.adsabs.harvard.edu/abs/2021PSJ.....2....1A/abstract",
+      "note": "Orbits in 9.2 days, so close that it's likely tidally locked: one side always faces its star, and a base there never sees night"
     },
     {
       "field": "surfacePressureBar",
@@ -102,14 +102,14 @@
       "note": "Weather unknown"
     }
   ],
-  "twist": "radiation",
-  "headline": "GJ 411 b gets 313% of Earth’s sunlight, 18.5 light-years away.",
-  "scaleText": "18.5 light-years away · 1.45× Earth’s width · 3.13× Earth’s sunlight",
+  "twist": "thermal",
+  "headline": "TRAPPIST-1 f gets 37% of Earth’s sunlight, 40.5 light-years away.",
+  "scaleText": "40.5 light-years away · 1.04× Earth’s width · 0.37× Earth’s sunlight",
   "because": [
     {
       "kind": "power",
-      "text": "It gets 3.13× Earth’s sunlight; its nights have never been measured.",
-      "field": "insolation"
+      "text": "It likely always faces its star, so the base never sees night.",
+      "field": "nightHours"
     },
     {
       "kind": "life_support",
@@ -118,13 +118,13 @@
     },
     {
       "kind": "twist",
-      "text": "Its atmosphere has never been measured, so plan for radiation.",
-      "field": "surfacePressureBar"
+      "text": "Its equilibrium temperature is about 218 K.",
+      "field": "meanTempK"
     }
   ],
   "funFacts": [
-    "Welcome to GJ 411 b, 18.5 light-years from Earth.",
-    "A year here lasts 13 Earth days as it circles a M1.5 V star.",
+    "Welcome to TRAPPIST-1 f, 40.5 light-years from Earth.",
+    "A year here lasts 9 Earth days as it circles a M8.0 V star.",
     "Nobody knows yet whether it has air — only a handful of rocky exoplanets have been checked."
   ]
 }

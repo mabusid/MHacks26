@@ -87,7 +87,9 @@ const EARTH_G = 9.81;
 const POOL_FILTER = 'pl_rade <= 1.6 and pl_insol between 0.25 and 4 and pl_eqt between 150 and 400 and sy_dist is not null';
 const COLUMNS =
   'pl_name,pl_rade,pl_bmasse,pl_bmasselim,pl_bmassprov,pl_insol,pl_eqt,pl_orbper,sy_dist,st_spectype,' +
-  'pl_rade_reflink,pl_bmasse_reflink,pl_insol_reflink,pl_eqt_reflink';
+  'pl_rade_reflink,pl_bmasse_reflink,pl_insol_reflink,pl_eqt_reflink,pl_orbper_reflink';
+/** Orbits this short (days) are close enough to the star that tidal locking is the expected outcome. */
+export const LIKELY_LOCKED_DAYS = 20;
 
 export interface ExoplanetRow {
   pl_name: string;
@@ -104,6 +106,7 @@ export interface ExoplanetRow {
   pl_bmasse_reflink: string | null;
   pl_insol_reflink: string | null;
   pl_eqt_reflink: string | null;
+  pl_orbper_reflink?: string | null;
 }
 
 async function tap<T>(adql: string, timeoutMs = 10_000): Promise<T[]> {
@@ -140,7 +143,11 @@ export function parseReflink(html: string | null): { label: string; url: string 
   return { label: label ? `${label} via ${ARCHIVE_LABEL}` : ARCHIVE_LABEL, url };
 }
 
-/** Archive row → sourced values. Gravity is derived; a mass that's only a limit or not measured → estimated. */
+/**
+ * Archive row → sourced values. Gravity is derived; a mass that's only a limit or not measured → estimated.
+ * A short orbit means the planet is likely tidally locked: the base sits on the side that always faces the star,
+ * so there's no night (estimated — rotation is never measured). Longer orbits leave the night unknown.
+ */
 export function exoplanetValues(row: ExoplanetRow): { values: SourcedValue[]; scale: ScaleInfo } {
   const ref = (html: string | null) => parseReflink(html);
   const insolRef = ref(row.pl_insol_reflink);
@@ -166,11 +173,27 @@ export function exoplanetValues(row: ExoplanetRow): { values: SourcedValue[]; sc
         sourceUrl: radRef.url,
         note: 'Mass not directly measured; assumes Earth-like density from its radius',
       };
+  const orbitRef = ref(row.pl_orbper_reflink ?? null);
+  const locked: SourcedValue[] =
+    row.pl_orbper !== null && row.pl_orbper <= LIKELY_LOCKED_DAYS
+      ? [
+          {
+            field: 'nightHours',
+            value: 0,
+            unit: 'h',
+            status: 'estimated',
+            sourceLabel: orbitRef.label,
+            sourceUrl: orbitRef.url,
+            note: `Orbits in ${Math.round(row.pl_orbper * 10) / 10} days, so close that it's likely tidally locked: one side always faces its star, and a base there never sees night`,
+          },
+        ]
+      : [];
   return {
     values: [
       { field: 'insolation', value: row.pl_insol, unit: '× Earth', status: 'sourced', sourceLabel: insolRef.label, sourceUrl: insolRef.url, note: '' },
       { field: 'meanTempK', value: row.pl_eqt, unit: 'K', status: 'sourced', sourceLabel: eqtRef.label, sourceUrl: eqtRef.url, note: 'Equilibrium temperature' },
       gravity,
+      ...locked,
     ],
     scale: { distance: { value: Math.round(row.sy_dist * PARSEC_LY * 10) / 10, unit: 'ly' }, radiusEarths: row.pl_rade },
   };

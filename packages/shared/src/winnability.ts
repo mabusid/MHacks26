@@ -30,14 +30,15 @@ export function tileCapacity(tiles: Tiles): TileCapacity {
   };
 }
 
-/** Can these counts physically fit? Berms prefer non-lit adjacent tiles so solar keeps the lit ones. */
+/** Can these counts physically fit? Habitat-ring pieces prefer non-lit tiles so solar keeps the lit ones. */
 export function fits(c: Counts, cap: TileCapacity): boolean {
   const total = Object.values(c).reduce((a, b) => a + b, 0);
   if (total > OPEN_TILES) return false;
   if (c.ice_drill > cap.ice) return false;
-  if (c.berm > cap.adjacent) return false;
-  const bermsOnLit = Math.max(0, c.berm - cap.adjacentNotLit);
-  return c.solar <= cap.lit - bermsOnLit;
+  const ring = c.berm + c.thermal_unit;
+  if (ring > cap.adjacent) return false;
+  const ringOnLit = Math.max(0, ring - cap.adjacentNotLit);
+  return c.solar <= cap.lit - ringOnLit;
 }
 
 /** Every winning build that fits the grid, with mass ≤ maxMass. */
@@ -47,6 +48,7 @@ export function winningBuilds(rules: RoundRules, tiles: Tiles, maxMass = Infinit
   const out: Build[] = [];
   const c = emptyCounts();
   c.berm = rules.bermsRequired;
+  c.thermal_unit = rules.thermalLoad;
   for (c.reactor = 0; c.reactor <= RANGES.reactor; c.reactor++)
     for (c.solar = 0; c.solar <= RANGES.solar; c.solar++)
       for (c.battery = 0; c.battery <= RANGES.battery; c.battery++)

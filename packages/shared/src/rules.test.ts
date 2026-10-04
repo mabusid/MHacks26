@@ -1,17 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { FIXTURES } from './fixtures';
-import { deriveRules, nightBand, rulesFromRound, thermalLoadFor, triggeredTwists } from './rules';
+import { deriveRules, nightBand, rulesFromRound, stormBand, thermalLoadFor, triggeredTwists } from './rules';
 
 describe('nightBand', () => {
-  it('maps night length to bands, unknown → 2', () => {
-    expect(nightBand(12, false)).toBe(1);
-    expect(nightBand(200, false)).toBe(2);
-    expect(nightBand(354, false)).toBe(3);
-    expect(nightBand(null, false)).toBe(2);
+  it('maps night length to bands, unknown → 2, no night (tidally locked) → 0', () => {
+    expect(nightBand(0)).toBe(0);
+    expect(nightBand(12)).toBe(1);
+    expect(nightBand(200)).toBe(2);
+    expect(nightBand(354)).toBe(3);
+    expect(nightBand(null)).toBe(2);
   });
-  it('adds one for dust storms, capped at 3', () => {
-    expect(nightBand(12, true)).toBe(2);
-    expect(nightBand(354, true)).toBe(3);
+  it('the dust storm reserve is one more night than power needs', () => {
+    expect(stormBand({ nightBand: 1 })).toBe(2);
+    expect(stormBand({ nightBand: 3 })).toBe(4);
   });
 });
 
@@ -37,7 +38,7 @@ describe('deriveRules', () => {
   it('applies a twist effect only when chosen', () => {
     const dust = deriveRules(FIXTURES.mars.profile, 'dust');
     expect(dust.solarPerArray).toBeCloseTo(3 * 0.43 * 0.5);
-    expect(dust.nightBand).toBe(2);
+    expect(dust.nightBand).toBe(1);
     expect(dust.thermalLoad).toBe(0);
     const thermal = deriveRules(FIXTURES.mars.profile, 'thermal');
     expect(thermal.thermalLoad).toBe(1);

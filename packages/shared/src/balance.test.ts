@@ -28,10 +28,10 @@ describe('balance: the planet data decides the build', () => {
     expect([cheapest.mass, budget]).toEqual([23, 27]);
   });
 
-  it('Titan (thermal): ~1% sunlight and −179 °C → reactor + shipped supplies', () => {
+  it('Titan (thermal): ~1% sunlight and −179 °C → reactor + shipped supplies + 2 thermal units', () => {
     const { cheapest, budget } = solve('titan');
-    expect(cheapest.counts).toMatchObject({ reactor: 1, solar: 0, water_tank: 2, o2_tank: 2 });
-    expect([cheapest.mass, budget]).toEqual([30, 34]);
+    expect(cheapest.counts).toMatchObject({ reactor: 1, solar: 0, water_tank: 2, o2_tank: 2, thermal_unit: 2 });
+    expect([cheapest.mass, budget]).toEqual([32, 37]);
   });
 
   it('Bright exoplanet (radiation): 1.5× sunlight → solar + batteries, no reactor', () => {
@@ -54,12 +54,12 @@ describe('balance: the planet data decides the build', () => {
     expect(everywhere).toEqual([]);
   });
 
-  it('rejects rules that no build can satisfy within the grid or the 34 CU cap', () => {
+  it('rejects rules that no build can satisfy within the grid or the 38 CU cap', () => {
     const tiles = generateTiles(mulberry32(1), { ice: false, polarIce: false });
     const base = deriveRules(FIXTURES.titan.profile, 'thermal');
     // More berms than habitat-adjacent tiles: nothing fits the grid.
     expect(solveRound({ ...base, twist: 'radiation', bermsRequired: 9 }, tiles)).toMatchObject({ ok: false });
-    // Synthetic load one reactor can't carry, no usable sunlight: 2 reactors + tanks = 44 CU > 34.
+    // 3 thermal units push the load past one reactor, no usable sunlight: 2 reactors + tanks + units = 47 CU > 38.
     const heavy = { ...base, thermalLoad: 3 as unknown as 2 };
     expect(solveRound(heavy, tiles)).toMatchObject({ ok: false });
   });

@@ -40,8 +40,8 @@ function nudge(kind: RequirementKind, twist: Twist): string {
   if (kind === 'power') return 'Your power plan won’t hold up yet.';
   if (kind === 'life_support') return 'Your crew is going to run short on water or air.';
   if (twist === 'radiation') return 'The habitat isn’t shielded yet.';
-  if (twist === 'thermal') return 'There isn’t enough power for heating yet.';
-  return 'The dust storms will starve your solar.';
+  if (twist === 'thermal') return 'Nothing is keeping the habitat at a livable temperature yet.';
+  return 'A dust storm would leave you without enough stored power.';
 }
 
 /** "ice drill", but keep chemical symbols: "O₂ tank". */

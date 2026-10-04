@@ -84,7 +84,7 @@ Crew size (**4**, one per player) and mission length (**30 sols**) are fixed so 
 
 | Requirement | Researched inputs | What the research decides |
 | --- | --- | --- |
-| **Power** (always) | Insolation, dust, day length, temperature | Solar output per array; **night storage** needed (night band); **thermal load** added to the base load |
+| **Power** (always) | Insolation, dust, night length (or likely tidal locking) | Solar output per array; **night storage** needed (night band; none on a tidally locked world's day side) |
 | **Life support** (always) | BVAD crew rates; water/ice presence; atmosphere composition | Water & O₂ thresholds (from BVAD); whether the **ice drill** is usable (ice tiles exist); whether the **O₂ unit** needs water or uses CO₂ |
 | **Twist** (one) | Radiation dose, atmosphere, temperature, dust record | Which twist applies and its threshold (see below) |
 | **Mass budget** | All of the above | Cheapest winning build under these criteria × 1.15 (see **Evaluation**) |
@@ -94,17 +94,17 @@ Crew size (**4**, one per player) and mission length (**30 sols**) are fixed so 
 | Twist | Triggered by research showing | Threshold set by research |
 | --- | --- | --- |
 | **Radiation** | Surface pressure < 0.01 bar, or exoplanet atmosphere unknown | **4** berms adjacent to habitat; **6** if measured surface dose > 10 mSv/day (e.g. Europa, inside Jupiter's radiation belts) |
-| **Thermal** | Mean surface temp (or `pl_eqt`) < 250 K or > 330 K | **+1 power** (200–250 K or 330–400 K) · **+2 power** (< 200 K or > 400 K) — heating or cooling |
-| **Dust storms** | Recorded global dust storms (Mars) | Solar output **×0.5**; night band **+1** (max 3) |
+| **Thermal** | Measured mean surface temp (or `pl_eqt`) < 250 K or > 330 K | **1 thermal unit** next to the habitat (200–250 K or 330–400 K) · **2** (< 200 K or > 400 K); each draws 1 power |
+| **Dust storms** | Recorded global dust storms (Mars) | Solar output **×0.5** (on the power line); **storm reserve**: batteries for one more night than power needs |
 
 If several trigger, the agent picks one, preferring a twist **different from last round**, and writes a one-line justification citing the fact. If none trigger, default to **Radiation**.
 
-A twist's effect applies **only when it is the chosen twist** (e.g. Mars with Dust chosen gets the solar ×0.5 and night +1, but no thermal load), so every round has exactly 3 requirements.
+A twist's effect applies **only when it is the chosen twist** (e.g. Mars with Dust chosen gets solar ×0.5 and the storm reserve, but needs no thermal units), so every round has exactly 3 requirements. Every twist is **its own pass/fail line** — it can fail while power passes, so the debrief names the fact it teaches.
 
 ### Research supplies the facts, server computes the thresholds
 
 - The research produces **sourced parameters** (each tied to a tool fetch — see **Research pipeline**). The criteria follow from those parameters by the rules above, so **different research → different criteria**.
-- `commit_round` **computes every threshold** (night band, thermal load, ISRU availability, berm count) from the committed parameters. The agent never does the math, so it can't get it wrong.
+- `commit_round` **computes every threshold** (night band, thermal units, ISRU availability, berm count) from the committed parameters. The agent never does the math, so it can't get it wrong.
 - The agent decides **which planet, which twist** (among those the data triggers), and **how each requirement is explained**. Every because-line must reference a parameter row, so explanations can't drift from the data.
 
 ### Life-support units (shown in debrief, from BVAD)
@@ -121,13 +121,14 @@ Mass is in **cargo units (CU)**. The **habitat** (2×2) is pre-placed at grid ce
 | Piece | Mass | Power | Gives | Placement | Planet data it depends on |
 | --- | --- | --- | --- | --- | --- |
 | **Solar array** | 1 | +3 × insolation (cap 2.0), day only | Power | Lit tiles | Insolation, dust |
-| **Battery** | 2 | — | Covers 3 power of night load per night band | Anywhere; needs ≥ 1 solar to charge | Night length |
+| **Battery** | 2 | — | Covers 3 power of night load per night band (unused where there's no night) | Anywhere; needs ≥ 1 solar to charge | Night length, dust |
 | **Reactor** (fission) | 14 | +6 flat, day and night | Power | Anywhere | — (the "dark world" answer) |
 | **Water tank** | 4 | — | +6 water | Anywhere | — |
 | **O₂ tank** | 4 | — | +6 O₂ | Anywhere | — |
 | **Ice drill** | 2 | −2 | +12 water | **Ice tiles only** | Water/ice presence |
 | **O₂ unit** | 1 | −1 | +12 O₂; **uses 6 water** unless atmosphere is CO₂-rich | Anywhere | Atmosphere composition |
 | **Berm** (Overburden) | 1 | — | Radiation shielding | Orthogonally adjacent to habitat | Radiation |
+| **Thermal unit** | 1 | −1 | Heats or cools the habitat | Orthogonally adjacent to habitat | Temperature (thermal twist only) |
 
 **Placement:** every piece, including berms, places with one click/tap (no press-and-hold anywhere).
 
@@ -135,11 +136,11 @@ Mass is in **cargo units (CU)**. The **habitat** (2×2) is pre-placed at grid ce
 
 - **Ship it vs make it:** tanks are heavy (4 CU) but need no power; drill / O₂ unit are light but cost power — worth it only where the planet has ice or CO₂ air.
 - **Solar vs reactor:** solar + batteries is cheap on bright worlds with short nights; the reactor (14 CU) wins only on dark or very long-night worlds.
-- **Grid placement:** drills need ice tiles (often shaded), solar needs lit tiles, berms compete for habitat-adjacent tiles.
+- **Grid placement:** drills need ice tiles (often shaded), solar needs lit tiles, berms and thermal units compete with solar for the lit habitat-adjacent tiles.
 
 ### Balance (tuned with the solver over all real planets)
 
-Constants were chosen by sweeping 288 combinations against every planet in the cached pack (each planet's real data, 30 tile layouts). Before tuning, one planet-blind build (reactor + tanks) won on **10/10** planets and the reactor was required on 10/10; after tuning, the best planet-blind build wins on **5/10** (the exoplanets share unmeasured defaults), there are **6 distinct cheapest builds**, and the reactor is required on **4/10** (current pack; rerun after `pnpm build:pack`, which redraws the exoplanets). Every planet stays winnable on 30/30 layouts.
+Constants were chosen by sweeping 288 combinations against every planet in the cached pack (each planet's real data, 30 tile layouts). Before tuning, one planet-blind build (reactor + tanks) won on **10/10** planets and the reactor was required on 10/10; after tuning (plus separate twist lines and tidal-locking nights), the best planet-blind build wins on **4/10**, there are **8 distinct cheapest builds**, and the reactor is required on **4/10** (current pack; rerun after `pnpm build:pack`, which redraws the exoplanets). Every planet stays winnable on 30/30 layouts.
 
 | Planet (twist) | Cheapest build | CU | What the data teaches |
 | --- | --- | --- | --- |
@@ -147,17 +148,19 @@ Constants were chosen by sweeping 288 combinations against every planet in the c
 | **Mercury** (radiation) | 1 solar + 6 batteries + ice drill + 2 O₂ tanks + 4 berms | 27 | 6.7× sunlight, 88-day nights; MESSENGER's polar ice |
 | **Mars** (dust) | Reactor + O₂ unit (CO₂ air) + 2 water tanks | 23 | Dust halves solar; make O₂ from the air (MOXIE) |
 | **Ceres** (radiation) | Reactor + ice drill + 2 O₂ tanks + 4 berms | 28 | 13% sunlight; Dawn's crater ice |
-| **Titan / Europa** (thermal) | Reactor + 2 water tanks + 2 O₂ tanks | 30 | ~1–4% sunlight and bitter cold |
-| **Bright exoplanets** (radiation) | 1 solar + 4 batteries + 3 water tanks + O₂ unit + 4 berms | 26 | Bright star, but no measured ice or CO₂ — ship water |
-| **Hot exoplanets** (thermal) | 1 solar + 4 batteries + 3 water tanks + O₂ unit | 22 | Archive equilibrium temperature sets the cooling load; still no ice or CO₂ |
+| **Titan / Europa** (thermal) | Reactor + 2 water tanks + 2 O₂ tanks + 2 thermal units | 32 | ~1–4% sunlight and bitter cold |
+| **Wide-orbit exoplanets** (radiation) | 1 solar + 4 batteries + 3 water tanks + O₂ unit + 4 berms | 26 | Rotation unknown → plan for ×2 nights; no measured ice or CO₂ — ship water |
+| **Tidally locked exoplanets** (thermal) | 1–6 solar + 3 water tanks + O₂ unit + 1 thermal unit | 15–20 | Orbit ≤ 20 days → always day on the star side, no batteries; sunlight sets the array count |
 
 ### Mass budget
 
-`budget = ceil(cheapest winning build × 1.15)`, clamped to **14–34 CU**. If the cheapest build is over 34 CU, redraw the planet.
+`budget = ceil(cheapest winning build × 1.15)`, clamped to **14–38 CU**. If the cheapest build is over 38 CU, redraw the planet.
 
 ### Data integrity
 
 An **estimated** value can't set a twist (no thresholds from guesses) — except radiation from an unmeasured atmosphere, the honest plan-for-the-worst case. E.g. Ceres' temperature is a blackbody estimate, so it gets radiation, not thermal; the Moon's and Mercury's temperatures are equatorial/global averages, not polar-site values, so they're marked estimated.
+
+**Exoplanet nights (estimated):** rotation is never measured. An orbit of **≤ 20 days** is close enough that tidal locking is expected, so the base sits on the side that always faces the star — **no night, no batteries** (night band 0). Wider orbits stay unknown → band 2. The card shows the estimate tag and the reason.
 
 ---
 
@@ -191,17 +194,20 @@ An **estimated** value can't set a twist (no thresholds from guesses) — except
 Counts below only include validly placed pieces.
 
 ```
-load      = 4 + 2·drills + 1·o2_units + thermal_load        # thermal_load 0/1/2 from research
+load      = 4 + 2·drills + 1·o2_units + 1·thermal_units
 reactor   = 6 · reactors
 solar     = Σ lit solar arrays · 3 · min(insolation, 2) · (dust ? 0.5 : 1)
-band      = night ≤ 24 h → 1 · ≤ 10 Earth days → 2 · longer → 3   (+1 if dust, max 3)
+band      = no night (tidally locked) → 0 · night ≤ 24 h → 1 · ≤ 10 Earth days → 2 · longer → 3 · unknown → 2
+storage   = ceil(max(0, load − reactor) / 3)
 
 Power      : reactor + solar ≥ load
-             AND batteries ≥ ceil(max(0, load − reactor) / 3) · band
+             AND batteries ≥ storage · band
              AND (batteries = 0 OR solar arrays ≥ 1)
 Water      : 6·water_tanks + 12·drills − (co2_atmosphere ? 0 : 6·o2_units) ≥ 12
 O₂         : 6·o2_tanks + 12·o2_units ≥ 12
 Radiation  : berms adjacent to habitat ≥ required (4 or 6, from researched dose)
+Thermal    : thermal units adjacent to habitat ≥ required (1 or 2, from researched temperature)
+Dust       : charged batteries ≥ storage · (band + 1)          # storm reserve
 ```
 
 - **Evaluation** runs once at 0:00 and stores per-requirement pass/fail + reason.
@@ -329,8 +335,8 @@ Runs in the **lobby** (and during debrief for the next round) so players never w
 | --- | --- | --- | --- |
 | Name, type, distance, size vs Earth | Briefing, scale card | Fact Sheet | `pl_name`, `sy_dist` (pc → ly), `pl_rade` |
 | Insolation (Earth = 1) | Solar output | Fact Sheet (solar irradiance / 1361 W/m²) | `pl_insol` |
-| Night length | Night band | Fact Sheet (day length / 2) | **Estimated:** band 2 — rotation unknown; close-in planets may be tidally locked |
-| Temperature | Thermal twist & load | Fact Sheet mean surface temp | `pl_eqt` |
+| Night length | Night band | Fact Sheet (day length / 2) | **Estimated** from `pl_orbper`: ≤ 20 days → likely tidally locked, no night (band 0); otherwise unknown → band 2 |
+| Temperature | Thermal twist & unit count | Fact Sheet mean surface temp | `pl_eqt` |
 | Gravity | Planet facts (display only) | Fact Sheet | Derived: `pl_bmasse / pl_rade²` × 9.8; **estimated** (assume Earth density) if mass is missing, an upper limit (`pl_bmasselim = 1`), or not a direct measurement (`pl_bmassprov` ≠ "Mass") |
 | Atmosphere (pressure, CO₂-rich?) | Radiation twist, O₂ unit mode | Fact Sheet | **Estimated:** unknown → no usable atmosphere |
 | Water/ice | Ice tiles | Curated per body with mission source (e.g. LCROSS, MESSENGER, Dawn) | **Estimated:** unknown → no ice |

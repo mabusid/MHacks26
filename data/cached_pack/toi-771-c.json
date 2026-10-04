@@ -1,29 +1,29 @@
 {
-  "planetName": "GJ 3323 b",
+  "planetName": "TOI-771 c",
   "params": [
     {
       "field": "insolation",
-      "num": 2.58,
+      "num": 3,
       "flag": null,
       "unit": "× Earth",
       "status": "sourced",
-      "sourceLabel": "Astudillo-Defru et al. 2017 via NASA Exoplanet Archive",
-      "sourceUrl": "https://ui.adsabs.harvard.edu/abs/2017A&A...602A..88A/abstract",
+      "sourceLabel": "Lacedelli et al. 2025 via NASA Exoplanet Archive",
+      "sourceUrl": "https://ui.adsabs.harvard.edu/abs/2025A&A...698A.223L/abstract",
       "note": ""
     },
     {
       "field": "meanTempK",
-      "num": 290.06,
+      "num": 365,
       "flag": null,
       "unit": "K",
       "status": "sourced",
-      "sourceLabel": "Calculated Value via NASA Exoplanet Archive",
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/docs/pscp_calc.html",
+      "sourceLabel": "Lacedelli et al. 2025 via NASA Exoplanet Archive",
+      "sourceUrl": "https://ui.adsabs.harvard.edu/abs/2025A&A...698A.223L/abstract",
       "note": "Equilibrium temperature"
     },
     {
       "field": "gravity",
-      "num": 12.07,
+      "num": 14.72,
       "flag": null,
       "unit": "m/s²",
       "status": "estimated",
@@ -33,13 +33,13 @@
     },
     {
       "field": "nightHours",
-      "num": null,
+      "num": 0,
       "flag": null,
-      "unit": "",
+      "unit": "h",
       "status": "estimated",
-      "sourceLabel": "",
-      "sourceUrl": "",
-      "note": "Rotation not measured — planets this close to their star are often tidally locked"
+      "sourceLabel": "Lacedelli et al. 2025 via NASA Exoplanet Archive",
+      "sourceUrl": "https://ui.adsabs.harvard.edu/abs/2025A&A...698A.223L/abstract",
+      "note": "Orbits in 7.6 days, so close that it's likely tidally locked: one side always faces its star, and a base there never sees night"
     },
     {
       "field": "surfacePressureBar",
@@ -102,14 +102,14 @@
       "note": "Weather unknown"
     }
   ],
-  "twist": "radiation",
-  "headline": "GJ 3323 b gets 258% of Earth’s sunlight, 17.5 light-years away.",
-  "scaleText": "17.5 light-years away · 1.23× Earth’s width · 2.58× Earth’s sunlight",
+  "twist": "thermal",
+  "headline": "TOI-771 c gets 300% of Earth’s sunlight, 82.4 light-years away.",
+  "scaleText": "82.4 light-years away · 1.50× Earth’s width · 3.00× Earth’s sunlight",
   "because": [
     {
       "kind": "power",
-      "text": "It gets 2.58× Earth’s sunlight; its nights have never been measured.",
-      "field": "insolation"
+      "text": "It likely always faces its star, so the base never sees night.",
+      "field": "nightHours"
     },
     {
       "kind": "life_support",
@@ -118,13 +118,13 @@
     },
     {
       "kind": "twist",
-      "text": "Its atmosphere has never been measured, so plan for radiation.",
-      "field": "surfacePressureBar"
+      "text": "Its equilibrium temperature is about 365 K.",
+      "field": "meanTempK"
     }
   ],
   "funFacts": [
-    "Welcome to GJ 3323 b, 17.5 light-years from Earth.",
-    "A year here lasts 5 Earth days as it circles a M4 star.",
+    "Welcome to TOI-771 c, 82.4 light-years from Earth.",
+    "A year here lasts 8 Earth days as it circles a M3 star.",
     "Nobody knows yet whether it has air — only a handful of rocky exoplanets have been checked."
   ]
 }

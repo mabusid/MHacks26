@@ -32,11 +32,23 @@ describe('evaluate', () => {
     expect(evaluate(counts({ water_tank: 2, o2_unit: 1 }), moon).water).toBe(6);
   });
 
-  it('thermal twist mirrors power with its own wording', () => {
+  it('thermal twist needs thermal units by the habitat, failing on its own line even when power passes', () => {
     const titan = deriveRules(FIXTURES.titan.profile, 'thermal');
-    const e = evaluate(counts({ water_tank: 2, o2_tank: 2 }), titan);
-    expect(e.load).toBe(6);
-    expect(e.requirements.twist).toMatchObject({ pass: false, fact: 'meanTempK' });
-    expect(e.requirements.twist.reason).toMatch(/^Heating:/);
+    const without = evaluate(counts({ reactor: 1, water_tank: 2, o2_tank: 2 }), titan);
+    expect(without.requirements.power.pass).toBe(true);
+    expect(without.requirements.twist).toMatchObject({ pass: false, fact: 'meanTempK', reason: 'Thermal control short by 2 units next to the habitat' });
+    const withUnits = evaluate(counts({ reactor: 1, water_tank: 2, o2_tank: 2, thermal_unit: 2 }), titan);
+    expect(withUnits.load).toBe(6);
+    expect(withUnits.allPass).toBe(true);
+  });
+
+  it('dust storm reserve fails separately from night power', () => {
+    const mars = deriveRules(FIXTURES.mars.profile, 'dust');
+    // Night band 1 on Mars: 2 batteries cover the night, but a storm needs ×2.
+    const e = evaluate(counts({ solar: 8, battery: 2, water_tank: 2, o2_unit: 1 }), mars);
+    expect(e.requirements.power.pass).toBe(true);
+    expect(e.requirements.twist).toMatchObject({ pass: false, fact: 'dustStorms' });
+    expect(e.requirements.twist.reason).toMatch(/^Storm reserve short by 2 batteries/);
+    expect(evaluate(counts({ solar: 8, battery: 4, water_tank: 2, o2_unit: 1 }), mars).requirements.twist.pass).toBe(true);
   });
 });

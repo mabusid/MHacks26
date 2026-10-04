@@ -663,6 +663,8 @@ export const placePiece = spacetimedb.reducer({ kind: t.string(), index: t.u8() 
   const rd = requireBuilding(ctx);
   if (!(PIECE_KINDS as readonly string[]).includes(kind)) throw new SenderError(`Unknown piece "${kind}"`);
   if (kind === 'ice_drill' && !rd.iceAvailable) throw new SenderError('No ice on this planet');
+  if (kind === 'thermal_unit' && rd.twist !== 'thermal') throw new SenderError('No thermal control needed on this mission');
+  if (kind === 'berm' && rd.twist !== 'radiation') throw new SenderError('No radiation shielding needed on this mission');
   checkPlacement(ctx, rd.id, rd.massBudget, kind as PieceKind, index);
   ctx.db.piece.insert({ id: 0n, roundId: rd.id, kind, index, placedBy: ctx.sender });
 });

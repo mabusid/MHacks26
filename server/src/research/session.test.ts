@@ -87,6 +87,14 @@ describe('Exoplanet Archive mapping', () => {
     expect(g({ ...row, pl_bmasse: 35, pl_bmasselim: 1 })).toMatchObject({ status: 'estimated', value: 9.03 });
     expect(exoplanetValues(row).scale.distance).toEqual({ value: 40.5, unit: 'ly' });
   });
+
+  it('a short orbit is likely tidally locked → no night (estimated); a wide orbit leaves the night unmeasured', () => {
+    const night = (r: ExoplanetRow) => exoplanetValues(r).values.find(v => v.field === 'nightHours');
+    expect(night(row)).toMatchObject({ status: 'estimated', value: 0 });
+    expect(night(row)!.note).toMatch(/6\.1 days.*tidally locked/);
+    expect(night({ ...row, pl_orbper: 53.6 })).toBeUndefined();
+    expect(night({ ...row, pl_orbper: null })).toBeUndefined();
+  });
 });
 
 describe('numeric grounding', async () => {

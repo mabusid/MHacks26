@@ -1,34 +1,34 @@
 {
-  "planetName": "GJ 625 b",
+  "planetName": "TOI-2095 c",
   "params": [
     {
       "field": "insolation",
-      "num": 2.0787,
+      "num": 1.84,
       "flag": null,
       "unit": "× Earth",
       "status": "sourced",
-      "sourceLabel": "Calculated Value via NASA Exoplanet Archive",
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/docs/pscp_calc.html",
+      "sourceLabel": "Murgas et al. 2023 via NASA Exoplanet Archive",
+      "sourceUrl": "https://ui.adsabs.harvard.edu/abs/2023A&A...677A.182M/abstract",
       "note": ""
     },
     {
       "field": "meanTempK",
-      "num": 335.59,
+      "num": 297,
       "flag": null,
       "unit": "K",
       "status": "sourced",
-      "sourceLabel": "Calculated Value via NASA Exoplanet Archive",
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/docs/pscp_calc.html",
+      "sourceLabel": "Murgas et al. 2023 via NASA Exoplanet Archive",
+      "sourceUrl": "https://ui.adsabs.harvard.edu/abs/2023A&A...677A.182M/abstract",
       "note": "Equilibrium temperature"
     },
     {
       "field": "gravity",
-      "num": 14.62,
+      "num": 13.05,
       "flag": null,
       "unit": "m/s²",
       "status": "estimated",
-      "sourceLabel": "Calculated Value via NASA Exoplanet Archive",
-      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/docs/pscp_calc.html",
+      "sourceLabel": "Murgas et al. 2023 via NASA Exoplanet Archive",
+      "sourceUrl": "https://ui.adsabs.harvard.edu/abs/2023A&A...677A.182M/abstract",
       "note": "Mass not directly measured; assumes Earth-like density from its radius"
     },
     {
@@ -39,7 +39,7 @@
       "status": "estimated",
       "sourceLabel": "",
       "sourceUrl": "",
-      "note": "Rotation not measured — planets this close to their star are often tidally locked"
+      "note": "Rotation not measured, and its orbit is too wide to assume tidal locking"
     },
     {
       "field": "surfacePressureBar",
@@ -102,13 +102,13 @@
       "note": "Weather unknown"
     }
   ],
-  "twist": "thermal",
-  "headline": "GJ 625 b gets 208% of Earth’s sunlight, 21.1 light-years away.",
-  "scaleText": "21.1 light-years away · 1.49× Earth’s width · 2.08× Earth’s sunlight",
+  "twist": "radiation",
+  "headline": "TOI-2095 c gets 184% of Earth’s sunlight, 136.7 light-years away.",
+  "scaleText": "136.7 light-years away · 1.33× Earth’s width · 1.84× Earth’s sunlight",
   "because": [
     {
       "kind": "power",
-      "text": "It gets 2.08× Earth’s sunlight; its nights have never been measured.",
+      "text": "It gets 1.84× Earth’s sunlight; its nights have never been measured.",
       "field": "insolation"
     },
     {
@@ -118,13 +118,13 @@
     },
     {
       "kind": "twist",
-      "text": "Its equilibrium temperature is about 336 K.",
-      "field": "meanTempK"
+      "text": "Its atmosphere has never been measured, so plan for radiation.",
+      "field": "surfacePressureBar"
     }
   ],
   "funFacts": [
-    "Welcome to GJ 625 b, 21.1 light-years from Earth.",
-    "A year here lasts 15 Earth days as it circles a M2 star.",
+    "Welcome to TOI-2095 c, 136.7 light-years from Earth.",
+    "A year here lasts 28 Earth days as it circles a M2.5 V star.",
     "Nobody knows yet whether it has air — only a handful of rocky exoplanets have been checked."
   ]
 }

@@ -37,7 +37,7 @@ export function paramValue(p: PlanetParameter): string {
     case 'insolation':
       return `${n < 0.1 ? n.toFixed(3) : n.toFixed(2)}× Earth`;
     case 'nightHours':
-      return n > 48 ? `${(n / 24).toFixed(1)} Earth days` : `${n.toFixed(1)} h`;
+      return n === 0 ? 'None (always faces its star)' : n > 48 ? `${(n / 24).toFixed(1)} Earth days` : `${n.toFixed(1)} h`;
     case 'meanTempK':
       return `${Math.round(n)} K (${Math.round(n - 273.15)} °C)`;
     case 'surfacePressureBar':
@@ -77,7 +77,8 @@ export function keyFacts(params: readonly PlanetParameter[]): string[] {
     out.push(pct < 10 ? `${pct.toFixed(1)}% of Earth’s sunlight` : `${Math.round(pct)}% of Earth’s sunlight`);
   }
   const night = get('nightHours');
-  if (night?.num !== undefined) out.push(night.num > 48 ? `${Math.round(night.num / 24)}-day nights` : `${Math.round(night.num)}-hour nights`);
+  if (night?.num === 0) out.push('No night (always faces its star)');
+  else if (night?.num !== undefined) out.push(night.num > 48 ? `${Math.round(night.num / 24)}-day nights` : `${Math.round(night.num)}-hour nights`);
   else if (night) out.push('night length unknown');
   const temp = get('meanTempK');
   if (temp?.num !== undefined) out.push(`${Math.round(temp.num - 273.15)} °C`);

@@ -26,7 +26,7 @@ export interface BoardRead {
 const REQUIREMENT_PIECES: Record<RequirementKind, PieceKind[]> = {
   power: ['reactor', 'solar', 'battery'],
   life_support: ['ice_drill', 'o2_unit', 'water_tank', 'o2_tank'],
-  twist: ['berm', 'reactor', 'solar', 'battery'],
+  twist: ['berm', 'thermal_unit', 'battery', 'reactor', 'solar'],
 };
 
 function signatureOf(board: readonly PlacedPiece[]): string {
@@ -71,7 +71,7 @@ function planActions(board: readonly PlacedPiece[], tiles: Tiles, target: Counts
   for (const kind of order) {
     const missing = target[kind] - current[kind];
     for (let n = 0; n < missing; n++) {
-      const pool = kind === 'berm' ? HABITAT_ADJACENT : candidates;
+      const pool = PIECES[kind].placement === 'habitat_adjacent' ? HABITAT_ADJACENT : candidates;
       const i = pool.find(t => {
         const { x, y } = xy(t);
         return placementError(kind, x, y, tiles, taken) === null;

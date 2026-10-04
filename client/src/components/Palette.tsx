@@ -15,6 +15,9 @@ interface Props {
 /** Why a piece can't be used right now — shown on the button, not hidden in a tooltip. */
 function unavailable(k: PieceKind, rules: RoundRules, massLeft: number): string | null {
   if (k === 'ice_drill' && !rules.iceAvailable) return 'no ice here';
+  if (k === 'thermal_unit' && rules.twist !== 'thermal') return 'not needed';
+  if (k === 'berm' && rules.twist !== 'radiation') return 'not needed';
+  if (k === 'battery' && rules.nightBand === 0) return 'no night here';
   if (PIECES[k].mass > massLeft) return 'over budget';
   return null;
 }

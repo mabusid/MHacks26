@@ -145,16 +145,19 @@ const late = await connect();
 const lateIsMember = () => [...A.db.member.iter()].some(m => m.roomId === A.room().id && m.identity.toHexString() === late.hex);
 
 let titanRound = 0n;
-await step('empty Titan base → MISSION FAILED, each ✗ with a reason and the responsible fact', async () => {
+await step('Titan (thermal): berms refused, one of two thermal units placed → MISSION FAILED, each ✗ with a reason and the responsible fact', async () => {
   await toBuild(host, 'titan');
   titanRound = A.rid();
   await rejects('join mid-build', late.conn.reducers.joinRoom({ code: A.room().code, name: 'Late' }), /join at the debrief/);
+  await rejects('berm on a thermal round', host.conn.reducers.placePiece({ kind: 'berm', index: RING[0] }), /No radiation shielding needed/);
+  await rejects('thermal unit off the ring', host.conn.reducers.placePiece({ kind: 'thermal_unit', index: A.free() }), /touch the habitat/);
+  await host.conn.reducers.placePiece({ kind: 'thermal_unit', index: RING[0] });
   await host.conn.reducers.lockBuild({});
   await until('debrief', () => A.room().phase.tag === 'Debrief' && A.results(titanRound).length === 3);
   const res = A.results(titanRound);
   if (A.db.round.id.find(titanRound)!.success !== false || res.some(r => r.pass)) throw new Error(JSON.stringify(res));
   const twist = res.find(r => r.kind === 'twist')!;
-  if (!/^Heating:/.test(twist.reason) || twist.fact !== 'meanTempK') throw new Error(JSON.stringify(twist));
+  if (twist.reason !== 'Thermal control short by 1 unit next to the habitat' || twist.fact !== 'meanTempK') throw new Error(JSON.stringify(twist));
   return res.map(r => `${r.reason} [${r.fact}]`).join(' · ');
 });
 

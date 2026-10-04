@@ -65,6 +65,15 @@ const ICONS: Record<PieceKind, ReactElement> = {
       <path d="M6 16c2-3 4-4.5 6-4.5" stroke="#d6a35c" strokeWidth="1" fill="none" opacity="0.8" />
     </>
   ),
+  thermal_unit: (
+    <>
+      <rect x="3" y="6" width="12" height="14" rx="1.5" fill="#475569" stroke="#cbd5e1" strokeWidth="1.1" />
+      <path d="M6 8.5v9M9 8.5v9M12 8.5v9" stroke="#cbd5e1" strokeWidth="1.2" strokeLinecap="round" />
+      <rect x="17" y="3" width="4" height="13" rx="2" fill="#e2e8f0" stroke="#94a3b8" strokeWidth="0.9" />
+      <circle cx="19" cy="18" r="3" fill="#f97316" stroke="#fed7aa" strokeWidth="0.9" />
+      <path d="M19 9v8" stroke="#f97316" strokeWidth="1.6" strokeLinecap="round" />
+    </>
+  ),
 };
 
 export default function PieceIcon({ kind, size = 24 }: { kind: PieceKind; size?: number }) {

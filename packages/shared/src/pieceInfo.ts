@@ -13,7 +13,7 @@ export function pieceEffect(kind: PieceKind, r: RoundRules): string {
     case 'solar':
       return `+${fmt(r.solarPerArray)} power by day · sunlit tiles`;
     case 'battery':
-      return `Stores ${BATTERY_COVERS} power for the night (×${r.nightBand} nights here)`;
+      return r.nightBand === 0 ? 'No night here — nothing to store for' : `Stores ${BATTERY_COVERS} power for the night (×${r.nightBand} nights here)`;
     case 'reactor':
       return `+${REACTOR_OUTPUT} power, day and night`;
     case 'water_tank':
@@ -27,6 +27,10 @@ export function pieceEffect(kind: PieceKind, r: RoundRules): string {
         ? `+${O2_UNIT_O2} O₂ from the CO₂ air · −${PIECES.o2_unit.draw} power`
         : `+${O2_UNIT_O2} O₂ · uses ${O2_UNIT_WATER_USE} water · −${PIECES.o2_unit.draw} power`;
     case 'berm':
-      return 'Radiation shielding · next to the habitat';
+      return r.twist === 'radiation' ? 'Radiation shielding · next to the habitat' : 'Not needed on this mission';
+    case 'thermal_unit':
+      return r.twist === 'thermal'
+        ? `Heats or cools the habitat · −${PIECES.thermal_unit.draw} power · next to the habitat`
+        : 'Not needed on this mission';
   }
 }

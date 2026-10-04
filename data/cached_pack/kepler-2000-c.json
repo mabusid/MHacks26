@@ -1,19 +1,19 @@
 {
-  "planetName": "Kepler-367 c",
+  "planetName": "Kepler-2000 c",
   "params": [
     {
       "field": "insolation",
-      "num": 3.761,
+      "num": 3.92,
       "flag": null,
       "unit": "× Earth",
       "status": "sourced",
-      "sourceLabel": "Berger et al. 2018 via NASA Exoplanet Archive",
-      "sourceUrl": "https://ui.adsabs.harvard.edu/abs/2018ApJ...866...99B/abstract",
+      "sourceLabel": "Q1-Q17 DR25 KOI Table via NASA Exoplanet Archive",
+      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/docs/Kepler_KOI_docs.html",
       "note": ""
     },
     {
       "field": "meanTempK",
-      "num": 357,
+      "num": 359,
       "flag": null,
       "unit": "K",
       "status": "sourced",
@@ -23,12 +23,12 @@
     },
     {
       "field": "gravity",
-      "num": 11.77,
+      "num": 15.4,
       "flag": null,
       "unit": "m/s²",
       "status": "estimated",
-      "sourceLabel": "Rowe et al. 2014 via NASA Exoplanet Archive",
-      "sourceUrl": "https://ui.adsabs.harvard.edu/abs/2014ApJ...784...45R/abstract",
+      "sourceLabel": "Q1-Q17 DR25 KOI Table via NASA Exoplanet Archive",
+      "sourceUrl": "https://exoplanetarchive.ipac.caltech.edu/docs/Kepler_KOI_docs.html",
       "note": "Mass not directly measured; assumes Earth-like density from its radius"
     },
     {
@@ -39,7 +39,7 @@
       "status": "estimated",
       "sourceLabel": "",
       "sourceUrl": "",
-      "note": "Rotation not measured — planets this close to their star are often tidally locked"
+      "note": "Rotation not measured, and its orbit is too wide to assume tidal locking"
     },
     {
       "field": "surfacePressureBar",
@@ -102,13 +102,13 @@
       "note": "Weather unknown"
     }
   ],
-  "twist": "thermal",
-  "headline": "Kepler-367 c gets 376% of Earth’s sunlight, 613.3 light-years away.",
-  "scaleText": "613.3 light-years away · 1.20× Earth’s width · 3.76× Earth’s sunlight",
+  "twist": "radiation",
+  "headline": "Kepler-2000 c gets 392% of Earth’s sunlight, 1045.6 light-years away.",
+  "scaleText": "1045.6 light-years away · 1.57× Earth’s width · 3.92× Earth’s sunlight",
   "because": [
     {
       "kind": "power",
-      "text": "It gets 3.76× Earth’s sunlight; its nights have never been measured.",
+      "text": "It gets 3.92× Earth’s sunlight; its nights have never been measured.",
       "field": "insolation"
     },
     {
@@ -118,13 +118,13 @@
     },
     {
       "kind": "twist",
-      "text": "Its equilibrium temperature is about 357 K.",
-      "field": "meanTempK"
+      "text": "Its atmosphere has never been measured, so plan for radiation.",
+      "field": "surfacePressureBar"
     }
   ],
   "funFacts": [
-    "Welcome to Kepler-367 c, 613.3 light-years from Earth.",
-    "A year here lasts 54 Earth days as it circles its star.",
+    "Welcome to Kepler-2000 c, 1045.6 light-years from Earth.",
+    "A year here lasts 21 Earth days as it circles its star.",
     "Nobody knows yet whether it has air — only a handful of rocky exoplanets have been checked."
   ]
 }

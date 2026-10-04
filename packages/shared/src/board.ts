@@ -26,7 +26,7 @@ export function placementError(kind: PieceKind, x: number, y: number, tiles: Til
     case 'ice':
       return tile === 'ice' ? null : 'Ice drills need an ice tile';
     case 'habitat_adjacent':
-      return isHabitatAdjacent(x, y) ? null : 'Berms must touch the habitat';
+      return isHabitatAdjacent(x, y) ? null : `${PIECES[kind].label}s must touch the habitat`;
     case 'any':
       return null;
   }

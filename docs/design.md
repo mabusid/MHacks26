@@ -30,7 +30,7 @@ Layout, look, and transitions for every phase. Rules, copy, and visibility: [Pla
 | Reserved colors | Teal = valid/primary, coral = invalid/urgent/fail, green = success, amber = host/estimated. **Crew colors avoid all four:** blue `#60a5fa`, pink `#f472b6`, yellow `#facc15`, violet `#a78bfa`. |
 | Don't block the play area | Panels sit on edges; the board never sits under a panel; toasts appear between board and palette. |
 | Touch | No hover-only information: selecting a tool marks **all valid tiles at once**; requirement details expand on tap; the info line mirrors any tooltip. Targets ≥ 40 px. |
-| Keyboard | Arrow keys move between tiles (DOM buttons), Enter places, 1–8 pick pieces, R = remove. |
+| Keyboard | Arrow keys move between tiles (DOM buttons), Enter places, 1–9 pick pieces, R = remove. |
 | Motion | Camera moves only in the briefing (hides loading) and debrief; ease-in-out 1.5–2.5 s. `prefers-reduced-motion`: no camera moves, no blink. **The build timer never starts while the camera is moving.** |
 | Contrast | HUD text ≥ 4.5:1, timer ≥ 3:1 large. |
 
@@ -112,7 +112,7 @@ Centered card: planet name, 1–2 numbers, the **same 3 requirement lines as the
 - **Top bar:** planet, ★ host name, Leave (left) · timer (center, largest; coral + blink under 0:30) · mass **bar + numbers** (right; coral + "over by N" when over; flashes on change).
 - **Board:** A–H / 1–8 edge labels; tile types by pattern + legend (sunlit bright, shaded dark + striped, ice blue); habitat 2×2; pieces as SVG icons; live named cursors in crew colors (offline hidden).
 - **Tool selected →** all valid tiles get a teal rim + dot; invalid tiles dim (no dot). Hover/focus puts the tile name and reason in the info line.
-- **Palette:** 8 pieces + Remove, all one click/tap (no press-and-hold anywhere). Disabled pieces say why ("over budget", "no ice here"). The **info line** under the palette says what the selected piece does *on this planet*.
+- **Palette:** 9 pieces + Remove (two rows of five on phones), all one click/tap (no press-and-hold anywhere). Disabled pieces say why ("over budget", "no ice here", "no night here", "not needed"). The **info line** under the palette says what the selected piece does *on this planet*.
 - **Right rail:** 3 requirement lines, **tap to expand** threshold + researched reason; Planet facts & sources; host **Lock in early** (in-HUD confirm, not a browser dialog); dev board read (dev only).
 - **Mission Control bar:** typewriter caption; tap = mute this device; "tap to enable sound" (amber) when the browser blocked audio.
 

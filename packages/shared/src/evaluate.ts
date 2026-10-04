@@ -4,7 +4,7 @@ import {
   BATTERY_COVERS, DRILL_WATER_UNITS, HABITAT_LOAD, O2_NEED, O2_TANK_UNITS, O2_UNIT_O2, O2_UNIT_WATER_USE,
   PIECES, REACTOR_OUTPUT, WATER_NEED, WATER_TANK_UNITS, type Counts,
 } from './pieces';
-import type { PlanetProfile, RoundRules } from './rules';
+import { stormBand, type PlanetProfile, type RoundRules } from './rules';
 
 export type RequirementKind = 'power' | 'life_support' | 'twist';
 
@@ -32,10 +32,12 @@ export interface Evaluation {
 const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
 
 export function evaluate(c: Counts, r: RoundRules): Evaluation {
-  const load = HABITAT_LOAD + c.ice_drill * PIECES.ice_drill.draw + c.o2_unit * PIECES.o2_unit.draw + r.thermalLoad;
+  const load =
+    HABITAT_LOAD + c.ice_drill * PIECES.ice_drill.draw + c.o2_unit * PIECES.o2_unit.draw + c.thermal_unit * PIECES.thermal_unit.draw;
   const reactor = c.reactor * REACTOR_OUTPUT;
   const dayPower = reactor + c.solar * r.solarPerArray;
-  const batteriesNeeded = Math.ceil(Math.max(0, load - reactor) / BATTERY_COVERS) * r.nightBand;
+  const storageUnits = Math.ceil(Math.max(0, load - reactor) / BATTERY_COVERS);
+  const batteriesNeeded = storageUnits * r.nightBand;
   // Batteries only help if something can charge them.
   const batteriesEffective = c.solar > 0 ? c.battery : 0;
 
@@ -53,7 +55,7 @@ export function evaluate(c: Counts, r: RoundRules): Evaluation {
             ? 'Batteries have nothing to charge them'
             : `Night storage short by ${nightShort} batter${nightShort === 1 ? 'y' : 'ies'} (night band ${r.nightBand})`
           : 'Power covered day and night',
-    fact: dayShort > 0 ? (r.thermalLoad ? 'meanTempK' : 'insolation') : nightShort > 0 ? 'nightHours' : null,
+    fact: dayShort > 0 ? 'insolation' : nightShort > 0 ? 'nightHours' : null,
   };
 
   const water =
@@ -84,17 +86,24 @@ export function evaluate(c: Counts, r: RoundRules): Evaluation {
       reason: short ? `Shielding short by ${short} berm${short === 1 ? '' : 's'} next to the habitat` : 'Habitat shielded',
       fact: short ? 'radiationDoseMSvPerDay' : null,
     };
-  } else {
-    // Thermal and dust raise the power bar; the twist is met when power is. The power line already gives the
-    // numbers, so this one just names the cause.
-    const label = r.twist === 'thermal' ? 'Heating' : 'Dust storms';
-    const failure = r.twist === 'thermal' ? `+${r.thermalLoad} power for heat not covered` : 'power falls short with solar halved';
+  } else if (r.twist === 'thermal') {
+    const short = Math.max(0, r.thermalLoad - c.thermal_unit);
     twist = {
       kind: 'twist',
-      pass: power.pass,
-      severity: power.severity,
-      reason: power.pass ? `${label} covered` : `${label}: ${failure}`,
-      fact: power.pass ? null : r.twist === 'thermal' ? 'meanTempK' : 'dustStorms',
+      pass: short === 0,
+      severity: r.thermalLoad ? short / r.thermalLoad : 0,
+      reason: short ? `Thermal control short by ${short} unit${short === 1 ? '' : 's'} next to the habitat` : 'Habitat temperature controlled',
+      fact: short ? 'meanTempK' : null,
+    };
+  } else {
+    const needed = storageUnits * stormBand(r);
+    const short = Math.max(0, needed - batteriesEffective);
+    twist = {
+      kind: 'twist',
+      pass: short === 0,
+      severity: needed ? short / needed : 0,
+      reason: short ? `Storm reserve short by ${short} batter${short === 1 ? 'y' : 'ies'} (dust can hide the sun for days)` : 'Storm reserve covered',
+      fact: short ? 'dustStorms' : null,
     };
   }
 

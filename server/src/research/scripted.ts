@@ -57,7 +57,8 @@ async function randomExoplanet(s: ResearchSession, avoid: string[]) {
   await s.log(`Equilibrium temperature ${Math.round(eqt)} K (${Math.round(eqt - 273.15)} °C)`);
 
   // What nobody has measured yet — said out loud, since that's part of the lesson.
-  s.markEstimated('nightHours', 'Rotation not measured — planets this close to their star are often tidally locked');
+  const locked = f.values.some(v => v.field === 'nightHours');
+  if (!locked) s.markEstimated('nightHours', 'Rotation not measured, and its orbit is too wide to assume tidal locking');
   s.markEstimated('surfacePressureBar', 'Atmosphere not yet measured — very few rocky exoplanets have been checked');
   s.markEstimated('radiationDoseMSvPerDay', 'No surface measurements exist');
   s.markEstimated('co2Atmosphere', 'Atmosphere not yet measured');
@@ -65,7 +66,8 @@ async function randomExoplanet(s: ResearchSession, avoid: string[]) {
   s.markEstimated('polarIce', 'No water detected');
   s.markEstimated('dustStorms', 'Weather unknown');
   await pause();
-  await s.log('Unknown: rotation, atmosphere, water — planning for the worst');
+  if (locked) await s.log(`Orbit ${f.orbitDays?.toFixed(1)} days — likely tidally locked: no night on the star-facing side`);
+  await s.log(`Unknown: ${locked ? '' : 'rotation, '}atmosphere, water — planning for the worst`);
 
   const twists = s.triggeredTwists();
   const twist: Twist = twists.includes('thermal') && Math.random() < 0.5 ? 'thermal' : twists[0];
@@ -79,7 +81,9 @@ async function randomExoplanet(s: ResearchSession, avoid: string[]) {
     headline: `${f.name} gets ${fmtPct(insol)} of Earth’s sunlight, ${scale.distance.value} light-years away.`,
     scaleText: `${scale.distance.value} light-years away · ${width}× Earth’s width · ${insol.toFixed(2)}× Earth’s sunlight`,
     because: {
-      power: { text: `It gets ${insol.toFixed(2)}× Earth’s sunlight; its nights have never been measured.`, field: 'insolation' },
+      power: locked
+        ? { text: 'It likely always faces its star, so the base never sees night.', field: 'nightHours' }
+        : { text: `It gets ${insol.toFixed(2)}× Earth’s sunlight; its nights have never been measured.`, field: 'insolation' },
       life_support: { text: 'No water or CO₂ has been detected, so supplies must be shipped.', field: 'waterIce' },
       twist:
         twist === 'thermal'

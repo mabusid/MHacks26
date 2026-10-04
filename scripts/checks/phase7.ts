@@ -86,11 +86,12 @@ await step('scripted Moon: every value cited to NASA or a paper; radiation twist
   return `dose ${dose.num} mSv/day (${dose.sourceLabel})`;
 });
 
-await step('scripted Mars: different twist and thresholds (dust storms, ×2 night storage)', async () => {
+await step('scripted Mars: different twist and thresholds (dust storms → ×2 storm reserve on its own line)', async () => {
   const rd = await forceResearch('mars');
-  if (rd.twist !== 'dust' || rd.nightBand !== 2) throw new Error(`${rd.twist}, band ${rd.nightBand}`);
-  const power = reqsOf(rd.id).find(r => r.kind === 'power')!;
-  return power.summary;
+  if (rd.twist !== 'dust' || rd.nightBand !== 1) throw new Error(`${rd.twist}, band ${rd.nightBand}`);
+  const twist = reqsOf(rd.id).find(r => r.kind === 'twist')!;
+  if (twist.summary !== 'Storm reserve (×2 storage)') throw new Error(twist.summary);
+  return twist.summary;
 });
 
 await step('live exoplanet: archive values cite the paper; unknowns are estimated with reasons', async () => {
@@ -102,6 +103,8 @@ await step('live exoplanet: archive values cite the paper; unknowns are estimate
   if (!/NASA Exoplanet Archive/.test(sun.sourceLabel)) throw new Error(`insolation source: ${sun.sourceLabel}`);
   const unknown = ps.filter(p => p.status === 'estimated').map(p => p.field);
   if (!unknown.includes('nightHours') || !unknown.includes('surfacePressureBar')) throw new Error(`estimated: ${unknown}`);
+  const night = ps.find(p => p.field === 'nightHours')!;
+  if (night.num === 0 ? !/tidally locked/.test(night.note) || rd.nightBand !== 0 : rd.nightBand !== 2) throw new Error(`night ${night.num}: ${night.note}, band ${rd.nightBand}`);
   return `${rd.planetName}: sunlight ${sun.num}× (${sun.sourceLabel}); unknown: ${unknown.join(', ')}`;
 });
 

@@ -10,7 +10,7 @@ export interface PlanetProfile {
   name: string;
   /** Sunlight relative to Earth (1.0 = 1361 W/m²). */
   insolation: number;
-  /** Length of one night in hours; null = unknown (estimated band 2). */
+  /** Length of one night in hours; 0 = no night (tidally locked, base on the star-facing side); null = unknown (band 2). */
   nightHours: number | null;
   /** Mean surface temperature (or exoplanet equilibrium temperature), kelvin. */
   meanTempK: number;
@@ -27,12 +27,18 @@ export interface PlanetProfile {
   gravity: number;
 }
 
-export type NightBand = 1 | 2 | 3;
+export type NightBand = 0 | 1 | 2 | 3;
 
-/** Night storage multiplier: ≤ 24 h → 1, ≤ 10 Earth days → 2, longer → 3; +1 for dust storms, max 3. */
-export function nightBand(nightHours: number | null, dust: boolean): NightBand {
-  const base = nightHours === null ? 2 : nightHours <= 24 ? 1 : nightHours <= 240 ? 2 : 3;
-  return Math.min(3, base + (dust ? 1 : 0)) as NightBand;
+/** Night storage multiplier: no night → 0, ≤ 24 h → 1, ≤ 10 Earth days → 2, longer → 3; unknown → 2. */
+export function nightBand(nightHours: number | null): NightBand {
+  if (nightHours === null) return 2;
+  if (nightHours === 0) return 0;
+  return nightHours <= 24 ? 1 : nightHours <= 240 ? 2 : 3;
+}
+
+/** Dust storms block the sun for days: the storm reserve is one more night of storage than power needs. */
+export function stormBand(r: Pick<RoundRules, 'nightBand'>): number {
+  return Math.max(1, r.nightBand + 1);
 }
 
 export function thermalLoadFor(tempK: number): 0 | 1 | 2 {
@@ -63,6 +69,7 @@ export interface RoundRules {
   twist: Twist;
   solarPerArray: number;
   nightBand: NightBand;
+  /** Thermal units required next to the habitat (thermal twist only); each draws power. */
   thermalLoad: 0 | 1 | 2;
   co2Atmosphere: boolean;
   iceAvailable: boolean;
@@ -75,7 +82,7 @@ export function deriveRules(p: PlanetProfile, twist: Twist, estimated: ReadonlyS
   return {
     twist,
     solarPerArray: SOLAR_OUTPUT * Math.min(p.insolation, SOLAR_INSOLATION_CAP) * (dust ? 0.5 : 1),
-    nightBand: nightBand(p.nightHours, dust),
+    nightBand: nightBand(p.nightHours),
     thermalLoad: twist === 'thermal' ? thermalLoadFor(p.meanTempK) : 0,
     co2Atmosphere: p.co2Atmosphere,
     iceAvailable: p.waterIce,
@@ -96,7 +103,7 @@ export function rulesFromRound(r: {
   return {
     twist: (TWISTS as readonly string[]).includes(r.twist) ? (r.twist as Twist) : 'radiation',
     solarPerArray: r.solarPerArray,
-    nightBand: Math.min(3, Math.max(1, r.nightBand)) as NightBand,
+    nightBand: Math.min(3, Math.max(0, r.nightBand)) as NightBand,
     thermalLoad: Math.min(2, Math.max(0, r.thermalLoad)) as 0 | 1 | 2,
     co2Atmosphere: r.co2Atmosphere,
     iceAvailable: r.iceAvailable,
